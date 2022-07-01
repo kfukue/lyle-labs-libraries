@@ -1,0 +1,26 @@
+CREATE TABLE strategy_market_data_assets
+(
+  id SERIAL,
+  strategy_id INT NOT NULL,
+  base_asset_id  INT NOT NULL,
+  quote_asset_id INT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  uuid uuid NOT NULL DEFAULT uuid_generate_v4() ,
+  alternate_name VARCHAR(255) NULL,
+  start_date timestamp NULL,
+  end_date timestamp NULL,
+  ticker VARCHAR(255) NULL,
+  description TEXT NULL,
+  source_id INT NOT NULL,
+  frequency_id INT NOT NULL,
+  created_by VARCHAR(255) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_by VARCHAR(255) NOT NULL,
+  updated_at timestamp NOT NULL,
+  PRIMARY KEY(id),
+  CONSTRAINT fk_strategy_id FOREIGN KEY(strategy_id) REFERENCES strategies(id),
+  CONSTRAINT fk_base_asset_id FOREIGN KEY(base_asset_id) REFERENCES assets(id),
+  CONSTRAINT fk_quote_asset_id FOREIGN KEY(quote_asset_id) REFERENCES assets(id),
+  CONSTRAINT fk_source FOREIGN KEY(source_id) REFERENCES sources(id),
+  CONSTRAINT fk_frequency_id FOREIGN KEY(frequency_id) REFERENCES structured_values(id)
+);

@@ -1,0 +1,25 @@
+CREATE TABLE jobs
+(
+  id SERIAL,
+  uuid uuid NOT NULL DEFAULT uuid_generate_v4() ,
+  name VARCHAR(255) NOT NULL,
+  alternate_name VARCHAR(255) NULL,
+  start_date timestamp NOT NULL,
+  end_date timestamp NOT NULL,
+  description TEXT NULL,
+  status_id int NOT NULL,
+  response_status TEXT,
+  request_url TEXT NULL,
+  request_body TEXT NULL,
+  request_method TEXT NULL,
+  response_data TEXT NULL,
+  response_data_json jsonb NULL,
+  job_category_id INT NULL,
+  created_by VARCHAR(255) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_by VARCHAR(255) NOT NULL,
+  updated_at timestamp NOT NULL,
+  PRIMARY KEY(id),
+  CONSTRAINT status_id FOREIGN KEY(status_id) REFERENCES structured_values(id),
+  CONSTRAINT job_category_id FOREIGN KEY(job_category_id) REFERENCES structured_values(id) 
+);

@@ -1,0 +1,25 @@
+CREATE TABLE pools
+(
+  id SERIAL,
+  target_asset_id  INT NOT NULL,
+  strategy_id INT NOT NULL,
+  account_id INT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  uuid uuid NOT NULL DEFAULT uuid_generate_v4() ,
+  alternate_name VARCHAR(255) NULL,
+  start_date timestamp NULL,
+  end_date timestamp NULL,
+  description TEXT NULL,
+  chain_id INT NOT NULL,
+  frequency_id INT NOT NULL,
+  created_by VARCHAR(255) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_by VARCHAR(255) NOT NULL,
+  updated_at timestamp NOT NULL,
+  PRIMARY KEY(id),
+  CONSTRAINT fk_target_asset_id FOREIGN KEY(target_asset_id) REFERENCES assets(id),
+  CONSTRAINT fk_strategy_id FOREIGN KEY(strategy_id) REFERENCES strategies(id),
+  CONSTRAINT fk_account_id FOREIGN KEY(account_id) REFERENCES accounts(id),
+  CONSTRAINT fk_frequency_id FOREIGN KEY(frequency_id) REFERENCES structured_values(id),
+  CONSTRAINT fk_chain FOREIGN KEY(chain_id) REFERENCES chains(id)
+);

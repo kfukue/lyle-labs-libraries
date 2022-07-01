@@ -1,0 +1,27 @@
+CREATE TABLE positions
+(
+  id SERIAL,
+  uuid uuid NOT NULL DEFAULT uuid_generate_v4() ,
+  name VARCHAR(255) NOT NULL,
+  alternate_name VARCHAR(255) NULL,
+  account_id INT NULL,
+  portfolio_id INT NULL,
+  frequency_id INT NOT NULL,
+  start_date timestamp NOT NULL,
+  end_date timestamp NOT NULL,
+  base_asset_id INT NOT NULL,
+  quote_asset_id INT NOT NULL,
+  quantity NUMERIC NULL,
+  cost_basis NUMERIC NULL,
+  profit NUMERIC NULL,
+  total_amount NUMERIC NULL,
+  description TEXT NULL,
+  created_by VARCHAR(255) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_by VARCHAR(255) NOT NULL,
+  updated_at timestamp NOT NULL,
+  PRIMARY KEY(id),
+  CONSTRAINT fk_asset_base_asset_id FOREIGN KEY(base_asset_id) REFERENCES assets(id),
+  CONSTRAINT fk_asset_quote_asset_id FOREIGN KEY(quote_asset_id) REFERENCES assets(id),
+  CONSTRAINT fk_structured_value_position_frequency FOREIGN KEY(frequency_id) REFERENCES structured_values(id)
+);
