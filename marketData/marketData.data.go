@@ -180,7 +180,7 @@ func RemoveMarketData(marketDataID int) error {
 
 func RemoveMarketDataFromBaseAssetBetweenDates(assetID int, startDate, endDate time.Time) error {
 	log.Println(fmt.Sprintf("start : %s end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
-	err := removeMarketDataQuoteFromBaseAssetBetweenDates(assetID, startDate, endDate)
+	err := RemoveMarketDataQuoteFromBaseAssetBetweenDates(assetID, startDate, endDate)
 	if err != nil {
 		log.Println(err.Error())
 		return err
