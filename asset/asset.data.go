@@ -33,7 +33,9 @@ func GetAsset(assetID int) (*Asset, error) {
 	category_id,
 	sub_category_id,
 	is_default_quote,
-	ignore_market_data
+	ignore_market_data,
+	decimals,
+	contract_address
 	FROM assets 
 	WHERE id = $1`, assetID)
 
@@ -58,6 +60,8 @@ func GetAsset(assetID int) (*Asset, error) {
 		&asset.SubCategoryID,
 		&asset.IsDefaultQuote,
 		&asset.IgnoreMarketData,
+		&asset.Decimals,
+		&asset.ContractAddress,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -91,7 +95,9 @@ func GetAssetByTicker(ticker string) (*Asset, error) {
 	category_id,
 	sub_category_id,
 	is_default_quote,
-	ignore_market_data
+	ignore_market_data,
+	decimals,
+	contract_address
 	FROM assets 
 	WHERE ticker = $1`, ticker)
 
@@ -116,6 +122,8 @@ func GetAssetByTicker(ticker string) (*Asset, error) {
 		&asset.SubCategoryID,
 		&asset.IsDefaultQuote,
 		&asset.IgnoreMarketData,
+		&asset.Decimals,
+		&asset.ContractAddress,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -149,7 +157,9 @@ func GetAssetByBaseAndQuoteID(baseAssetID *int, quoteAssetID *int) (*Asset, erro
 	category_id,
 	sub_category_id,
 	is_default_quote,
-	ignore_market_data
+	ignore_market_data,
+	decimals,
+	contract_address
 	FROM assets 
 	WHERE base_asset_id = $1 AND 
 	quote_asset_id = $2`, *baseAssetID, *quoteAssetID)
@@ -175,6 +185,8 @@ func GetAssetByBaseAndQuoteID(baseAssetID *int, quoteAssetID *int) (*Asset, erro
 		&asset.SubCategoryID,
 		&asset.IsDefaultQuote,
 		&asset.IgnoreMarketData,
+		&asset.Decimals,
+		&asset.ContractAddress,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -207,7 +219,9 @@ func GetTopTenAssets() ([]Asset, error) {
 	category_id,
 	sub_category_id,
 	is_default_quote,
-	ignore_market_data
+	ignore_market_data,
+	decimals,
+	contract_address
 	FROM assets 
 	`)
 	if err != nil {
@@ -238,6 +252,8 @@ func GetTopTenAssets() ([]Asset, error) {
 			&asset.SubCategoryID,
 			&asset.IsDefaultQuote,
 			&asset.IgnoreMarketData,
+			&asset.Decimals,
+			&asset.ContractAddress,
 		)
 
 		assets = append(assets, asset)
@@ -330,7 +346,9 @@ func GetCryptoAssets() ([]Asset, error) {
 	category_id,
 	sub_category_id,
 	is_default_quote,
-	ignore_market_data
+	ignore_market_data,
+	decimals,
+	contract_address
 	FROM public.assets
 	where asset_type_id = 1
 	`)
@@ -362,6 +380,8 @@ func GetCryptoAssets() ([]Asset, error) {
 			&asset.SubCategoryID,
 			&asset.IsDefaultQuote,
 			&asset.IgnoreMarketData,
+			&asset.Decimals,
+			&asset.ContractAddress,
 		)
 
 		assets = append(assets, asset)
@@ -405,6 +425,8 @@ func GetCryptoAssetsBySourceId(sourceID *int, excludeIgnoreMarketData bool) ([]A
 	assets.sub_category_id,
 	assets.is_default_quote,
 	assets.ignore_market_data,
+	assets.decimals,
+	assets.contract_address,
 	assetSources.source_id,
 	assetSources.source_identifier
 	FROM assets assets
@@ -446,6 +468,8 @@ func GetCryptoAssetsBySourceId(sourceID *int, excludeIgnoreMarketData bool) ([]A
 			&asset.Asset.SubCategoryID,
 			&asset.Asset.IsDefaultQuote,
 			&asset.Asset.IgnoreMarketData,
+			&asset.Asset.Decimals,
+			&asset.Asset.ContractAddress,
 			&asset.SourceID,
 			&asset.SourceIdentifier,
 		)
@@ -479,6 +503,8 @@ func GetAssetWithSourceByAssetIdAndSourceID(assetID *int, sourceID *int, exclude
 	assets.sub_category_id,
 	assets.is_default_quote,
 	assets.ignore_market_data,
+	assets.decimals,
+	assets.contract_address,
 	assetSources.source_id,
 	assetSources.source_identifier
 	FROM assets assets
@@ -514,6 +540,8 @@ func GetAssetWithSourceByAssetIdAndSourceID(assetID *int, sourceID *int, exclude
 		&assetWithSources.Asset.SubCategoryID,
 		&assetWithSources.Asset.IsDefaultQuote,
 		&assetWithSources.Asset.IgnoreMarketData,
+		&assetWithSources.Asset.Decimals,
+		&assetWithSources.Asset.ContractAddress,
 		&assetWithSources.SourceID,
 		&assetWithSources.SourceIdentifier,
 	)
@@ -549,6 +577,8 @@ func GetAssetWithSourceByAssetIdsAndSourceID(assetIDs []int, sourceID *int, excl
 	assets.sub_category_id,
 	assets.is_default_quote,
 	assets.ignore_market_data,
+	assets.decimals,
+	assets.contract_address,
 	assetSources.source_id,
 	assetSources.source_identifier
 	FROM assets assets
@@ -591,6 +621,8 @@ func GetAssetWithSourceByAssetIdsAndSourceID(assetIDs []int, sourceID *int, excl
 			&asset.Asset.SubCategoryID,
 			&asset.Asset.IsDefaultQuote,
 			&asset.Asset.IgnoreMarketData,
+			&asset.Asset.Decimals,
+			&asset.Asset.ContractAddress,
 			&asset.SourceID,
 			&asset.SourceIdentifier,
 		)
@@ -622,7 +654,9 @@ func GetAssetList() ([]Asset, error) {
 	category_id,
 	sub_category_id,
 	is_default_quote,
-	ignore_market_data
+	ignore_market_data,
+	decimals,
+	contract_address
 	FROM assets`)
 	if err != nil {
 		log.Println(err.Error())
@@ -652,6 +686,8 @@ func GetAssetList() ([]Asset, error) {
 			&asset.SubCategoryID,
 			&asset.IsDefaultQuote,
 			&asset.IgnoreMarketData,
+			&asset.Decimals,
+			&asset.ContractAddress,
 		)
 
 		assets = append(assets, asset)
@@ -681,6 +717,8 @@ func GetDefaultQuoteAssetListBySourceID(sourceID *int) ([]AssetWithSources, erro
 	assets.sub_category_id,
 	assets.is_default_quote,
 	assets.ignore_market_data,
+	assets.decimals,
+	assets.contract_address,
 	assetSources.source_id,
 	assetSources.source_identifier
 	FROM get_default_quotes assets
@@ -715,6 +753,8 @@ func GetDefaultQuoteAssetListBySourceID(sourceID *int) ([]AssetWithSources, erro
 			&asset.Asset.SubCategoryID,
 			&asset.Asset.IsDefaultQuote,
 			&asset.Asset.IgnoreMarketData,
+			&asset.Asset.Decimals,
+			&asset.Asset.ContractAddress,
 			&asset.SourceID,
 			&asset.SourceIdentifier,
 		)
@@ -746,7 +786,9 @@ func GetDefaultQuoteAssetList() ([]Asset, error) {
 	category_id,
 	sub_category_id,
 	is_default_quote,
-	ignore_market_data
+	ignore_market_data,
+	decimals,
+	contract_address
 	FROM get_default_quotes`)
 	if err != nil {
 		log.Println(err.Error())
@@ -776,6 +818,8 @@ func GetDefaultQuoteAssetList() ([]Asset, error) {
 			&asset.SubCategoryID,
 			&asset.IsDefaultQuote,
 			&asset.IgnoreMarketData,
+			&asset.Decimals,
+			&asset.ContractAddress,
 		)
 
 		assets = append(assets, asset)
@@ -805,8 +849,10 @@ func UpdateAsset(asset Asset) error {
 		category_id = $11,
 		sub_category_id = $12,
 		is_default_quote = $13,
-		ignore_market_data = $14
-		WHERE id=$15`,
+		ignore_market_data = $14,
+		decimals = $15,
+		contract_address=$16
+		WHERE id=$17`,
 		asset.Name,             // 1
 		asset.AlternateName,    //2
 		asset.Cusip,            //3
@@ -821,7 +867,9 @@ func UpdateAsset(asset Asset) error {
 		asset.SubCategoryID,    //12
 		asset.IsDefaultQuote,   //13
 		asset.IgnoreMarketData, //14
-		asset.ID)               //15
+		asset.Decimals,         //15
+		asset.ContractAddress,  //16
+		asset.ID)               //17
 
 	if err != nil {
 		log.Println(err.Error())
@@ -853,7 +901,9 @@ func InsertAsset(asset Asset) (int, error) {
 		category_id,
 		sub_category_id,
 		is_default_quote,
-		ignore_market_data
+		ignore_market_data,
+		decimals,
+		contract_address
 		) VALUES (
 			$1,
 			uuid_generate_v4(), 
@@ -872,7 +922,9 @@ func InsertAsset(asset Asset) (int, error) {
 			$11,
 			$12,
 			$13,
-			$14
+			$14,
+			$15,
+			$16
 		)
 		RETURNING id`,
 		asset.Name,             //1
@@ -889,6 +941,8 @@ func InsertAsset(asset Asset) (int, error) {
 		asset.SubCategoryID,    //12
 		asset.IsDefaultQuote,   //13
 		asset.IgnoreMarketData, //14
+		asset.Decimals,         //15
+		asset.ContractAddress,  //16
 	).Scan(&insertID)
 	if err != nil {
 		log.Println(err.Error())

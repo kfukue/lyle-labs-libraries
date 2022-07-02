@@ -27,3 +27,12 @@ CREATE TABLE assets
   CONSTRAINT fk_structured_value_category FOREIGN KEY(category_id) REFERENCES structured_values(id)
   CONSTRAINT fk_structured_value__sub_category FOREIGN KEY(sub_category_id) REFERENCES structured_values(id)
 );
+
+-- new columns 2022-07-02
+ROLLBACK
+START TRANSACTION;
+ALTER TABLE assets
+  ADD COLUMN decimals INT NULL,
+  ADD COLUMN contract_address VARCHAR(255) NULL
+  COMMIT
+-- end 2022-07-02

@@ -25,6 +25,8 @@ type Asset struct {
 	SubCategoryID    *int      `json:"subCategoryId"`
 	IsDefaultQuote   *bool     `json:"isDefaultQuote"`
 	IgnoreMarketData *bool     `json:"ignoreMarketData"`
+	Decimals         *int      `json:"decimals"`
+	ContractAddress  string    `json:"contractAddress"`
 }
 
 // Asset
