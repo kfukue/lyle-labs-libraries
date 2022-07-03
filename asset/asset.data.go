@@ -389,6 +389,19 @@ func GetCryptoAssets() ([]Asset, error) {
 	return assets, nil
 }
 
+func GetCryptoAssetsBySourceID(sourceID *int, excludeIgnoreMarketData bool) ([]Asset, error) {
+	assetsWithSources, err := GetCryptoAssetsBySourceId(sourceID, excludeIgnoreMarketData)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	results := make([]Asset, 0)
+	for _, assetsWithSource := range assetsWithSources {
+		results = append(results, assetsWithSource.Asset)
+	}
+	return results, nil
+}
+
 func GetCryptoAssetsBySourceId(sourceID *int, excludeIgnoreMarketData bool) ([]AssetWithSources, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
