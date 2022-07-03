@@ -425,10 +425,10 @@ func GetCryptoAssetsBySourceId(sourceID *int, excludeIgnoreMarketData bool) ([]A
 	assets.sub_category_id,
 	assets.is_default_quote,
 	assets.ignore_market_data,
-	assets.decimals,
-	assets.contract_address,
 	assetSources.source_id,
-	assetSources.source_identifier
+	assetSources.source_identifier,
+	assets.decimals,
+	assets.contract_address
 	FROM assets assets
 	JOIN asset_sources assetSources ON assets.id = assetSources.asset_id
 	WHERE assetSources.source_id = $1
@@ -468,10 +468,10 @@ func GetCryptoAssetsBySourceId(sourceID *int, excludeIgnoreMarketData bool) ([]A
 			&asset.Asset.SubCategoryID,
 			&asset.Asset.IsDefaultQuote,
 			&asset.Asset.IgnoreMarketData,
-			&asset.Asset.Decimals,
-			&asset.Asset.ContractAddress,
 			&asset.SourceID,
 			&asset.SourceIdentifier,
+			&asset.Asset.Decimals,
+			&asset.Asset.ContractAddress,
 		)
 
 		assets = append(assets, asset)
@@ -503,10 +503,10 @@ func GetAssetWithSourceByAssetIdAndSourceID(assetID *int, sourceID *int, exclude
 	assets.sub_category_id,
 	assets.is_default_quote,
 	assets.ignore_market_data,
-	assets.decimals,
-	assets.contract_address,
 	assetSources.source_id,
-	assetSources.source_identifier
+	assetSources.source_identifier,
+	assets.decimals,
+	assets.contract_address
 	FROM assets assets
 	JOIN asset_sources assetSources ON assets.id = assetSources.asset_id
 	WHERE 
@@ -540,10 +540,10 @@ func GetAssetWithSourceByAssetIdAndSourceID(assetID *int, sourceID *int, exclude
 		&assetWithSources.Asset.SubCategoryID,
 		&assetWithSources.Asset.IsDefaultQuote,
 		&assetWithSources.Asset.IgnoreMarketData,
-		&assetWithSources.Asset.Decimals,
-		&assetWithSources.Asset.ContractAddress,
 		&assetWithSources.SourceID,
 		&assetWithSources.SourceIdentifier,
+		&assetWithSources.Asset.Decimals,
+		&assetWithSources.Asset.ContractAddress,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -577,10 +577,10 @@ func GetAssetWithSourceByAssetIdsAndSourceID(assetIDs []int, sourceID *int, excl
 	assets.sub_category_id,
 	assets.is_default_quote,
 	assets.ignore_market_data,
-	assets.decimals,
-	assets.contract_address,
 	assetSources.source_id,
-	assetSources.source_identifier
+	assetSources.source_identifier,
+	assets.decimals,
+	assets.contract_address
 	FROM assets assets
 	JOIN asset_sources assetSources ON assets.id = assetSources.asset_id
 	WHERE 
@@ -621,10 +621,10 @@ func GetAssetWithSourceByAssetIdsAndSourceID(assetIDs []int, sourceID *int, excl
 			&asset.Asset.SubCategoryID,
 			&asset.Asset.IsDefaultQuote,
 			&asset.Asset.IgnoreMarketData,
-			&asset.Asset.Decimals,
-			&asset.Asset.ContractAddress,
 			&asset.SourceID,
 			&asset.SourceIdentifier,
+			&asset.Asset.Decimals,
+			&asset.Asset.ContractAddress,
 		)
 
 		assets = append(assets, asset)
@@ -717,10 +717,10 @@ func GetDefaultQuoteAssetListBySourceID(sourceID *int) ([]AssetWithSources, erro
 	assets.sub_category_id,
 	assets.is_default_quote,
 	assets.ignore_market_data,
-	assets.decimals,
-	assets.contract_address,
 	assetSources.source_id,
-	assetSources.source_identifier
+	assetSources.source_identifier,
+	assets.decimals,
+	assets.contract_address
 	FROM get_default_quotes assets
 	JOIN asset_sources assetSources ON assets.id = assetSources.asset_id
 	WHERE assetSources.source_id = $1
@@ -753,10 +753,10 @@ func GetDefaultQuoteAssetListBySourceID(sourceID *int) ([]AssetWithSources, erro
 			&asset.Asset.SubCategoryID,
 			&asset.Asset.IsDefaultQuote,
 			&asset.Asset.IgnoreMarketData,
-			&asset.Asset.Decimals,
-			&asset.Asset.ContractAddress,
 			&asset.SourceID,
 			&asset.SourceIdentifier,
+			&asset.Asset.Decimals,
+			&asset.Asset.ContractAddress,
 		)
 
 		assets = append(assets, asset)
