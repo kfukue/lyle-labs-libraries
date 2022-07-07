@@ -239,7 +239,7 @@ func UpdateAccount(account Account) error {
 	account_type_id=$7,
 	description=$8,
 		updated_by=$9, 
-		updated_at=current_timestamp at time zone 'UTC'
+		updated_at=current_timestamp at time zone 'UTC',
 		chain_id = $10
 		WHERE id=$11`,
 		account.Name,
