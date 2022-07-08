@@ -614,7 +614,7 @@ func GetAllMarketDataFromStrategyID(strategyID *int) ([]MarketDataQuoteResults, 
 			where strategy_id = $1
 		)
 	)
-	AND mq.quote_asset_id = 34
+	-- 	AND mq.quote_asset_id = 34 ignore usd since need ecd ptp / ptp where base is ptp
 	ORDER BY m.start_date desc , baseA.ticker`, strategyID)
 	if err != nil {
 		log.Println(err.Error())
