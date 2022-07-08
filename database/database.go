@@ -77,6 +77,7 @@ func SetupDatabase() (*sql.DB, error) {
 		}
 		user := utils.GoDotEnvVariable("DB_USER")
 		password := utils.GoDotEnvVariable("DB_PASS")
+		dbname := utils.GoDotEnvVariable("DB_NAME_DEV")
 		dbURI = fmt.Sprintf(dbURI, host, port, user, password, dbname, sslmode, filepath.Join(dir, sslrootcert), filepath.Join(dir, sslcert), filepath.Join(dir, sslkey))
 	}
 	DbConn, err := sql.Open("pgx", dbURI)
