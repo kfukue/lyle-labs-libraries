@@ -16,3 +16,12 @@ CREATE TABLE chains
   CONSTRAINT fk_chain_type FOREIGN KEY(chain_type_id) REFERENCES structured_values(id)
 );
 
+-- new columns 2022-08-04
+ROLLBACK
+START TRANSACTION;
+ALTER TABLE chains
+  ADD COLUMN rpc_url VARCHAR(255) NULL,
+  ADD COLUMN chain_id INT NULL,
+  ADD COLUMN block_explorer_url VARCHAR(255) NULL,
+  COMMIT
+-- end 2022-08-04
