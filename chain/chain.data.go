@@ -240,7 +240,7 @@ func UpdateChain(chain Chain) error {
 		base_asset_id = $7,
 		rpc_url = $8,
 		chain_id = $9,
-		block_explorer_url = $10,
+		block_explorer_url = $10
 		WHERE id=$11`,
 		chain.Name,             //1
 		chain.AlternateName,    //2
