@@ -26,7 +26,7 @@ func initializeClient() {
 	}
 }
 
-func GetDiscordBotToken(discordPath string) (string, error) {
+func GetDiscordBotToken() (string, error) {
 	if utils.GetEnv() == "production" {
 		log.Println("In production!")
 		discordPath := utils.MustGetenv(DISCORD_PATH)
