@@ -38,6 +38,17 @@ const (
 func GetEnv() string {
 	return os.Getenv("APP_ENV")
 }
+
+func LookupEnv(k string) string {
+	var envValue string
+	if GetEnv() == "production" {
+		envValue = MustGetenv(k)
+	} else {
+		envValue = GoDotEnvVariable(k)
+	}
+	return envValue
+}
+
 func MustGetenv(k string) string {
 	v := os.Getenv(k)
 	if v == "" {

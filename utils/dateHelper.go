@@ -111,3 +111,9 @@ func ParseStringToDate(s string, layout string) (time.Time, error) {
 	}
 	return result, err
 }
+
+func TimeDiff(TimeA time.Time, TimeB time.Time) time.Time {
+	timeDiff := TimeB.Sub(TimeA)
+	out := time.Time{}.Add(timeDiff)
+	return out
+}

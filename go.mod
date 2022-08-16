@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	cloud.google.com/go/secretmanager v1.4.0
+	github.com/bwmarrin/discordgo v0.25.0
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgtype v1.11.0
@@ -23,6 +24,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/googleapis/gax-go/v2 v2.2.0 // indirect
+	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.12.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
