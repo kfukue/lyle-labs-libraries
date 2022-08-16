@@ -12,6 +12,7 @@ const (
 	LayoutPostgres  = "2006-01-02 15:04:05"
 	LayoutCoingecko = "02-01-2006"
 	LayoutRFC3339   = "2016-06-20T12:41:45.140Z"
+	TimeFormat      = "15:04:05"
 )
 
 func RangeDate(start, end time.Time) func() time.Time {
