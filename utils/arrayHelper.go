@@ -45,7 +45,7 @@ func SplitToString(a []int, sep string) string {
 	return strings.Join(b, sep)
 }
 
-func sliceAtoi(sa []string) ([]int, error) {
+func SliceAtoi(sa []string) ([]int, error) {
 	si := make([]int, 0, len(sa))
 	for _, a := range sa {
 		i, err := strconv.Atoi(a)
