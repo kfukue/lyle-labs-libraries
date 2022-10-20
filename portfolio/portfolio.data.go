@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
 func GetPortfolio(portfolioID int) (*Portfolio, error) {
@@ -122,10 +124,10 @@ func RemovePortfolio(portfolioID int) error {
 	return nil
 }
 
-func GetPortfolios() ([]Portfolio, error) {
+func GetPortfolios(ids []int) ([]Portfolio, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	sql := `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -141,7 +143,14 @@ func GetPortfolios() ([]Portfolio, error) {
 	created_at, 
 	updated_by, 
 	updated_at 
-	FROM portfolios`)
+	FROM portfolios
+	`
+	if len(ids) > 0 {
+		strIds := utils.SplitToString(ids, ",")
+		additionalQuery := fmt.Sprintf(`WHERE id IN (%s)`, strIds)
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
