@@ -28,9 +28,9 @@ func GetChain(chainID int) (*Chain, error) {
 	created_at, 
 	updated_by, 
 	updated_at,
-	rpc_url,
+	COALESCE(rpc_url, '') ,
 	chain_id,
-	block_explorer_url
+	COALESCE(block_explorer_url, '')
 	FROM chains 
 	WHERE id = $1
 	`, chainID)
@@ -78,9 +78,9 @@ func GetChainByAddress(address string) (*Chain, error) {
 	created_at, 
 	updated_by, 
 	updated_at,
-	rpc_url,
+	COALESCE(rpc_url, '') ,
 	chain_id,
-	block_explorer_url
+	COALESCE(block_explorer_url, '')
 	FROM chains 
 	WHERE address = $1
 	`, address)
@@ -128,9 +128,9 @@ func GetChainByAlternateName(altenateName string) (*Chain, error) {
 	created_at, 
 	updated_by, 
 	updated_at,
-	rpc_url,
+	COALESCE(rpc_url, '') ,
 	chain_id,
-	block_explorer_url
+	COALESCE(block_explorer_url, '')
 	FROM chains 
 	WHERE alternate_name = $1
 	`, altenateName)
@@ -189,9 +189,9 @@ func GetChainList(ids []int) ([]Chain, error) {
 	created_at, 
 	updated_by, 
 	updated_at,
-	rpc_url,
+	COALESCE(rpc_url, '') ,
 	chain_id,
-	block_explorer_url
+	COALESCE(block_explorer_url, '')
 	FROM chains`
 	if len(ids) > 0 {
 		strIds := utils.SplitToString(ids, ",")
