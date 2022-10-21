@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
@@ -632,10 +634,10 @@ func GetAssetWithSourceByAssetIdsAndSourceID(assetIDs []int, sourceID *int, excl
 	return assets, nil
 }
 
-func GetAssetList() ([]Asset, error) {
+func GetAssetList(ids []int) ([]Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	sql := `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -657,7 +659,13 @@ func GetAssetList() ([]Asset, error) {
 	ignore_market_data,
 	decimals,
 	contract_address
-	FROM assets`)
+	FROM assets`
+	if len(ids) > 0 {
+		strIds := utils.SplitToString(ids, ",")
+		additionalQuery := fmt.Sprintf(`WHERE id IN (%s)`, strIds)
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err

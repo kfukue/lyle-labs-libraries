@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
 func GetStructuredValue(structuredValueID int) (*StructuredValue, error) {
@@ -138,10 +140,10 @@ func GetStructuredValueByStructuredValueTypeIDList(structuredValueID int) ([]Str
 	return structuredValues, nil
 }
 
-func GetStructuredValueList() ([]StructuredValue, error) {
+func GetStructuredValueList(ids []int) ([]StructuredValue, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	sql := `SELECT  
 	id,
 	uuid, 
 	name, 
@@ -151,7 +153,13 @@ func GetStructuredValueList() ([]StructuredValue, error) {
 	created_at, 
 	updated_by, 
 	updated_at 
-	FROM structured_values`)
+	FROM structured_values`
+	if len(ids) > 0 {
+		strIds := utils.SplitToString(ids, ",")
+		additionalQuery := fmt.Sprintf(`WHERE id IN (%s)`, strIds)
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err

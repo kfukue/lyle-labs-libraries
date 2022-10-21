@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
 func GetAllAssetSourceBySourceAndAssetType(sourceID int, assetTypeID int) ([]AssetSource, error) {
@@ -208,10 +210,10 @@ func RemoveAssetSource(sourceID int, assetID int) error {
 	return nil
 }
 
-func GetAssetSourceList() ([]AssetSource, error) {
+func GetAssetSourceList(assetIds []int, sourceIds []int) ([]AssetSource, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	sql := `SELECT 
 	source_id,
 	asset_id,
 	uuid, 
@@ -224,7 +226,21 @@ func GetAssetSourceList() ([]AssetSource, error) {
 	created_at, 
 	updated_by, 
 	updated_at 
-	FROM asset_sources`)
+	FROM asset_sources`
+	if len(assetIds) > 0 || len(sourceIds) > 0 {
+		additionalQuery := `WHERE`
+		if len(assetIds) > 0{
+			assetStrIds := utils.SplitToString(assetIds, ",")
+			additionalQuery += fmt.Sprintf(`asset_id IN (%s)`, assetStrIds)
+		if len(sourceIds) > 0{
+			if len(assetIds) > 0{
+				additionalQuery += `AND `
+			sourceStrIds := utils.SplitToString(sourceIds, ",")
+			additionalQuery += fmt.Sprintf(`source_id IN (%s)`, sourceStrIds)
+		}
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err

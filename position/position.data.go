@@ -387,10 +387,10 @@ func RemoveAllPositionByAccount(accountID int) error {
 	return nil
 }
 
-func GetPositions() ([]Position, error) {
+func GetPositions(ids []int) ([]Position, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	sql := `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -411,7 +411,13 @@ func GetPositions() ([]Position, error) {
 	created_at, 
 	updated_by, 
 	updated_at 
-	FROM positions`)
+	FROM positions`
+	if len(ids) > 0 {
+		strIds := utils.SplitToString(ids, ",")
+		additionalQuery := fmt.Sprintf(`WHERE id IN (%s)`, strIds)
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err

@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
 	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
@@ -130,10 +131,10 @@ func RemoveStepAsset(stepAssetID int) error {
 	return nil
 }
 
-func GetStepAssets() ([]StepAsset, error) {
+func GetStepAssets(ids []int) ([]StepAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	sql := `SELECT 
 		id,
 		step_id,
 		asset_id,
@@ -150,7 +151,13 @@ func GetStepAssets() ([]StepAsset, error) {
 		created_at, 
 		updated_by, 
 		updated_at
-	FROM step_assets`)
+	FROM step_assets`
+	if len(ids) > 0 {
+		strIds := utils.SplitToString(ids, ",")
+		additionalQuery := fmt.Sprintf(`WHERE id IN (%s)`, strIds)
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err

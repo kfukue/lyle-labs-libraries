@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
 func GetChain(chainID int) (*Chain, error) {
@@ -171,10 +173,10 @@ func RemoveChain(chainID int) error {
 	return nil
 }
 
-func GetChainList() ([]Chain, error) {
+func GetChainList(ids []int) ([]Chain, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	sql := `SELECT 
 	id,
 	uuid, 
 	base_asset_id,
@@ -190,7 +192,13 @@ func GetChainList() ([]Chain, error) {
 	rpc_url,
 	chain_id,
 	block_explorer_url
-	FROM chains`)
+	FROM chains`
+	if len(ids) > 0 {
+		strIds := utils.SplitToString(ids, ",")
+		additionalQuery := fmt.Sprintf(`WHERE id IN (%s)`, strIds)
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err

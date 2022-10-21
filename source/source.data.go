@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
 func GetSource(sourceID int) (*Source, error) {
@@ -106,10 +108,10 @@ func RemoveSource(sourceID int) error {
 	return nil
 }
 
-func GetSourceList() ([]Source, error) {
+func GetSourceList(ids []int) ([]Source, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	sql := `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -121,7 +123,13 @@ func GetSourceList() ([]Source, error) {
 	created_at, 
 	updated_by, 
 	updated_at 
-	FROM sources`)
+	FROM sources`
+	if len(ids) > 0 {
+		strIds := utils.SplitToString(ids, ",")
+		additionalQuery := fmt.Sprintf(`WHERE id IN (%s)`, strIds)
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err

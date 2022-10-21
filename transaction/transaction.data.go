@@ -132,10 +132,10 @@ func RemoveTransaction(transactionID int) error {
 	return nil
 }
 
-func GetTransactions() ([]Transaction, error) {
+func GetTransactions(ids []int) ([]Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	sql := `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -152,7 +152,13 @@ func GetTransactions() ([]Transaction, error) {
 	created_at, 
 	updated_by, 
 	updated_at
-	FROM transactions`)
+	FROM transactions`
+	if len(ids) > 0 {
+		strIds := utils.SplitToString(ids, ",")
+		additionalQuery := fmt.Sprintf(`WHERE id IN (%s)`, strIds)
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err

@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
 	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
@@ -134,10 +135,10 @@ func RemoveStrategyMarketDataAsset(strategyMarketDataAssetID int) error {
 	return nil
 }
 
-func GetStrategyMarketDataAssets() ([]StrategyMarketDataAsset, error) {
+func GetStrategyMarketDataAssets(ids []int) ([]StrategyMarketDataAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	sql := `SELECT 
 		id,
 		strategy_id,
 		base_asset_id,
@@ -155,7 +156,13 @@ func GetStrategyMarketDataAssets() ([]StrategyMarketDataAsset, error) {
 		created_at, 
 		updated_by, 
 		updated_at 
-	FROM strategy_market_data_assets`)
+	FROM strategy_market_data_assets`
+	if len(ids) > 0 {
+		strIds := utils.SplitToString(ids, ",")
+		additionalQuery := fmt.Sprintf(`WHERE id IN (%s)`, strIds)
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err

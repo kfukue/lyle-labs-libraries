@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
 	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
@@ -130,10 +131,10 @@ func RemoveStep(stepID int) error {
 	return nil
 }
 
-func GetSteps() ([]Step, error) {
+func GetSteps(ids []int) ([]Step, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	sql := `SELECT 
 		id,
 		pool_id,
 		parent_step_id,
@@ -150,7 +151,13 @@ func GetSteps() ([]Step, error) {
 		created_at, 
 		updated_by, 
 		updated_at
-	FROM steps`)
+	FROM steps`
+	if len(ids) > 0 {
+		strIds := utils.SplitToString(ids, ",")
+		additionalQuery := fmt.Sprintf(`WHERE id IN (%s)`, strIds)
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err

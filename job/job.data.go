@@ -145,10 +145,10 @@ func RemoveJob(jobID int) error {
 	return nil
 }
 
-func GetJobList() ([]Job, error) {
+func GetJobList(ids []int) ([]Job, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	sql := `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -168,7 +168,13 @@ func GetJobList() ([]Job, error) {
 	created_at, 
 	updated_by, 
 	updated_at,
-	FROM jobs`)
+	FROM jobs`
+	if len(ids) > 0 {
+		strIds := utils.SplitToString(ids, ",")
+		additionalQuery := fmt.Sprintf(`WHERE id IN (%s)`, strIds)
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
