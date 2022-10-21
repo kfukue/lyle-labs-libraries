@@ -229,12 +229,14 @@ func GetAssetSourceList(assetIds []int, sourceIds []int) ([]AssetSource, error) 
 	FROM asset_sources`
 	if len(assetIds) > 0 || len(sourceIds) > 0 {
 		additionalQuery := `WHERE`
-		if len(assetIds) > 0{
+		if len(assetIds) > 0 {
 			assetStrIds := utils.SplitToString(assetIds, ",")
 			additionalQuery += fmt.Sprintf(`asset_id IN (%s)`, assetStrIds)
-		if len(sourceIds) > 0{
-			if len(assetIds) > 0{
+		}
+		if len(sourceIds) > 0 {
+			if len(assetIds) > 0 {
 				additionalQuery += `AND `
+			}
 			sourceStrIds := utils.SplitToString(sourceIds, ",")
 			additionalQuery += fmt.Sprintf(`source_id IN (%s)`, sourceStrIds)
 		}
