@@ -154,7 +154,7 @@ func GetStepAssets(ids []int) ([]StepAsset, error) {
 	FROM step_assets`
 	if len(ids) > 0 {
 		strIds := utils.SplitToString(ids, ",")
-		additionalQuery := fmt.Sprintf(`WHERE id IN (%s)`, strIds)
+		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
 	results, err := database.DbConn.QueryContext(ctx, sql)

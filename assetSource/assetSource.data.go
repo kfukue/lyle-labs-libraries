@@ -228,7 +228,7 @@ func GetAssetSourceList(assetIds []int, sourceIds []int) ([]AssetSource, error) 
 	updated_at 
 	FROM asset_sources`
 	if len(assetIds) > 0 || len(sourceIds) > 0 {
-		additionalQuery := `WHERE`
+		additionalQuery := ` WHERE`
 		if len(assetIds) > 0 {
 			assetStrIds := utils.SplitToString(assetIds, ",")
 			additionalQuery += fmt.Sprintf(`asset_id IN (%s)`, assetStrIds)
