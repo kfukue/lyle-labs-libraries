@@ -33,6 +33,8 @@ CREATE TABLE market_data
   CONSTRAINT fk_asset FOREIGN KEY(asset_id) REFERENCES assets(id),
   CONSTRAINT fk_structured_value_interval FOREIGN KEY(interval_id) REFERENCES structured_values(id),
   CONSTRAINT fk_source FOREIGN KEY(source_id) REFERENCES sources(id)
+  CONSTRAINT fk_structured_value_market_data_type FOREIGN KEY(market_data_type_id) REFERENCES structured_values(id),
+  
 );
 
 -- new columns 2022-03-06

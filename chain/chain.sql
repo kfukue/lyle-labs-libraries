@@ -20,8 +20,10 @@ CREATE TABLE chains
 ROLLBACK
 START TRANSACTION;
 ALTER TABLE chains
+  ADD COLUMN base_asset_id VARCHAR(255) NULL,
   ADD COLUMN rpc_url VARCHAR(255) NULL,
   ADD COLUMN chain_id INT NULL,
   ADD COLUMN block_explorer_url VARCHAR(255) NULL,
+  CONSTRAINT fk_base_asset FOREIGN KEY(base_asset_id) REFERENCES assets(id)
   COMMIT
 -- end 2022-08-04

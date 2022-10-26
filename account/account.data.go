@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
 func GetAccount(accountID int) (*Account, error) {
@@ -171,10 +173,10 @@ func RemoveAccount(accountID int) error {
 	return nil
 }
 
-func GetAccountList() ([]Account, error) {
+func GetAccountList(ids []int) ([]Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	sql := `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -190,7 +192,13 @@ func GetAccountList() ([]Account, error) {
 	updated_by, 
 	updated_at,
 	chain_id 
-	FROM accounts`)
+	FROM accounts`
+	if len(ids) > 0 {
+		strIds := utils.SplitToString(ids, ",")
+		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
