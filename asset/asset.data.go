@@ -391,6 +391,82 @@ func GetCryptoAssets() ([]Asset, error) {
 	return assets, nil
 }
 
+func GetAssetsByAssetTypeAndSource(assetTypeID *int, sourceID *int, excludeIgnoreMarketData bool) ([]AssetWithSources, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `SELECT 
+	assets.id,
+	assets.uuid, 
+	assets.name, 
+	assets.alternate_name, 
+	assets.cusip,
+	assets.ticker,
+	assets.base_asset_id,
+	assets.quote_asset_id,
+	assets.description,
+	assets.asset_type_id,
+	assets.created_by, 
+	assets.created_at, 
+	assets.updated_by, 
+	assets.updated_at,
+	assets.chain_id,
+	assets.category_id,
+	assets.sub_category_id,
+	assets.is_default_quote,
+	assets.ignore_market_data,
+	assetSources.source_id,
+	assetSources.source_identifier,
+	assets.decimals,
+	assets.contract_address
+	FROM assets assets
+	JOIN asset_sources assetSources ON assets.id = assetSources.asset_id
+	WHERE assets.asset_type_id = $1
+	AND assetSources.source_id = $2
+		`
+	if excludeIgnoreMarketData {
+		sql += `AND ignore_market_data = FALSE
+		`
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql, *assetTypeID, *sourceID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	assets := make([]AssetWithSources, 0)
+	for results.Next() {
+		var asset AssetWithSources
+		results.Scan(
+			&asset.Asset.ID,
+			&asset.Asset.UUID,
+			&asset.Asset.Name,
+			&asset.Asset.AlternateName,
+			&asset.Asset.Cusip,
+			&asset.Asset.Ticker,
+			&asset.Asset.BaseAssetID,
+			&asset.Asset.QuoteAssetID,
+			&asset.Asset.Description,
+			&asset.Asset.AssetTypeID,
+			&asset.Asset.CreatedBy,
+			&asset.Asset.CreatedAt,
+			&asset.Asset.UpdatedBy,
+			&asset.Asset.UpdatedAt,
+			&asset.Asset.ChainID,
+			&asset.Asset.CategoryID,
+			&asset.Asset.SubCategoryID,
+			&asset.Asset.IsDefaultQuote,
+			&asset.Asset.IgnoreMarketData,
+			&asset.SourceID,
+			&asset.SourceIdentifier,
+			&asset.Asset.Decimals,
+			&asset.Asset.ContractAddress,
+		)
+
+		assets = append(assets, asset)
+	}
+	return assets, nil
+}
+
 func GetCryptoAssetsBySourceID(sourceID *int, excludeIgnoreMarketData bool) ([]Asset, error) {
 	assetsWithSources, err := GetCryptoAssetsBySourceId(sourceID, excludeIgnoreMarketData)
 	if err != nil {
