@@ -107,7 +107,7 @@ func GetTopTenStrategies() ([]Strategy, error) {
 func RemoveStrategy(strategyID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM strategy WHERE id = $1`, strategyID)
+	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM strategies WHERE id = $1`, strategyID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
