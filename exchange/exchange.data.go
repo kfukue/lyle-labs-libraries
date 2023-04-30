@@ -43,10 +43,10 @@ func getExchange(exchangeID int) (*Exchange, error) {
 		start_date,
 		end_date,
 		description,
-		created_by, 
-		created_at, 
-		updated_by, 
-		updated_at
+		created_by,
+		created_at,
+		updated_by,
+		updated_at,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -196,10 +196,10 @@ func getStartAndEndDateDiffExchanges(diffInDate int) ([]Exchange, error) {
 			start_date,
 			end_date,
 			description,
-			created_by, 
-			created_at, 
-			updated_by, 
-			updated_at
+			created_by,
+			created_at,
+			updated_by,
+			updated_at,
 		)
 
 		exchanges = append(exchanges, exchange)
@@ -225,18 +225,18 @@ func updateExchange(exchange Exchange) error {
 		updated_by=$8, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$9`,
-		exchange.UUID,          	//1
-		exchange.Name,         		//2
-		exchange.AlternateName,     //3
-		exchange.Url,    			//4
-		exchange.StartDate,         //5
-		exchange.EndDate,           //6
-		exchange.Description,   	//7
-		exchange.CreatedBy,       	//8
-		exchange.CreatedAt,     
-		exchange.UpdatedBy,     	//8
-		exchange.UpdatedAt, 
-		exchange.ID)              	//9
+		exchange.UUID,          //1
+		exchange.Name,          //2
+		exchange.AlternateName, //3
+		exchange.Url,           //4
+		exchange.StartDate,     //5
+		exchange.EndDate,       //6
+		exchange.Description,   //7
+		exchange.CreatedBy,     //8
+		exchange.CreatedAt,
+		exchange.UpdatedBy, //8
+		exchange.UpdatedAt,
+		exchange.ID) //9
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -276,14 +276,14 @@ func insertExchange(exchange Exchange) (int, error) {
 			current_timestamp at time zone 'UTC'
 		)
 		RETURNING id`,
-		&exchange.UUID,      		//1
-		&exchange.Name,      		//2
-		&exchange.AlternateName,  	//3
-		&exchange.Url, 				//4
-		&exchange.StartDate,        //5
-		&exchange.EndDate,   		//6
-		&exchange.Description,      //7
-		&exchange.CreatedBy,        //8
+		&exchange.UUID,          //1
+		&exchange.Name,          //2
+		&exchange.AlternateName, //3
+		&exchange.Url,           //4
+		&exchange.StartDate,     //5
+		&exchange.EndDate,       //6
+		&exchange.Description,   //7
+		&exchange.CreatedBy,     //8
 	).Scan(&insertID)
 
 	if err != nil {
@@ -303,17 +303,17 @@ func insertExchanges(exchanges []Exchange) error {
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(exchange.UUID)
 		row := []interface{}{
-			uuidString,                	//1
-			exchange.Name,             	//2
-			exchange.AlternateName,   	//3
-			exchange.Url,    			//4
-			&exchange.StartDate,       	//5
-			&exchange.EndDate,         	//6
-			exchange.Description,      	//7
-			exchange.CreatedBy,        	//8
-			&now,                      	//9
-			exchange.CreatedBy,        	//10
-			&now,                      	//11
+			uuidString,             //1
+			exchange.Name,          //2
+			exchange.AlternateName, //3
+			exchange.Url,           //4
+			&exchange.StartDate,    //5
+			&exchange.EndDate,      //6
+			exchange.Description,   //7
+			exchange.CreatedBy,     //8
+			&now,                   //9
+			exchange.CreatedBy,     //10
+			&now,                   //11
 		}
 		rows = append(rows, row)
 	}
@@ -321,17 +321,17 @@ func insertExchanges(exchanges []Exchange) error {
 		ctx,
 		pgx.Identifier{"exchanges"},
 		[]string{
-			"uuid",             //1
-			"name",             //2
-			"alternate_name",   //3
-			"url",   			//4
-			"start_date",       //5
-			"end_date",         //6
-			"description",      //7
-			"created_by",       //8
-			"created_at",       //9
-			"updated_by",       //10
-			"updated_at",       //11
+			"uuid",           //1
+			"name",           //2
+			"alternate_name", //3
+			"url",            //4
+			"start_date",     //5
+			"end_date",       //6
+			"description",    //7
+			"created_by",     //8
+			"created_at",     //9
+			"updated_by",     //10
+			"updated_at",     //11
 		},
 		pgx.CopyFromRows(rows),
 	)
@@ -359,11 +359,11 @@ func updateExchangeChainByUUID(exchangeChain ExchangeChain) error {
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE 
 		uuid=$5,`,
-		exchangeChain.ExchangeID,	//1
-		exchangeChain.ChainID,     	//2
-		exchange.Description,   	//3
-		exchange.UpdatedBy,     	//4
-		exchange.UUID)              //5
+		exchangeChain.ExchangeID, //1
+		exchangeChain.ChainID,    //2
+		exchange.Description,     //3
+		exchange.UpdatedBy,       //4
+		exchange.UUID)            //5
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -399,11 +399,11 @@ func insertExchangeChain(exchangeChain ExchangeChain) (int, error) {
 			current_timestamp at time zone 'UTC'
 		)
 		RETURNING id`,
-		&exchangeChain.UUID,      		//1
-		&exchangeChain.ExchangeID,      //2
-		&exchangeChain.ChainID,  		//3
-		&exchangeChain.Description,     //4
-		&exchangeChain.CreatedBy,       //5
+		&exchangeChain.UUID,        //1
+		&exchangeChain.ExchangeID,  //2
+		&exchangeChain.ChainID,     //3
+		&exchangeChain.Description, //4
+		&exchangeChain.CreatedBy,   //5
 	).Scan(&insertID)
 
 	if err != nil {
@@ -423,14 +423,14 @@ func insertExchangeChains(exchangeChains []ExchangeChain) error {
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(exchange.UUID)
 		row := []interface{}{
-			uuidString,                	//1
-			exchangeChain.ExchangeID,	//2
-			exchangeChain.ChainID,   	//3
-			exchangeChain.Description,  //4
-			exchangeChain.CreatedBy,   	//5
-			&now,                      	//6
-			exchangeChain.CreatedBy,    //7
-			&now,                      	//8
+			uuidString,                //1
+			exchangeChain.ExchangeID,  //2
+			exchangeChain.ChainID,     //3
+			exchangeChain.Description, //4
+			exchangeChain.CreatedBy,   //5
+			&now,                      //6
+			exchangeChain.CreatedBy,   //7
+			&now,                      //8
 		}
 		rows = append(rows, row)
 	}
@@ -438,14 +438,14 @@ func insertExchangeChains(exchangeChains []ExchangeChain) error {
 		ctx,
 		pgx.Identifier{"exchange_chains"},
 		[]string{
-			"uuid",             //1
-			"exchange_id",      //2
-			"chain_id",   		//3
-			"description",      //4
-			"created_by",       //5
-			"created_at",       //6
-			"updated_by",       //7
-			"updated_at",       //8
+			"uuid",        //1
+			"exchange_id", //2
+			"chain_id",    //3
+			"description", //4
+			"created_by",  //5
+			"created_at",  //6
+			"updated_by",  //7
+			"updated_at",  //8
 		},
 		pgx.CopyFromRows(rows),
 	)
@@ -456,4 +456,3 @@ func insertExchangeChains(exchangeChains []ExchangeChain) error {
 	}
 	return nil
 }
-
