@@ -10,7 +10,7 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
-	"github.com/kfukue/lyle-labs/libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/lib/pq"
 )
 
