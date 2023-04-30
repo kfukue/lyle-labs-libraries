@@ -35,18 +35,18 @@ func getExchange(exchangeID int) (*Exchange, error) {
 
 	exchange := &Exchange{}
 	err := row.Scan(
-		id,
-		uuid,
-		name,
-		alternate_name,
-		url,
-		start_date,
-		end_date,
-		description,
-		created_by,
-		created_at,
-		updated_by,
-		updated_at,
+		&exchange.ID,
+		&exchange.UUID,
+		&exchange.Name,
+		&exchange.AlternateName,
+		&exchange.Url,
+		&exchange.StartDate,
+		&exchange.EndDate,
+		&exchange.Description,
+		&exchange.CreatedBy,
+		&exchange.CreatedAt,
+		&exchange.UpdatedBy,
+		&exchange.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -188,18 +188,18 @@ func getStartAndEndDateDiffExchanges(diffInDate int) ([]Exchange, error) {
 	for results.Next() {
 		var exchange Exchange
 		results.Scan(
-			id,
-			uuid,
-			name,
-			alternate_name,
-			url,
-			start_date,
-			end_date,
-			description,
-			created_by,
-			created_at,
-			updated_by,
-			updated_at,
+			&exchange.ID,
+			&exchange.UUID,
+			&exchange.Name,
+			&exchange.AlternateName,
+			&exchange.Url,
+			&exchange.StartDate,
+			&exchange.EndDate,
+			&exchange.Description,
+			&exchange.CreatedBy,
+			&exchange.CreatedAt,
+			&exchange.UpdatedBy,
+			&exchange.UpdatedAt,
 		)
 
 		exchanges = append(exchanges, exchange)
@@ -343,6 +343,8 @@ func insertExchanges(exchanges []Exchange) error {
 	return nil
 }
 
+// exchange chain methods
+
 func updateExchangeChainByUUID(exchangeChain ExchangeChain) error {
 	// if the exchange id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
@@ -359,19 +361,17 @@ func updateExchangeChainByUUID(exchangeChain ExchangeChain) error {
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE 
 		uuid=$5,`,
-		exchangeChain.ExchangeID, //1
-		exchangeChain.ChainID,    //2
-		exchange.Description,     //3
-		exchange.UpdatedBy,       //4
-		exchange.UUID)            //5
+		exchangeChain.ExchangeID,  //1
+		exchangeChain.ChainID,     //2
+		exchangeChain.Description, //3
+		exchangeChain.UpdatedBy,   //4
+		exchangeChain.UUID)        //5
 	if err != nil {
 		log.Println(err.Error())
 		return err
 	}
 	return nil
 }
-
-// exchange chain methods
 
 func insertExchangeChain(exchangeChain ExchangeChain) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
@@ -421,7 +421,7 @@ func insertExchangeChains(exchangeChains []ExchangeChain) error {
 	for i, _ := range exchangeChains {
 		exchangeChain := exchangeChains[i]
 		uuidString := &pgtype.UUID{}
-		uuidString.Set(exchange.UUID)
+		uuidString.Set(exchangeChain.UUID)
 		row := []interface{}{
 			uuidString,                //1
 			exchangeChain.ExchangeID,  //2
