@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
 	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
@@ -108,6 +109,56 @@ func GetExchanges() ([]Exchange, error) {
 			&exchange.UpdatedAt,
 		)
 
+		exchanges = append(exchanges, exchange)
+	}
+	return exchanges, nil
+}
+
+func GetExchangeList(ids []int) ([]Exchange, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `SELECT 
+		id,
+		uuid,
+		name,
+		alternate_name,
+		url,
+		start_date,
+		end_date,
+		description,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at
+	FROM exchanges`
+	if len(ids) > 0 {
+		strIds := utils.SplitToString(ids, ",")
+		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
+		sql += additionalQuery
+	}
+	results, err := database.DbConn.QueryContext(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	exchanges := make([]Exchange, 0)
+	for results.Next() {
+		var exchange Exchange
+		results.Scan(
+			&exchange.ID,
+			&exchange.UUID,
+			&exchange.Name,
+			&exchange.AlternateName,
+			&exchange.Url,
+			&exchange.StartDate,
+			&exchange.EndDate,
+			&exchange.Description,
+			&exchange.CreatedBy,
+			&exchange.CreatedAt,
+			&exchange.UpdatedBy,
+			&exchange.UpdatedAt,
+		)
 		exchanges = append(exchanges, exchange)
 	}
 	return exchanges, nil
