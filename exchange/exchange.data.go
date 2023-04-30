@@ -14,7 +14,7 @@ import (
 	"github.com/lib/pq"
 )
 
-func getExchange(exchangeID int) (*Exchange, error) {
+func GetExchange(exchangeID int) (*Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	row := database.DbConn.QueryRowContext(ctx, `SELECT 
@@ -57,7 +57,7 @@ func getExchange(exchangeID int) (*Exchange, error) {
 	return exchange, nil
 }
 
-func removeExchange(exchangeID int) error {
+func RemoveExchange(exchangeID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM exchanges WHERE id = $1`, exchangeID)
@@ -68,7 +68,7 @@ func removeExchange(exchangeID int) error {
 	return nil
 }
 
-func getExchanges() ([]Exchange, error) {
+func GetExchanges() ([]Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConn.QueryContext(ctx, `SELECT 
@@ -113,7 +113,7 @@ func getExchanges() ([]Exchange, error) {
 	return exchanges, nil
 }
 
-func getExchangesByUUIDs(UUIDList []string) ([]Exchange, error) {
+func GetExchangesByUUIDs(UUIDList []string) ([]Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConn.QueryContext(ctx, `SELECT 
@@ -160,7 +160,7 @@ func getExchangesByUUIDs(UUIDList []string) ([]Exchange, error) {
 	return exchanges, nil
 }
 
-func getStartAndEndDateDiffExchanges(diffInDate int) ([]Exchange, error) {
+func GetStartAndEndDateDiffExchanges(diffInDate int) ([]Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConn.QueryContext(ctx, `SELECT 
@@ -207,7 +207,7 @@ func getStartAndEndDateDiffExchanges(diffInDate int) ([]Exchange, error) {
 	return exchanges, nil
 }
 
-func updateExchange(exchange Exchange) error {
+func UpdateExchange(exchange Exchange) error {
 	// if the exchange id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -244,7 +244,7 @@ func updateExchange(exchange Exchange) error {
 	return nil
 }
 
-func insertExchange(exchange Exchange) (int, error) {
+func InsertExchange(exchange Exchange) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var insertID int
@@ -292,7 +292,7 @@ func insertExchange(exchange Exchange) (int, error) {
 	}
 	return int(insertID), nil
 }
-func insertExchanges(exchanges []Exchange) error {
+func InsertExchanges(exchanges []Exchange) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -345,7 +345,7 @@ func insertExchanges(exchanges []Exchange) error {
 
 // exchange chain methods
 
-func updateExchangeChainByUUID(exchangeChain ExchangeChain) error {
+func UpdateExchangeChainByUUID(exchangeChain ExchangeChain) error {
 	// if the exchange id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -373,7 +373,7 @@ func updateExchangeChainByUUID(exchangeChain ExchangeChain) error {
 	return nil
 }
 
-func insertExchangeChain(exchangeChain ExchangeChain) (int, error) {
+func InsertExchangeChain(exchangeChain ExchangeChain) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var insertID int
@@ -412,7 +412,7 @@ func insertExchangeChain(exchangeChain ExchangeChain) (int, error) {
 	}
 	return int(insertID), nil
 }
-func insertExchangeChains(exchangeChains []ExchangeChain) error {
+func InsertExchangeChains(exchangeChains []ExchangeChain) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
