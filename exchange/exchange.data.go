@@ -341,14 +341,15 @@ func InsertExchange(exchange Exchange) (int, error) {
 			current_timestamp at time zone 'UTC'
 		)
 		RETURNING id`,
-		&exchange.UUID,          //1
-		&exchange.Name,          //2
-		&exchange.AlternateName, //3
-		&exchange.Url,           //4
-		&exchange.StartDate,     //5
-		&exchange.EndDate,       //6
-		&exchange.Description,   //7
-		&exchange.CreatedBy,     //8
+		&exchange.UUID,           //1
+		&exchange.Name,           //2
+		&exchange.AlternateName,  //3
+		&exchange.ExchangeTypeID, //4
+		&exchange.Url,            //5
+		&exchange.StartDate,      //6
+		&exchange.EndDate,        //7
+		&exchange.Description,    //8
+		&exchange.CreatedBy,      //9
 	).Scan(&insertID)
 
 	if err != nil {
