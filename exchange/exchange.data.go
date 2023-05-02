@@ -278,7 +278,7 @@ func UpdateExchange(exchange Exchange) error {
 	_, err := database.DbConn.ExecContext(ctx, `UPDATE exchanges SET 
 		name=$1,
 		alternate_name=$2,
-		exchange_type_id =$3
+		exchange_type_id =$3,
 		url=$4,
 		start_date=$5,
 		end_date=$6,
@@ -293,11 +293,8 @@ func UpdateExchange(exchange Exchange) error {
 		exchange.StartDate,      //5
 		exchange.EndDate,        //6
 		exchange.Description,    //7
-		exchange.CreatedBy,      //8
-		exchange.CreatedAt,
-		exchange.UpdatedBy, //8
-		exchange.UpdatedAt,
-		exchange.ID) //9
+		exchange.UpdatedBy,      //8
+		exchange.ID)             //9
 	if err != nil {
 		log.Println(err.Error())
 		return err
