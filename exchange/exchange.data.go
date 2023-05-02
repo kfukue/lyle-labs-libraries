@@ -276,30 +276,28 @@ func UpdateExchange(exchange Exchange) error {
 		return errors.New("exchange has invalid ID")
 	}
 	_, err := database.DbConn.ExecContext(ctx, `UPDATE exchanges SET 
-		uuid=$1,
-		name=$2,
-		alternate_name=$3,
-		exchange_type_id =$4
-		url=$5,
-		start_date=$6,
-		end_date=$7,
-		description=$8,
-		updated_by=$9, 
+		name=$1,
+		alternate_name=$2,
+		exchange_type_id =$3
+		url=$4,
+		start_date=$5,
+		end_date=$6,
+		description=$7,
+		updated_by=$8, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$10`,
-		exchange.UUID,           //1
-		exchange.Name,           //2
-		exchange.AlternateName,  //3
-		exchange.ExchangeTypeID, //4
-		exchange.Url,            //5
-		exchange.StartDate,      //6
-		exchange.EndDate,        //7
-		exchange.Description,    //8
-		exchange.CreatedBy,      //9
+		WHERE id=$9`,
+		exchange.Name,           //1
+		exchange.AlternateName,  //2
+		exchange.ExchangeTypeID, //3
+		exchange.Url,            //4
+		exchange.StartDate,      //5
+		exchange.EndDate,        //6
+		exchange.Description,    //7
+		exchange.CreatedBy,      //8
 		exchange.CreatedAt,
-		exchange.UpdatedBy, //9
+		exchange.UpdatedBy, //8
 		exchange.UpdatedAt,
-		exchange.ID) //10
+		exchange.ID) //9
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -327,6 +325,7 @@ func InsertExchange(exchange Exchange) (int, error) {
 		updated_by, 
 		updated_at
 		) VALUES (
+			uuid_generate_v4(),
 			$1,
 			$2, 
 			$3, 
@@ -335,21 +334,19 @@ func InsertExchange(exchange Exchange) (int, error) {
 			$6,
 			$7,
 			$8,
-			$9,
 			current_timestamp at time zone 'UTC',
-			$9,
+			$8,
 			current_timestamp at time zone 'UTC'
 		)
 		RETURNING id`,
-		&exchange.UUID,           //1
-		&exchange.Name,           //2
-		&exchange.AlternateName,  //3
-		&exchange.ExchangeTypeID, //4
-		&exchange.Url,            //5
-		&exchange.StartDate,      //6
-		&exchange.EndDate,        //7
-		&exchange.Description,    //8
-		&exchange.CreatedBy,      //9
+		&exchange.Name,           //1
+		&exchange.AlternateName,  //2
+		&exchange.ExchangeTypeID, //3
+		&exchange.Url,            //4
+		&exchange.StartDate,      //5
+		&exchange.EndDate,        //6
+		&exchange.Description,    //7
+		&exchange.CreatedBy,      //8
 	).Scan(&insertID)
 
 	if err != nil {
