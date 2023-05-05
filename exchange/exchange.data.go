@@ -336,14 +336,14 @@ func InsertExchange(exchange Exchange) (int, error) {
 			current_timestamp at time zone 'UTC'
 		)
 		RETURNING id`,
-		&exchange.Name,           //1
-		&exchange.AlternateName,  //2
-		&exchange.ExchangeTypeID, //3
-		&exchange.Url,            //4
-		&exchange.StartDate,      //5
-		&exchange.EndDate,        //6
-		&exchange.Description,    //7
-		&exchange.CreatedBy,      //8
+		exchange.Name,           //1
+		exchange.AlternateName,  //2
+		exchange.ExchangeTypeID, //3
+		exchange.Url,            //4
+		exchange.StartDate,      //5
+		exchange.EndDate,        //6
+		exchange.Description,    //7
+		exchange.CreatedBy,      //8
 	).Scan(&insertID)
 
 	if err != nil {
@@ -363,18 +363,18 @@ func InsertExchanges(exchanges []Exchange) error {
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(exchange.UUID)
 		row := []interface{}{
-			uuidString,              //1
-			exchange.Name,           //2
-			exchange.AlternateName,  //3
-			exchange.ExchangeTypeID, //4
-			exchange.Url,            //5
-			&exchange.StartDate,     //6
-			&exchange.EndDate,       //7
-			exchange.Description,    //8
-			exchange.CreatedBy,      //9
-			&now,                    //10
-			exchange.CreatedBy,      //11
-			&now,                    //12
+			uuidString,               //1
+			exchange.Name,            //2
+			exchange.AlternateName,   //3
+			*exchange.ExchangeTypeID, //4
+			exchange.Url,             //5
+			exchange.StartDate,       //6
+			exchange.EndDate,         //7
+			exchange.Description,     //8
+			exchange.CreatedBy,       //9
+			&now,                     //10
+			exchange.CreatedBy,       //11
+			&now,                     //12
 		}
 		rows = append(rows, row)
 	}
@@ -461,11 +461,11 @@ func InsertExchangeChain(exchangeChain ExchangeChain) (int, error) {
 			current_timestamp at time zone 'UTC'
 		)
 		RETURNING id`,
-		&exchangeChain.UUID,        //1
-		&exchangeChain.ExchangeID,  //2
-		&exchangeChain.ChainID,     //3
-		&exchangeChain.Description, //4
-		&exchangeChain.CreatedBy,   //5
+		exchangeChain.UUID,        //1
+		exchangeChain.ExchangeID,  //2
+		exchangeChain.ChainID,     //3
+		exchangeChain.Description, //4
+		exchangeChain.CreatedBy,   //5
 	).Scan(&insertID)
 
 	if err != nil {

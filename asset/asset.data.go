@@ -136,6 +136,130 @@ func GetAssetByTicker(ticker string) (*Asset, error) {
 	return asset, nil
 }
 
+// GetAssetByContractAddress : get asset by contract address
+func GetAssetByContractAddress(contractAddress string) (*Asset, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	id,
+	uuid, 
+	name, 
+	alternate_name, 
+	cusip,
+	ticker,
+	base_asset_id,
+	quote_asset_id,
+	description,
+	asset_type_id,
+	created_by, 
+	created_at, 
+	updated_by, 
+	updated_at,
+	chain_id,
+	category_id,
+	sub_category_id,
+	is_default_quote,
+	ignore_market_data,
+	decimals,
+	contract_address
+	FROM assets 
+	WHERE contract_address = $1`, contractAddress)
+
+	asset := &Asset{}
+	err := row.Scan(
+		&asset.ID,
+		&asset.UUID,
+		&asset.Name,
+		&asset.AlternateName,
+		&asset.Cusip,
+		&asset.Ticker,
+		&asset.BaseAssetID,
+		&asset.QuoteAssetID,
+		&asset.Description,
+		&asset.AssetTypeID,
+		&asset.CreatedBy,
+		&asset.CreatedAt,
+		&asset.UpdatedBy,
+		&asset.UpdatedAt,
+		&asset.ChainID,
+		&asset.CategoryID,
+		&asset.SubCategoryID,
+		&asset.IsDefaultQuote,
+		&asset.IgnoreMarketData,
+		&asset.Decimals,
+		&asset.ContractAddress,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return asset, nil
+}
+
+// GetAssetByCusip : get asset by cusip
+func GetAssetByCusip(cusip string) (*Asset, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	id,
+	uuid, 
+	name, 
+	alternate_name, 
+	cusip,
+	ticker,
+	base_asset_id,
+	quote_asset_id,
+	description,
+	asset_type_id,
+	created_by, 
+	created_at, 
+	updated_by, 
+	updated_at,
+	chain_id,
+	category_id,
+	sub_category_id,
+	is_default_quote,
+	ignore_market_data,
+	decimals,
+	contract_address
+	FROM assets 
+	WHERE cusip = $1`, cusip)
+
+	asset := &Asset{}
+	err := row.Scan(
+		&asset.ID,
+		&asset.UUID,
+		&asset.Name,
+		&asset.AlternateName,
+		&asset.Cusip,
+		&asset.Ticker,
+		&asset.BaseAssetID,
+		&asset.QuoteAssetID,
+		&asset.Description,
+		&asset.AssetTypeID,
+		&asset.CreatedBy,
+		&asset.CreatedAt,
+		&asset.UpdatedBy,
+		&asset.UpdatedAt,
+		&asset.ChainID,
+		&asset.CategoryID,
+		&asset.SubCategoryID,
+		&asset.IsDefaultQuote,
+		&asset.IgnoreMarketData,
+		&asset.Decimals,
+		&asset.ContractAddress,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return asset, nil
+}
+
 // GetAssetByBaseAndQuoteID : get asset by base and quote id
 func GetAssetByBaseAndQuoteID(baseAssetID *int, quoteAssetID *int) (*Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
