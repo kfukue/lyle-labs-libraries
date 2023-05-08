@@ -530,8 +530,8 @@ func UpdateLiquidityPoolAssetByUUID(liquidityPoolAsset LiquidityPoolAsset) error
 	// if the liquidityPool id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	if liquidityPoolChain.LiquidityPoolID == nil || *liquidityPoolChain.LiquidityPoolID == 0 || liquidityPoolChain.ChainID == nil || *liquidityPoolChain.ChainID == 0 {
-		return errors.New("liquidityPoolChain has invalid IDs")
+	if liquidityPoolAssets.LiquidityPoolID == nil || *liquidityPoolAssets.LiquidityPoolID == 0 || liquidityPoolAssets.ChainID == nil || *liquidityPoolAssets.ChainID == 0 {
+		return errors.New("liquidityPoolAssets has invalid IDs")
 	}
 	_, err := database.DbConn.ExecContext(ctx, `UPDATE liquidity_pool_assets SET 
 		liquidity_pool_id=$1,
@@ -544,14 +544,14 @@ func UpdateLiquidityPoolAssetByUUID(liquidityPoolAsset LiquidityPoolAsset) error
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE 
 		uuid=$8,`,
-		liquidityPoolChain.LiquidityPoolID, //1
-		liquidityPoolChain.AssetID,         //2
-		liquidityPoolChain.TokenNumber,     //3
-		liquidityPoolChain.Name,            //4
-		liquidityPoolChain.AlternateName,   //5
-		liquidityPoolChain.Description,     //6
-		liquidityPoolChain.UpdatedBy,       //7
-		liquidityPoolChain.UUID)            //8
+		liquidityPoolAssets.LiquidityPoolID, //1
+		liquidityPoolAssets.AssetID,         //2
+		liquidityPoolAssets.TokenNumber,     //3
+		liquidityPoolAssets.Name,            //4
+		liquidityPoolAssets.AlternateName,   //5
+		liquidityPoolAssets.Description,     //6
+		liquidityPoolAssets.UpdatedBy,       //7
+		liquidityPoolAssets.UUID)            //8
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -559,12 +559,12 @@ func UpdateLiquidityPoolAssetByUUID(liquidityPoolAsset LiquidityPoolAsset) error
 	return nil
 }
 
-func InsertLiquidityPoolChain(liquidityPoolChain LiquidityPoolChain) (int, error) {
+func InsertLiquidityPoolAsset(liquidityPoolAsset LiquidityPoolAsset) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var insertID int
 	// layoutPostgres := utils.LayoutPostgres
-	_, err := database.DbConn.ExecContext(ctx, `INSERT INTO liquidityPool_chains 
+	_, err := database.DbConn.ExecContext(ctx, `INSERT INTO liquidity_pool_assets 
 	(
 		uuid,
 		liquidity_pool_id,
@@ -591,13 +591,13 @@ func InsertLiquidityPoolChain(liquidityPoolChain LiquidityPoolChain) (int, error
 			current_timestamp at time zone 'UTC'
 		)
 		`,
-		liquidityPoolChain.LiquidityPoolID, //1
-		liquidityPoolChain.AssetID,         //2
-		liquidityPoolChain.TokenNumber,     //3
-		liquidityPoolChain.Name,            //4
-		liquidityPoolChain.AlternateName,   //5
-		liquidityPoolChain.Description,     //6
-		liquidityPoolChain.CreatedBy,       //7
+		liquidityPoolAssets.LiquidityPoolID, //1
+		liquidityPoolAssets.AssetID,         //2
+		liquidityPoolAssets.TokenNumber,     //3
+		liquidityPoolAssets.Name,            //4
+		liquidityPoolAssets.AlternateName,   //5
+		liquidityPoolAssets.Description,     //6
+		liquidityPoolAssets.CreatedBy,       //7
 	)
 
 	if err != nil {
@@ -606,28 +606,28 @@ func InsertLiquidityPoolChain(liquidityPoolChain LiquidityPoolChain) (int, error
 	}
 	return int(insertID), nil
 }
-func InsertLiquidityPoolChains(liquidityPoolChains []LiquidityPoolChain) error {
+func InsertLiquidityPoolAssets(liquidityPoolAssets []LiquidityPoolAsset) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range liquidityPoolChains {
-		liquidityPoolChain := liquidityPoolChains[i]
+	for i, _ := range liquidityPoolAssetss {
+		liquidityPoolAssets := liquidityPoolAssetss[i]
 		uuidString := &pgtype.UUID{}
-		uuidString.Set(liquidityPoolChain.UUID)
+		uuidString.Set(liquidityPoolAssets.UUID)
 		row := []interface{}{
-			uuidString,                         //1
-			liquidityPoolChain.LiquidityPoolID, //2
-			liquidityPoolChain.AssetID,         //3
-			liquidityPoolChain.TokenNumber,     //4
-			liquidityPoolChain.Name,            //5
-			liquidityPoolChain.AlternateName,   //6
-			liquidityPoolChain.Description,     //7
-			liquidityPoolChain.CreatedBy,       //8
-			&now,                               //9
-			liquidityPoolChain.CreatedBy,       //10
-			&now,                               //11
+			uuidString,                          //1
+			liquidityPoolAssets.LiquidityPoolID, //2
+			liquidityPoolAssets.AssetID,         //3
+			liquidityPoolAssets.TokenNumber,     //4
+			liquidityPoolAssets.Name,            //5
+			liquidityPoolAssets.AlternateName,   //6
+			liquidityPoolAssets.Description,     //7
+			liquidityPoolAssets.CreatedBy,       //8
+			&now,                                //9
+			liquidityPoolAssets.CreatedBy,       //10
+			&now,                                //11
 		}
 		rows = append(rows, row)
 	}
