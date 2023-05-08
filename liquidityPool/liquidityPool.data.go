@@ -39,7 +39,7 @@ func GetLiquidityPool(liquidityPoolID int) (*LiquidityPool, error) {
 		created_at, 
 		updated_by, 
 		updated_at
-	FROM liquidityPools 
+	FROM liquidity_pools 
 	WHERE id = $1`, liquidityPoolID)
 
 	liquidityPool := &LiquidityPool{}
@@ -77,7 +77,7 @@ func GetLiquidityPool(liquidityPoolID int) (*LiquidityPool, error) {
 func RemoveLiquidityPool(liquidityPoolID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM liquidityPools WHERE id = $1`, liquidityPoolID)
+	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM liquidity_pools WHERE id = $1`, liquidityPoolID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -109,7 +109,7 @@ func GetLiquidityPools() ([]LiquidityPool, error) {
 		created_at, 
 		updated_by, 
 		updated_at
-	FROM liquidityPools`)
+	FROM liquidity_pools`)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -170,7 +170,7 @@ func GetLiquidityPoolList(ids []int) ([]LiquidityPool, error) {
 		created_at, 
 		updated_by, 
 		updated_at
-	FROM liquidityPools`
+	FROM liquidity_pools`
 	if len(ids) > 0 {
 		strIds := utils.SplitToString(ids, ",")
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
@@ -236,7 +236,7 @@ func GetLiquidityPoolsByUUIDs(UUIDList []string) ([]LiquidityPool, error) {
 		created_at, 
 		updated_by, 
 		updated_at
-	FROM liquidityPools
+	FROM liquidity_pools
 	WHERE text(uuid) = ANY($1)
 	`, pq.Array(UUIDList))
 	if err != nil {
@@ -299,7 +299,7 @@ func GetStartAndEndDateDiffLiquidityPools(diffInDate int) ([]LiquidityPool, erro
 		created_at, 
 		updated_by, 
 		updated_at
-	FROM liquidityPools
+	FROM liquidity_pools
 	WHERE DATE_PART('day', AGE(start_date, end_date)) =$1
 	`, diffInDate)
 	if err != nil {
@@ -345,7 +345,7 @@ func UpdateLiquidityPool(liquidityPool LiquidityPool) error {
 	if liquidityPool.ID == nil || *liquidityPool.ID == 0 {
 		return errors.New("liquidityPool has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE liquidityPools SET 
+	_, err := database.DbConn.ExecContext(ctx, `UPDATE liquidity_pools SET 
 		name=$1,
 		alternate_name=$2,
 		pair_address=$3,
@@ -391,7 +391,7 @@ func InsertLiquidityPool(liquidityPool LiquidityPool) (int, error) {
 	defer cancel()
 	var insertID int
 	// layoutPostgres := utils.LayoutPostgres
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO liquidityPools 
+	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO liquidity_pools 
 	(
 		uuid,
 		name,
@@ -492,7 +492,7 @@ func InsertLiquidityPools(liquidityPools []LiquidityPool) error {
 	}
 	copyCount, err := database.DbConnPgx.CopyFrom(
 		ctx,
-		pgx.Identifier{"liquidityPools"},
+		pgx.Identifier{"liquidity_pools"},
 		[]string{
 			"uuid",                   //1
 			"name",                   //2
@@ -633,7 +633,7 @@ func InsertLiquidityPoolAssets(liquidityPoolAssets []LiquidityPoolAsset) error {
 	}
 	copyCount, err := database.DbConnPgx.CopyFrom(
 		ctx,
-		pgx.Identifier{"liquidityPool_chains"},
+		pgx.Identifier{"liquidity_pool_assets"},
 		[]string{
 			"uuid",              //1
 			"liquidity_pool_id", //2
