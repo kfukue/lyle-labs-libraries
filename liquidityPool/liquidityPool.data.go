@@ -530,7 +530,7 @@ func UpdateLiquidityPoolAssetByUUID(liquidityPoolAsset LiquidityPoolAsset) error
 	// if the liquidityPool id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	if liquidityPoolAsset.LiquidityPoolID == nil || *liquidityPoolAsset.LiquidityPoolID == 0 || liquidityPoolAssets.ChainID == nil || *liquidityPoolAssets.ChainID == 0 {
+	if liquidityPoolAsset.LiquidityPoolID == nil || *liquidityPoolAsset.LiquidityPoolID == 0 || liquidityPoolAsset.UUID == nil || liquidityPoolAsset.UUID == "" {
 		return errors.New("liquidityPoolAsset has invalid IDs")
 	}
 	_, err := database.DbConn.ExecContext(ctx, `UPDATE liquidity_pool_assets SET 
@@ -612,8 +612,8 @@ func InsertLiquidityPoolAssets(liquidityPoolAssets []LiquidityPoolAsset) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range liquidityPoolAssetss {
-		liquidityPoolAssets := liquidityPoolAssetss[i]
+	for i, _ := range liquidityPoolAssets {
+		liquidityPoolAssets := liquidityPoolAssets[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(liquidityPoolAssets.UUID)
 		row := []interface{}{
