@@ -530,8 +530,8 @@ func UpdateLiquidityPoolAssetByUUID(liquidityPoolAsset LiquidityPoolAsset) error
 	// if the liquidityPool id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	if liquidityPoolAssets.LiquidityPoolID == nil || *liquidityPoolAssets.LiquidityPoolID == 0 || liquidityPoolAssets.ChainID == nil || *liquidityPoolAssets.ChainID == 0 {
-		return errors.New("liquidityPoolAssets has invalid IDs")
+	if liquidityPoolAsset.LiquidityPoolID == nil || *liquidityPoolAsset.LiquidityPoolID == 0 || liquidityPoolAssets.ChainID == nil || *liquidityPoolAssets.ChainID == 0 {
+		return errors.New("liquidityPoolAsset has invalid IDs")
 	}
 	_, err := database.DbConn.ExecContext(ctx, `UPDATE liquidity_pool_assets SET 
 		liquidity_pool_id=$1,
@@ -544,14 +544,14 @@ func UpdateLiquidityPoolAssetByUUID(liquidityPoolAsset LiquidityPoolAsset) error
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE 
 		uuid=$8,`,
-		liquidityPoolAssets.LiquidityPoolID, //1
-		liquidityPoolAssets.AssetID,         //2
-		liquidityPoolAssets.TokenNumber,     //3
-		liquidityPoolAssets.Name,            //4
-		liquidityPoolAssets.AlternateName,   //5
-		liquidityPoolAssets.Description,     //6
-		liquidityPoolAssets.UpdatedBy,       //7
-		liquidityPoolAssets.UUID)            //8
+		liquidityPoolAsset.LiquidityPoolID, //1
+		liquidityPoolAsset.AssetID,         //2
+		liquidityPoolAsset.TokenNumber,     //3
+		liquidityPoolAsset.Name,            //4
+		liquidityPoolAsset.AlternateName,   //5
+		liquidityPoolAsset.Description,     //6
+		liquidityPoolAsset.UpdatedBy,       //7
+		liquidityPoolAsset.UUID)            //8
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -591,13 +591,13 @@ func InsertLiquidityPoolAsset(liquidityPoolAsset LiquidityPoolAsset) (int, error
 			current_timestamp at time zone 'UTC'
 		)
 		`,
-		liquidityPoolAssets.LiquidityPoolID, //1
-		liquidityPoolAssets.AssetID,         //2
-		liquidityPoolAssets.TokenNumber,     //3
-		liquidityPoolAssets.Name,            //4
-		liquidityPoolAssets.AlternateName,   //5
-		liquidityPoolAssets.Description,     //6
-		liquidityPoolAssets.CreatedBy,       //7
+		liquidityPoolAsset.LiquidityPoolID, //1
+		liquidityPoolAsset.AssetID,         //2
+		liquidityPoolAsset.TokenNumber,     //3
+		liquidityPoolAsset.Name,            //4
+		liquidityPoolAsset.AlternateName,   //5
+		liquidityPoolAsset.Description,     //6
+		liquidityPoolAsset.CreatedBy,       //7
 	)
 
 	if err != nil {
