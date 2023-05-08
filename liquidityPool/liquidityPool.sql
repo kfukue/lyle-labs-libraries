@@ -1,3 +1,8 @@
+COMMIT
+
+DROP TABLE liquidity_pools;
+DROP TABLE liquidity_pool_assets;
+BEGIN TRANSACTION;
 CREATE TABLE liquidity_pools
 (
   id SERIAL,
@@ -7,6 +12,7 @@ CREATE TABLE liquidity_pools
   pair_address VARCHAR(255) NULL,
   chain_id INT NULL,
   exchange_id INT NULL,
+  liquidity_pool_type_id INT NULL,
   token0_id INT NULL,
   token1_id INT NULL,
   url varchar(255)NULL,
@@ -20,10 +26,11 @@ CREATE TABLE liquidity_pools
   updated_by VARCHAR(255) NOT NULL,
   updated_at timestamp NOT NULL,
   PRIMARY KEY(id),
-  CONSTRAINT fk_exchanged_id FOREIGN KEY(exchange_id) REFERENCES exchanges(id),
+  CONSTRAINT fk_chain_id FOREIGN KEY(chain_id) REFERENCES chains(id),
+  CONSTRAINT fk_exchange_id FOREIGN KEY(exchange_id) REFERENCES exchanges(id),
+  CONSTRAINT fk_liquidity_pool_type_id FOREIGN KEY(liquidity_pool_type_id) REFERENCES structured_values(id),
   CONSTRAINT fk_token0_id FOREIGN KEY(token0_id) REFERENCES assets(id),
   CONSTRAINT fk_token1_id FOREIGN KEY(token1_id) REFERENCES assets(id)
-
 );
 
 CREATE TABLE liquidity_pool_assets

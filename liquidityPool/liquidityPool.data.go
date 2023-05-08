@@ -26,6 +26,7 @@ func GetLiquidityPool(liquidityPoolID int) (*LiquidityPool, error) {
 		pair_address,
 		chain_id,
 		exchange_id,
+		liquidity_pool_type_id,
 		token0_id,
 		token1_id,
 		url,
@@ -50,6 +51,7 @@ func GetLiquidityPool(liquidityPoolID int) (*LiquidityPool, error) {
 		&liquidityPool.PairAddress,
 		&liquidityPool.ChainID,
 		&liquidityPool.ExchangeID,
+		&liquidityPool.LiquidityPoolTypeID,
 		&liquidityPool.Token0ID,
 		&liquidityPool.Token1ID,
 		&liquidityPool.Url,
@@ -94,6 +96,7 @@ func GetLiquidityPools() ([]LiquidityPool, error) {
 		pair_address,
 		chain_id,
 		exchange_id,
+		liquidity_pool_type_id,
 		token0_id,
 		token1_id,
 		url,
@@ -123,6 +126,7 @@ func GetLiquidityPools() ([]LiquidityPool, error) {
 			&liquidityPool.PairAddress,
 			&liquidityPool.ChainID,
 			&liquidityPool.ExchangeID,
+			&liquidityPool.LiquidityPoolTypeID,
 			&liquidityPool.Token0ID,
 			&liquidityPool.Token1ID,
 			&liquidityPool.Url,
@@ -153,6 +157,7 @@ func GetLiquidityPoolList(ids []int) ([]LiquidityPool, error) {
 		pair_address,
 		chain_id,
 		exchange_id,
+		liquidity_pool_type_id,
 		token0_id,
 		token1_id,
 		url,
@@ -188,6 +193,7 @@ func GetLiquidityPoolList(ids []int) ([]LiquidityPool, error) {
 			&liquidityPool.PairAddress,
 			&liquidityPool.ChainID,
 			&liquidityPool.ExchangeID,
+			&liquidityPool.LiquidityPoolTypeID,
 			&liquidityPool.Token0ID,
 			&liquidityPool.Token1ID,
 			&liquidityPool.Url,
@@ -217,6 +223,7 @@ func GetLiquidityPoolsByUUIDs(UUIDList []string) ([]LiquidityPool, error) {
 		pair_address,
 		chain_id,
 		exchange_id,
+		liquidity_pool_type_id,
 		token0_id,
 		token1_id,
 		url,
@@ -248,6 +255,7 @@ func GetLiquidityPoolsByUUIDs(UUIDList []string) ([]LiquidityPool, error) {
 			&liquidityPool.PairAddress,
 			&liquidityPool.ChainID,
 			&liquidityPool.ExchangeID,
+			&liquidityPool.LiquidityPoolTypeID,
 			&liquidityPool.Token0ID,
 			&liquidityPool.Token1ID,
 			&liquidityPool.Url,
@@ -278,6 +286,7 @@ func GetStartAndEndDateDiffLiquidityPools(diffInDate int) ([]LiquidityPool, erro
 		pair_address,
 		chain_id,
 		exchange_id,
+		liquidity_pool_type_id,
 		token0_id,
 		token1_id,
 		url,
@@ -309,6 +318,7 @@ func GetStartAndEndDateDiffLiquidityPools(diffInDate int) ([]LiquidityPool, erro
 			&liquidityPool.PairAddress,
 			&liquidityPool.ChainID,
 			&liquidityPool.ExchangeID,
+			&liquidityPool.LiquidityPoolTypeID,
 			&liquidityPool.Token0ID,
 			&liquidityPool.Token1ID,
 			&liquidityPool.Url,
@@ -341,32 +351,34 @@ func UpdateLiquidityPool(liquidityPool LiquidityPool) error {
 		pair_address=$3,
 		chain_id=$4,
 		exchange_id=$5,
-		token0_id=$6,
-		token1_id=$7,
-		url=$8,
-		start_block=$9,
-		latest_block_synced=$10,
-		created_txn_hash=$11,
-		IsActive=$12,
-		description=$13,
-		updated_by=$14, 
+		liquidity_pool_type_id=$6,
+		token0_id=$7,
+		token1_id=$8,
+		url=$9,
+		start_block=$10,
+		latest_block_synced=$11,
+		created_txn_hash=$12,
+		IsActive=$13,
+		description=$14,
+		updated_by=$15, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$15`,
-		liquidityPool.Name,              //1
-		liquidityPool.AlternateName,     //2
-		liquidityPool.PairAddress,       //3
-		liquidityPool.ChainID,           //4
-		liquidityPool.ExchangeID,        //5
-		liquidityPool.Token0ID,          //6
-		liquidityPool.Token1ID,          //7
-		liquidityPool.Url,               //8
-		liquidityPool.StartBlock,        //9
-		liquidityPool.LatestBlockSynced, //10
-		liquidityPool.CreatedTxnHash,    //11
-		liquidityPool.IsActive,          //12
-		liquidityPool.Description,       //13
-		liquidityPool.UpdatedBy,         //14
-		liquidityPool.ID)                //15
+		WHERE id=$16`,
+		liquidityPool.Name,                //1
+		liquidityPool.AlternateName,       //2
+		liquidityPool.PairAddress,         //3
+		liquidityPool.ChainID,             //4
+		liquidityPool.ExchangeID,          //5
+		liquidityPool.LiquidityPoolTypeID, //6
+		liquidityPool.Token0ID,            //7
+		liquidityPool.Token1ID,            //8
+		liquidityPool.Url,                 //9
+		liquidityPool.StartBlock,          //10
+		liquidityPool.LatestBlockSynced,   //11
+		liquidityPool.CreatedTxnHash,      //12
+		liquidityPool.IsActive,            //13
+		liquidityPool.Description,         //14
+		liquidityPool.UpdatedBy,           //15
+		liquidityPool.ID)                  //16
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -387,6 +399,7 @@ func InsertLiquidityPool(liquidityPool LiquidityPool) (int, error) {
 		pair_address,
 		chain_id,
 		exchange_id,
+		liquidity_pool_type_id,
 		token0_id,
 		token1_id,
 		url,
@@ -415,25 +428,27 @@ func InsertLiquidityPool(liquidityPool LiquidityPool) (int, error) {
 			$12,
 			$13,
 			$14,
+			$15,
 			current_timestamp at time zone 'UTC',
-			$14,
+			$15,
 			current_timestamp at time zone 'UTC'
 		)
 		RETURNING id`,
-		liquidityPool.Name,               //1
-		liquidityPool.AlternateName,      //2
-		&liquidityPool.PairAddress,       //3
-		&liquidityPool.ChainID,           //4
-		&liquidityPool.ExchangeID,        //5
-		&liquidityPool.Token0ID,          //6
-		&liquidityPool.Token1ID,          //7
-		&liquidityPool.Url,               //8
-		&liquidityPool.StartBlock,        //9
-		&liquidityPool.LatestBlockSynced, //10
-		&liquidityPool.CreatedTxnHash,    //11
-		&liquidityPool.IsActive,          //12
-		liquidityPool.Description,        //13
-		liquidityPool.CreatedBy,          //14
+		liquidityPool.Name,                 //1
+		liquidityPool.AlternateName,        //2
+		&liquidityPool.PairAddress,         //3
+		&liquidityPool.ChainID,             //4
+		&liquidityPool.ExchangeID,          //5
+		&liquidityPool.LiquidityPoolTypeID, //6
+		&liquidityPool.Token0ID,            //7
+		&liquidityPool.Token1ID,            //8
+		&liquidityPool.Url,                 //9
+		&liquidityPool.StartBlock,          //10
+		&liquidityPool.LatestBlockSynced,   //11
+		&liquidityPool.CreatedTxnHash,      //12
+		&liquidityPool.IsActive,            //13
+		liquidityPool.Description,          //14
+		liquidityPool.CreatedBy,            //15
 	).Scan(&insertID)
 
 	if err != nil {
@@ -453,24 +468,25 @@ func InsertLiquidityPools(liquidityPools []LiquidityPool) error {
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(liquidityPool.UUID)
 		row := []interface{}{
-			uuidString,                       //1
-			liquidityPool.Name,               //2
-			liquidityPool.AlternateName,      //3
-			liquidityPool.PairAddress,        //4
-			*liquidityPool.ChainID,           //5
-			*liquidityPool.ExchangeID,        //6
-			*liquidityPool.Token0ID,          //7
-			*liquidityPool.Token1ID,          //8
-			liquidityPool.Url,                //9
-			*liquidityPool.StartBlock,        //10
-			*liquidityPool.LatestBlockSynced, //11
-			liquidityPool.CreatedTxnHash,     //12
-			liquidityPool.IsActive,           //13
-			liquidityPool.Description,        //14
-			liquidityPool.CreatedBy,          //15
-			&now,                             //16
-			liquidityPool.CreatedBy,          //17
-			&now,                             //18
+			uuidString,                         //1
+			liquidityPool.Name,                 //2
+			liquidityPool.AlternateName,        //3
+			liquidityPool.PairAddress,          //4
+			*liquidityPool.ChainID,             //5
+			*liquidityPool.ExchangeID,          //6
+			*liquidityPool.LiquidityPoolTypeID, //7
+			*liquidityPool.Token0ID,            //8
+			*liquidityPool.Token1ID,            //9
+			liquidityPool.Url,                  //10
+			*liquidityPool.StartBlock,          //11
+			*liquidityPool.LatestBlockSynced,   //12
+			liquidityPool.CreatedTxnHash,       //13
+			liquidityPool.IsActive,             //14
+			liquidityPool.Description,          //15
+			liquidityPool.CreatedBy,            //16
+			&now,                               //17
+			liquidityPool.CreatedBy,            //18
+			&now,                               //19
 		}
 		rows = append(rows, row)
 	}
@@ -478,24 +494,25 @@ func InsertLiquidityPools(liquidityPools []LiquidityPool) error {
 		ctx,
 		pgx.Identifier{"liquidityPools"},
 		[]string{
-			"uuid",                //1
-			"name",                //2
-			"alternate_name",      //3
-			"pair_address",        //4
-			"chain_id",            //5
-			"exchange_id",         //6
-			"token0_id",           //7
-			"token1_id",           //8
-			"url",                 //9
-			"start_block",         //10
-			"latest_block_synced", //11
-			"created_txn_hash",    //12
-			"IsActive",            //13
-			"description",         //14
-			"created_by",          //15
-			"created_at",          //16
-			"updated_by",          //17
-			"updated_at",          //18
+			"uuid",                   //1
+			"name",                   //2
+			"alternate_name",         //3
+			"pair_address",           //4
+			"chain_id",               //5
+			"exchange_id",            //6
+			"liquidity_pool_type_id", //7
+			"token0_id",              //8
+			"token1_id",              //9
+			"url",                    //10
+			"start_block",            //11
+			"latest_block_synced",    //12
+			"created_txn_hash",       //13
+			"IsActive",               //14
+			"description",            //15
+			"created_by",             //16
+			"created_at",             //17
+			"updated_by",             //18
+			"updated_at",             //19
 		},
 		pgx.CopyFromRows(rows),
 	)
