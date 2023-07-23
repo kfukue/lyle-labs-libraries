@@ -36,3 +36,10 @@ ALTER TABLE assets
   ADD COLUMN contract_address VARCHAR(255) NULL
   COMMIT
 -- end 2022-07-02
+-- new colun 2023-07-22
+ROLLBACK
+START TRANSACTION;
+ALTER TABLE assets
+  ADD  starting_block_number NUMERIC NULL
+  COMMIT
+-- end
