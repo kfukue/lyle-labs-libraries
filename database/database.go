@@ -70,15 +70,22 @@ func SetupDatabase() (*sql.DB, error) {
 		dir := utils.GoDotEnvVariable("SSL_CERT_FILE_PATH")
 		filepath.Abs(dir)
 		fmt.Println("in base : " + dir)
-		hostSecretPath := utils.GoDotEnvVariable("HOST_SECRET_PATH")
-		host, err := utils.AccessSecretVersion(hostSecretPath)
-		if err != nil {
-			log.Fatal(err)
-		}
 		user := utils.GoDotEnvVariable("DB_USER")
 		password := utils.GoDotEnvVariable("DB_PASS")
 		dbname := utils.GoDotEnvVariable("DB_NAME_DEV")
-		dbURI = fmt.Sprintf(dbURI, host, port, user, password, dbname, sslmode, filepath.Join(dir, sslrootcert), filepath.Join(dir, sslcert), filepath.Join(dir, sslkey))
+		hostSecretPath := utils.GoDotEnvVariable("HOST_SECRET_PATH")
+		var host string
+		if utils.GetEnv() == "LOCAL" {
+			host = utils.GoDotEnvVariable("LOCAL_HOST_PATH")
+			dbURI = "host=%s port=%d user=%s password=%s dbname=%s"
+			dbURI = fmt.Sprintf(dbURI, host, port, user, password, dbname)
+		} else {
+			host, err = utils.AccessSecretVersion(hostSecretPath)
+			if err != nil {
+				log.Fatal(err)
+			}
+			dbURI = fmt.Sprintf(dbURI, host, port, user, password, dbname, sslmode, filepath.Join(dir, sslrootcert), filepath.Join(dir, sslcert), filepath.Join(dir, sslkey))
+		}
 	}
 	DbConn, err := sql.Open("pgx", dbURI)
 	// DbConn, err = sql.Open("postgres", connStr)
