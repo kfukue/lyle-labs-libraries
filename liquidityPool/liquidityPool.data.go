@@ -212,6 +212,163 @@ func GetLiquidityPoolList(ids []int) ([]LiquidityPool, error) {
 	return liquidityPools, nil
 }
 
+func GetLiquidityPoolListByToken0(asset0ID int) ([]LiquidityPoolWithTokens, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `SELECT 
+	lp.id,
+	lp.uuid,
+	lp.name,
+	lp.alternate_name,
+	lp.pair_address,
+	lp.chain_id,
+	lp.exchange_id,
+	lp.liquidity_pool_type_id,
+	lp.token0_id,
+	lp.token1_id,
+	lp.url,
+	lp.start_block,
+	lp.latest_block_synced,
+	lp.created_txn_hash,
+	lp.IsActive,
+	lp.description,
+	lp.created_by, 
+	lp.created_at, 
+	lp.updated_by, 
+	lp.updated_at,
+	-- asset0
+	token0.id as token0_id,
+	token0.uuid as token0_uuid, 
+	token0.name as token0_name, 
+	token0.alternate_name as token0_alternate_name, 
+	token0.cusip as token0_cusip,
+	token0.ticker as token0_ticker,
+	token0.base_asset_id as token0_base_asset_id,
+	token0.quote_asset_id as token0_quote_asset_id,
+	token0.description as token0_description,
+	token0.asset_type_id as token0_asset_type_id,
+	token0.created_by as token0_created_by, 
+	token0.created_at as token0_created_at, 
+	token0.updated_by as token0_updated_by, 
+	token0.updated_at as token0_updated_at,
+	token0.chain_id as token0_chain_id,
+	token0.category_id as token0_category_id,
+	token0.sub_category_id as token0_sub_category_id,
+	token0.is_default_quote as token0_is_default_quote,
+	token0.ignore_market_data as token0_ignore_market_data,
+	token0.decimals as token0_decimals,
+	token0.contract_address as token0_contract_address,
+	token0.starting_block_number as token0_block_number,
+	--asset 1
+	token1.id as token1_id,
+	token1.uuid as token1_uuid, 
+	token1.name as token1_name, 
+	token1.alternate_name as token1_alternate_name, 
+	token1.cusip as token1_cusip,
+	token1.ticker as token1_ticker,
+	token1.base_asset_id as token1_base_asset_id,
+	token1.quote_asset_id as token1_quote_asset_id,
+	token1.description as token1_description,
+	token1.asset_type_id as token1_asset_type_id,
+	token1.created_by as token1_created_by, 
+	token1.created_at as token1_created_at, 
+	token1.updated_by as token1_updated_by, 
+	token1.updated_at as token1_updated_at,
+	token1.chain_id as token1_chain_id,
+	token1.category_id as token1_category_id,
+	token1.sub_category_id as token1_sub_category_id,
+	token1.is_default_quote as token1_is_default_quote,
+	token1.ignore_market_data as token1_ignore_market_data,
+	token1.decimals as token1_decimals,
+	token1.contract_address as token1_contract_address,
+	token1.starting_block_number as token1_block_number
+	FROM liquidity_pools lp
+	LEFT JOIN assets token0 ON lp.token0_id = token0.id
+	LEFT JOIN assets token1 ON lp.token1_id = token1.id
+	WHERE token0_id = $1
+	`
+	results, err := database.DbConn.QueryContext(ctx, sql, asset0ID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	liquidityPoolsWithTokens := make([]LiquidityPoolWithTokens, 0)
+	for results.Next() {
+		var liquidityPoolWithTokens LiquidityPoolWithTokens
+		results.Scan(
+			&liquidityPoolWithTokens.ID,
+			&liquidityPoolWithTokens.UUID,
+			&liquidityPoolWithTokens.Name,
+			&liquidityPoolWithTokens.AlternateName,
+			&liquidityPoolWithTokens.PairAddress,
+			&liquidityPoolWithTokens.ChainID,
+			&liquidityPoolWithTokens.ExchangeID,
+			&liquidityPoolWithTokens.LiquidityPoolTypeID,
+			&liquidityPoolWithTokens.Token0ID,
+			&liquidityPoolWithTokens.Token1ID,
+			&liquidityPoolWithTokens.Url,
+			&liquidityPoolWithTokens.StartBlock,
+			&liquidityPoolWithTokens.LatestBlockSynced,
+			&liquidityPoolWithTokens.CreatedTxnHash,
+			&liquidityPoolWithTokens.IsActive,
+			&liquidityPoolWithTokens.Description,
+			&liquidityPoolWithTokens.CreatedBy,
+			&liquidityPoolWithTokens.CreatedAt,
+			&liquidityPoolWithTokens.UpdatedBy,
+			&liquidityPoolWithTokens.UpdatedAt,
+			// token 0
+			&liquidityPoolWithTokens.Token0.ID,
+			&liquidityPoolWithTokens.Token0.UUID,
+			&liquidityPoolWithTokens.Token0.Name,
+			&liquidityPoolWithTokens.Token0.AlternateName,
+			&liquidityPoolWithTokens.Token0.Cusip,
+			&liquidityPoolWithTokens.Token0.Ticker,
+			&liquidityPoolWithTokens.Token0.BaseAssetID,
+			&liquidityPoolWithTokens.Token0.QuoteAssetID,
+			&liquidityPoolWithTokens.Token0.Description,
+			&liquidityPoolWithTokens.Token0.AssetTypeID,
+			&liquidityPoolWithTokens.Token0.CreatedBy,
+			&liquidityPoolWithTokens.Token0.CreatedAt,
+			&liquidityPoolWithTokens.Token0.UpdatedBy,
+			&liquidityPoolWithTokens.Token0.UpdatedAt,
+			&liquidityPoolWithTokens.Token0.ChainID,
+			&liquidityPoolWithTokens.Token0.CategoryID,
+			&liquidityPoolWithTokens.Token0.SubCategoryID,
+			&liquidityPoolWithTokens.Token0.IsDefaultQuote,
+			&liquidityPoolWithTokens.Token0.IgnoreMarketData,
+			&liquidityPoolWithTokens.Token0.Decimals,
+			&liquidityPoolWithTokens.Token0.ContractAddress,
+			&liquidityPoolWithTokens.Token0.StartingBlockNumber,
+			//token 1
+			&liquidityPoolWithTokens.Token1.ID,
+			&liquidityPoolWithTokens.Token1.UUID,
+			&liquidityPoolWithTokens.Token1.Name,
+			&liquidityPoolWithTokens.Token1.AlternateName,
+			&liquidityPoolWithTokens.Token1.Cusip,
+			&liquidityPoolWithTokens.Token1.Ticker,
+			&liquidityPoolWithTokens.Token1.BaseAssetID,
+			&liquidityPoolWithTokens.Token1.QuoteAssetID,
+			&liquidityPoolWithTokens.Token1.Description,
+			&liquidityPoolWithTokens.Token1.AssetTypeID,
+			&liquidityPoolWithTokens.Token1.CreatedBy,
+			&liquidityPoolWithTokens.Token1.CreatedAt,
+			&liquidityPoolWithTokens.Token1.UpdatedBy,
+			&liquidityPoolWithTokens.Token1.UpdatedAt,
+			&liquidityPoolWithTokens.Token1.ChainID,
+			&liquidityPoolWithTokens.Token1.CategoryID,
+			&liquidityPoolWithTokens.Token1.SubCategoryID,
+			&liquidityPoolWithTokens.Token1.IsDefaultQuote,
+			&liquidityPoolWithTokens.Token1.IgnoreMarketData,
+			&liquidityPoolWithTokens.Token1.Decimals,
+			&liquidityPoolWithTokens.Token1.ContractAddress,
+			&liquidityPoolWithTokens.Token1.StartingBlockNumber,
+		)
+		liquidityPoolsWithTokens = append(liquidityPoolsWithTokens, liquidityPoolWithTokens)
+	}
+	return liquidityPoolsWithTokens, nil
+}
+
 func GetLiquidityPoolsByUUIDs(UUIDList []string) ([]LiquidityPool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()

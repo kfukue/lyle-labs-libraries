@@ -2,6 +2,8 @@ package liquiditypool
 
 import (
 	"time"
+
+	"github.com/kfukue/lyle-labs-libraries/asset"
 )
 
 type LiquidityPool struct {
@@ -25,6 +27,12 @@ type LiquidityPool struct {
 	CreatedAt           time.Time `json:"createdAt"`
 	UpdatedBy           string    `json:"updatedBy"`
 	UpdatedAt           time.Time `json:"updatedAt"`
+}
+
+type LiquidityPoolWithTokens struct {
+	LiquidityPool
+	Token0 asset.Asset `json:"token0"`
+	Token1 asset.Asset `json:"token1"`
 }
 
 type LiquidityPoolAsset struct {
