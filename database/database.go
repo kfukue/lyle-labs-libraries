@@ -75,7 +75,7 @@ func SetupDatabase() (*sql.DB, error) {
 		dbname := utils.GoDotEnvVariable("DB_NAME_DEV")
 		hostSecretPath := utils.GoDotEnvVariable("HOST_SECRET_PATH")
 		var host string
-		if utils.GetEnv() == "APP_ENV" {
+		if utils.GetEnv() == "LOCAL_GETH" {
 			host = utils.GoDotEnvVariable("GETH_HOST_PATH")
 			dbURI = "host=%s port=%d user=%s password=%s dbname=%s"
 			dbURI = fmt.Sprintf(dbURI, host, port, user, password, dbname)
