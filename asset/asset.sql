@@ -43,3 +43,11 @@ ALTER TABLE assets
   ADD  starting_block_number NUMERIC NULL
   COMMIT
 -- end
+
+-- new colun 2023-08-28
+ROLLBACK
+START TRANSACTION;
+ALTER TABLE assets
+  ADD  import_geth NUMERIC NULL
+  COMMIT
+-- end

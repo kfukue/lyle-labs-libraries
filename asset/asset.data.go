@@ -38,7 +38,8 @@ func GetAsset(assetID int) (*Asset, error) {
 	ignore_market_data,
 	decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM assets 
 	WHERE id = $1`, assetID)
 
@@ -66,6 +67,7 @@ func GetAsset(assetID int) (*Asset, error) {
 		&asset.Decimals,
 		&asset.ContractAddress,
 		&asset.StartingBlockNumber,
+		&asset.ImportGeth,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -102,7 +104,8 @@ func GetAssetByTicker(ticker string) (*Asset, error) {
 	ignore_market_data,
 	decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM assets 
 	WHERE ticker = $1`, ticker)
 
@@ -130,6 +133,7 @@ func GetAssetByTicker(ticker string) (*Asset, error) {
 		&asset.Decimals,
 		&asset.ContractAddress,
 		&asset.StartingBlockNumber,
+		&asset.ImportGeth,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -166,7 +170,8 @@ func GetAssetByContractAddress(contractAddress string) (*Asset, error) {
 	ignore_market_data,
 	decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM assets 
 	WHERE contract_address = $1`, contractAddress)
 
@@ -194,6 +199,7 @@ func GetAssetByContractAddress(contractAddress string) (*Asset, error) {
 		&asset.Decimals,
 		&asset.ContractAddress,
 		&asset.StartingBlockNumber,
+		&asset.ImportGeth,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -230,7 +236,8 @@ func GetAssetByCusip(cusip string) (*Asset, error) {
 	ignore_market_data,
 	decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM assets 
 	WHERE cusip = $1`, cusip)
 
@@ -258,6 +265,7 @@ func GetAssetByCusip(cusip string) (*Asset, error) {
 		&asset.Decimals,
 		&asset.ContractAddress,
 		&asset.StartingBlockNumber,
+		&asset.ImportGeth,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -294,7 +302,8 @@ func GetAssetByBaseAndQuoteID(baseAssetID *int, quoteAssetID *int) (*Asset, erro
 	ignore_market_data,
 	decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM assets 
 	WHERE base_asset_id = $1 AND 
 	quote_asset_id = $2`, *baseAssetID, *quoteAssetID)
@@ -323,6 +332,7 @@ func GetAssetByBaseAndQuoteID(baseAssetID *int, quoteAssetID *int) (*Asset, erro
 		&asset.Decimals,
 		&asset.ContractAddress,
 		&asset.StartingBlockNumber,
+		&asset.ImportGeth,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -358,7 +368,8 @@ func GetTopTenAssets() ([]Asset, error) {
 	ignore_market_data,
 	decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM assets 
 	`)
 	if err != nil {
@@ -392,6 +403,7 @@ func GetTopTenAssets() ([]Asset, error) {
 			&asset.Decimals,
 			&asset.ContractAddress,
 			&asset.StartingBlockNumber,
+			&asset.ImportGeth,
 		)
 
 		assets = append(assets, asset)
@@ -487,7 +499,8 @@ func GetCryptoAssets() ([]Asset, error) {
 	ignore_market_data,
 	decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM public.assets
 	where asset_type_id = 1
 	`)
@@ -522,6 +535,7 @@ func GetCryptoAssets() ([]Asset, error) {
 			&asset.Decimals,
 			&asset.ContractAddress,
 			&asset.StartingBlockNumber,
+			&asset.ImportGeth,
 		)
 
 		assets = append(assets, asset)
@@ -556,7 +570,8 @@ func GetAssetsByAssetTypeAndSource(assetTypeID *int, sourceID *int, excludeIgnor
 	assetSources.source_identifier,
 	assets.decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM assets assets
 	JOIN asset_sources assetSources ON assets.id = assetSources.asset_id
 	WHERE assets.asset_type_id = $1
@@ -600,6 +615,7 @@ func GetAssetsByAssetTypeAndSource(assetTypeID *int, sourceID *int, excludeIgnor
 			&asset.Asset.Decimals,
 			&asset.Asset.ContractAddress,
 			&asset.StartingBlockNumber,
+			&asset.ImportGeth,
 		)
 
 		assets = append(assets, asset)
@@ -647,7 +663,8 @@ func GetCryptoAssetsBySourceId(sourceID *int, excludeIgnoreMarketData bool) ([]A
 	assetSources.source_identifier,
 	assets.decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM assets assets
 	JOIN asset_sources assetSources ON assets.id = assetSources.asset_id
 	WHERE assetSources.source_id = $1
@@ -692,6 +709,7 @@ func GetCryptoAssetsBySourceId(sourceID *int, excludeIgnoreMarketData bool) ([]A
 			&asset.Asset.Decimals,
 			&asset.Asset.ContractAddress,
 			&asset.StartingBlockNumber,
+			&asset.ImportGeth,
 		)
 
 		assets = append(assets, asset)
@@ -727,7 +745,8 @@ func GetAssetWithSourceByAssetIdAndSourceID(assetID *int, sourceID *int, exclude
 	assetSources.source_identifier,
 	assets.decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM assets assets
 	JOIN asset_sources assetSources ON assets.id = assetSources.asset_id
 	WHERE 
@@ -766,6 +785,7 @@ func GetAssetWithSourceByAssetIdAndSourceID(assetID *int, sourceID *int, exclude
 		&assetWithSources.Asset.Decimals,
 		&assetWithSources.Asset.ContractAddress,
 		&assetWithSources.Asset.StartingBlockNumber,
+		&assetWithSources.Asset.ImportGeth,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -803,7 +823,8 @@ func GetAssetWithSourceByAssetIdsAndSourceID(assetIDs []int, sourceID *int, excl
 	assetSources.source_identifier,
 	assets.decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM assets assets
 	JOIN asset_sources assetSources ON assets.id = assetSources.asset_id
 	WHERE 
@@ -849,6 +870,7 @@ func GetAssetWithSourceByAssetIdsAndSourceID(assetIDs []int, sourceID *int, excl
 			&asset.Asset.Decimals,
 			&asset.Asset.ContractAddress,
 			&asset.Asset.StartingBlockNumber,
+			&asset.Asset.ImportGeth,
 		)
 
 		assets = append(assets, asset)
@@ -881,7 +903,8 @@ func GetAssetList(ids []int) ([]Asset, error) {
 	ignore_market_data,
 	decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM assets`
 	if len(ids) > 0 {
 		strIds := utils.SplitToString(ids, ",")
@@ -920,6 +943,7 @@ func GetAssetList(ids []int) ([]Asset, error) {
 			&asset.Decimals,
 			&asset.ContractAddress,
 			&asset.StartingBlockNumber,
+			&asset.ImportGeth,
 		)
 
 		assets = append(assets, asset)
@@ -953,7 +977,8 @@ func GetDefaultQuoteAssetListBySourceID(sourceID *int) ([]AssetWithSources, erro
 	assetSources.source_identifier,
 	assets.decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM get_default_quotes assets
 	JOIN asset_sources assetSources ON assets.id = assetSources.asset_id
 	WHERE assetSources.source_id = $1
@@ -991,6 +1016,7 @@ func GetDefaultQuoteAssetListBySourceID(sourceID *int) ([]AssetWithSources, erro
 			&asset.Asset.Decimals,
 			&asset.Asset.ContractAddress,
 			&asset.StartingBlockNumber,
+			&asset.ImportGeth,
 		)
 
 		assets = append(assets, asset)
@@ -1023,7 +1049,8 @@ func GetDefaultQuoteAssetList() ([]Asset, error) {
 	ignore_market_data,
 	decimals,
 	contract_address,
-	starting_block_number
+	starting_block_number,
+	import_geth
 	FROM get_default_quotes`)
 	if err != nil {
 		log.Println(err.Error())
@@ -1056,6 +1083,7 @@ func GetDefaultQuoteAssetList() ([]Asset, error) {
 			&asset.Decimals,
 			&asset.ContractAddress,
 			&asset.StartingBlockNumber,
+			&asset.ImportGeth,
 		)
 
 		assets = append(assets, asset)
@@ -1088,8 +1116,9 @@ func UpdateAsset(asset Asset) error {
 		ignore_market_data = $14,
 		decimals = $15,
 		contract_address=$16,
-		starting_block_number=$17
-		WHERE id=$18`,
+		starting_block_number=$17,
+		import_geth = $18
+		WHERE id=$19`,
 		asset.Name,                // 1
 		asset.AlternateName,       //2
 		asset.Cusip,               //3
@@ -1107,7 +1136,8 @@ func UpdateAsset(asset Asset) error {
 		asset.Decimals,            //15
 		asset.ContractAddress,     //16
 		asset.StartingBlockNumber, //17
-		asset.ID)                  //18
+		asset.ImportGeth,          //18
+		asset.ID)                  //19
 
 	if err != nil {
 		log.Println(err.Error())
@@ -1142,7 +1172,8 @@ func InsertAsset(asset Asset) (int, error) {
 		ignore_market_data,
 		decimals,
 		contract_address,
-		starting_block_number
+		starting_block_number,
+		import_geth
 		) VALUES (
 			$1,
 			uuid_generate_v4(), 
@@ -1164,7 +1195,8 @@ func InsertAsset(asset Asset) (int, error) {
 			$14,
 			$15,
 			$16,
-			$17
+			$17,
+			$18
 		)
 		RETURNING id`,
 		asset.Name,                //1
@@ -1184,6 +1216,7 @@ func InsertAsset(asset Asset) (int, error) {
 		asset.Decimals,            //15
 		asset.ContractAddress,     //16
 		asset.StartingBlockNumber, //17
+		asset.ImportGeth,          //18
 	).Scan(&insertID)
 	if err != nil {
 		log.Println(err.Error())

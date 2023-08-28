@@ -28,6 +28,7 @@ type Asset struct {
 	Decimals            *int      `json:"decimals"`
 	ContractAddress     string    `json:"contractAddress"`
 	StartingBlockNumber *uint64   `json:"startingBlockNumber"`
+	ImportGeth          *bool     `json:"importGeth"`
 }
 
 // Asset
