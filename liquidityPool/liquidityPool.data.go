@@ -259,7 +259,7 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 	token0.decimals as token0_decimals,
 	token0.contract_address as token0_contract_address,
 	token0.starting_block_number as token0_block_number,
-	token0.import_geth as token0_import_geth
+	token0.import_geth as token0_import_geth,
 	--asset 1
 	token1.id as token1_id,
 	token1.uuid as token1_uuid, 
@@ -282,7 +282,7 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 	token1.ignore_market_data as token1_ignore_market_data,
 	token1.decimals as token1_decimals,
 	token1.contract_address as token1_contract_address,
-	token1.starting_block_number as token1_block_number
+	token1.starting_block_number as token1_block_number,
 	token1.import_geth as token1_import_geth
 	FROM liquidity_pools lp
 	LEFT JOIN assets token0 ON lp.token0_id = token0.id
