@@ -27,3 +27,12 @@ ALTER TABLE chains
   CONSTRAINT fk_base_asset FOREIGN KEY(base_asset_id) REFERENCES assets(id)
   COMMIT
 -- end 2022-08-04
+
+-- new columns 2023-09-11
+ROLLBACK
+START TRANSACTION;
+ALTER TABLE chains
+  ADD COLUMN rpc_url_dev VARCHAR(255) NULL,
+  ADD COLUMN rpc_url_prod VARCHAR(255) NULL
+  COMMIT
+-- end 2022-09-11

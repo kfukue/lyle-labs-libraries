@@ -21,4 +21,6 @@ type Chain struct {
 	RpcURL           string    `json:"rpcUrl"`
 	ChainID          *int      `json:"chainId"`
 	BlockExplorerURL string    `json:"blockExplorerUrl"`
+	RpcURLDev        string    `json:"rpcUrlDev"`
+	RpcURLProd       string    `json:"rpcUrlProd"`
 }
