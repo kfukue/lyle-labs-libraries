@@ -41,9 +41,10 @@ const (
 	AUDIT_TYPE_STRUCTURED_VALUE_TYPE_ID                      = 23
 	CREATE_AUDIT_TYPE_STRUCTURED_VALUE_ID                    = 86
 	UPDATE_AUDIT_TYPE_STRUCTURED_VALUE_ID                    = 87
-	GETH_RELATED_JOB_TYPE_ID                                 = 88
+	GETH_RELATED_JOB_IMPORT_JOB_TYPE_ID                      = 88
 	IMPOPRT_BALANCE_AND_TRANSFERS_STRCTURED_VALUE_ID         = 81
 	IMPOPRT_SWAPS_STRCTURED_VALUE_ID                         = 83
+	GETH_RELATED_JOB_DELETE_JOB_TYPE_ID                      = 90
 )
 
 func GetEnv() string {
