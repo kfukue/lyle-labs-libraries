@@ -18,7 +18,7 @@ import (
 func GetTransactionStep(transactionID int, stepID int) (*TransactionStep, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	transaction_id,  
 	step_id,
 	uuid, 
@@ -59,7 +59,7 @@ func GetTransactionStep(transactionID int, stepID int) (*TransactionStep, error)
 func GetTransactionStepByUUID(transactionStepUUID string) (*TransactionStep, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	transaction_id,  
 	step_id,
 	uuid, 
@@ -316,7 +316,7 @@ func InsertTransactionStep(transactionStep TransactionStep) (int, int, error) {
 	if transactionStep.UUID == "" {
 		transactionStep.UUID = transactionStepUUID.String()
 	}
-	err = database.DbConn.QueryRowContext(ctx, `INSERT INTO transaction_steps  
+	err = database.DbConnPgx.QueryRow(ctx, `INSERT INTO transaction_steps  
 	(
 		transaction_id,  
 		step_id,

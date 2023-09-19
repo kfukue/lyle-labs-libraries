@@ -18,7 +18,7 @@ import (
 func GetTransactionJob(transactionID int, jobID int) (*TransactionJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	transaction_id,  
 	job_id,
 	uuid, 
@@ -77,7 +77,7 @@ func GetTransactionJob(transactionID int, jobID int) (*TransactionJob, error) {
 func GetTransactionJobByUUID(transactionJobUUID string) (*TransactionJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	transaction_id,  
 	job_id,
 	uuid, 
@@ -440,7 +440,7 @@ func InsertTransactionJob(transactionJob TransactionJob) (int, int, error) {
 	if transactionJob.UUID == "" {
 		transactionJob.UUID = transactionJobUUID.String()
 	}
-	err = database.DbConn.QueryRowContext(ctx, `INSERT INTO transaction_jobs  
+	err = database.DbConnPgx.QueryRow(ctx, `INSERT INTO transaction_jobs  
 	(
 		transaction_id,  
 		job_id,

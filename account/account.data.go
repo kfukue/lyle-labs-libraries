@@ -15,7 +15,7 @@ import (
 func GetAccount(accountID int) (*Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -65,7 +65,7 @@ func GetAccount(accountID int) (*Account, error) {
 func GetAccountByAddress(address string) (*Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -115,7 +115,7 @@ func GetAccountByAddress(address string) (*Account, error) {
 func GetAccountByAlternateName(altenateName string) (*Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -273,7 +273,7 @@ func InsertAccount(account Account) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var ID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO accounts  
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO accounts  
 	(
 		uuid, 
 		name, 

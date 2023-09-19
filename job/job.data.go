@@ -18,7 +18,7 @@ import (
 func GetJob(jobID int) (*Job, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -390,7 +390,7 @@ func InsertJob(job Job) (int, error) {
 	defer cancel()
 	var insertID int
 	layoutPostgres := utils.LayoutPostgres
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO jobs 
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO jobs 
 	(
 		uuid, 
 		name, 

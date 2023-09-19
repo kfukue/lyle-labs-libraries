@@ -15,7 +15,7 @@ import (
 func GetChain(chainID int) (*Chain, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	base_asset_id,
@@ -69,7 +69,7 @@ func GetChain(chainID int) (*Chain, error) {
 func GetChainByAddress(address string) (*Chain, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	base_asset_id,
@@ -123,7 +123,7 @@ func GetChainByAddress(address string) (*Chain, error) {
 func GetChainByAlternateName(altenateName string) (*Chain, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	base_asset_id,
@@ -293,7 +293,7 @@ func InsertChain(chain Chain) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var ID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO chains  
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO chains  
 	(
 		uuid, 
 		name, 

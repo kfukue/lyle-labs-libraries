@@ -18,7 +18,7 @@ import (
 func GetPool(poolID int) (*Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 		id,
 		target_asset_id,
 		strategy_id,
@@ -401,7 +401,7 @@ func InsertPool(pool Pool) (int, error) {
 	defer cancel()
 	var insertID int
 	// layoutPostgres := utils.LayoutPostgres
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO pools 
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO pools 
 	(
 		target_asset_id,
 		strategy_id,

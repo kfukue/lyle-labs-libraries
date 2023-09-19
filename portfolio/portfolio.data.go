@@ -15,7 +15,7 @@ import (
 func GetPortfolio(portfolioID int) (*Portfolio, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -224,7 +224,7 @@ func InsertPortfolio(portfolio Portfolio) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var insertID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO portfolios 
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO portfolios 
 	(
 		name,  
 		uuid,

@@ -65,7 +65,7 @@ func GetAllAssetSourceBySourceAndAssetType(sourceID int, assetTypeID int) ([]Ass
 func GetAssetSource(sourceID int, assetID int) (*AssetSource, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	source_id,
 	asset_id,
 	uuid, 
@@ -110,7 +110,7 @@ func GetAssetSource(sourceID int, assetID int) (*AssetSource, error) {
 func GetAssetSourceByTicker(sourceID int, sourceIdentifier string) (*AssetSource, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	source_id,
 	asset_id,
 	uuid, 
@@ -308,7 +308,7 @@ func InsertAssetSource(assetSource AssetSource) (int, int, error) {
 	defer cancel()
 	var SourceID int
 	var AssetID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO asset_sources  
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO asset_sources  
 	(
 		source_id,
 		asset_id,

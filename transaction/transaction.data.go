@@ -19,7 +19,7 @@ import (
 func GetTransaction(transactionID int) (*Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -355,7 +355,7 @@ func InsertTransaction(transaction Transaction) (int, error) {
 	if transaction.UUID == "" {
 		transaction.UUID = transactionUUID.String()
 	}
-	err = database.DbConn.QueryRowContext(ctx, `INSERT INTO transactions 
+	err = database.DbConnPgx.QueryRow(ctx, `INSERT INTO transactions 
 	(
 		uuid, 
 		name, 

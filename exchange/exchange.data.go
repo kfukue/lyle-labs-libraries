@@ -18,7 +18,7 @@ import (
 func GetExchange(exchangeID int) (*Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -307,7 +307,7 @@ func InsertExchange(exchange Exchange) (int, error) {
 	defer cancel()
 	var insertID int
 	// layoutPostgres := utils.LayoutPostgres
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO exchanges 
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO exchanges 
 	(
 		uuid,
 		name,
@@ -440,7 +440,7 @@ func InsertExchangeChain(exchangeChain ExchangeChain) (int, error) {
 	defer cancel()
 	var insertID int
 	// layoutPostgres := utils.LayoutPostgres
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO exchange_chains 
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO exchange_chains 
 	(
 		uuid,
 		exchange_id,

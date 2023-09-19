@@ -16,7 +16,7 @@ import (
 func GetAsset(assetID int) (*Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -82,7 +82,7 @@ func GetAsset(assetID int) (*Asset, error) {
 func GetAssetByTicker(ticker string) (*Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -148,7 +148,7 @@ func GetAssetByTicker(ticker string) (*Asset, error) {
 func GetAssetByContractAddress(contractAddress string) (*Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -214,7 +214,7 @@ func GetAssetByContractAddress(contractAddress string) (*Asset, error) {
 func GetAssetByCusip(cusip string) (*Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -280,7 +280,7 @@ func GetAssetByCusip(cusip string) (*Asset, error) {
 func GetAssetByBaseAndQuoteID(baseAssetID *int, quoteAssetID *int) (*Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -827,7 +827,7 @@ func GetAssetWithSourceByAssetIdAndSourceID(assetID *int, sourceID *int, exclude
 		query += `AND ignore_market_data = FALSE
 		`
 	}
-	row := database.DbConn.QueryRowContext(ctx, query, &assetID, &sourceID)
+	row := database.DbConnPgx.QueryRow(ctx, query, &assetID, &sourceID)
 	assetWithSources := &AssetWithSources{}
 	err := row.Scan(
 		&assetWithSources.Asset.ID,
@@ -1219,7 +1219,7 @@ func InsertAsset(asset Asset) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var insertID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO assets  
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO assets  
 	(
 		name, 
 		uuid,

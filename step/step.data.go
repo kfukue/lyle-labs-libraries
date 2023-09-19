@@ -18,7 +18,7 @@ import (
 func GetStep(stepID int) (*Step, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 		id,
 		pool_id,
 		parent_step_id,
@@ -402,7 +402,7 @@ func InsertStep(step Step) (int, error) {
 	defer cancel()
 	var insertID int
 	// layoutPostgres := utils.LayoutPostgres
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO steps 
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO steps 
 	(
 		pool_id,
 		parent_step_id,

@@ -13,7 +13,7 @@ import (
 func GetSourceJob(sourceID int, jobID int) (*SourceJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	market_data_id,
 	asset_id,
 	uuid, 
@@ -51,7 +51,7 @@ func GetSourceJob(sourceID int, jobID int) (*SourceJob, error) {
 func GetSourceJobBySourceID(sourceID int) (*SourceJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	market_data_id,
 	job_id,
 	uuid, 
@@ -201,7 +201,7 @@ func InsertSourceJob(sourceJob SourceJob) (int, int, error) {
 	defer cancel()
 	var SourceID int
 	var JobID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO market_data_jobs  
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO market_data_jobs  
 	(
 		market_data_id,
 		job_id,

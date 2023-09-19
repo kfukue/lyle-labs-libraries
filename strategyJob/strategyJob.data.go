@@ -17,7 +17,7 @@ import (
 func GetStrategyJob(strategyID int, jobID int) (*StrategyJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	strategy_id,  
 	job_id,
 	uuid, 
@@ -76,7 +76,7 @@ func GetStrategyJob(strategyID int, jobID int) (*StrategyJob, error) {
 func GetStrategyJobByStrategyID(strategyID int) (*StrategyJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	strategy_id,
 	job_id,
 	uuid, 
@@ -314,7 +314,7 @@ func InsertStrategyJob(strategyJob StrategyJob) (int, int, error) {
 	defer cancel()
 	var StrategyID int
 	var JobID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO strategy_jobs  
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO strategy_jobs  
 	(
 		strategy_id,
 		job_id,

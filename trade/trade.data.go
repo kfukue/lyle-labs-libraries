@@ -14,7 +14,7 @@ import (
 func GetTrade(tradeID int) (*Trade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	parent_trade_id,
 	from_account_id,
@@ -99,7 +99,7 @@ func GetTrade(tradeID int) (*Trade, error) {
 func GetTradeByTransactionIDFromSource(transactionIDFromSource string, fromAccountID *int, toAccountID *int) (*Trade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	parent_trade_id,
 	from_account_id,
@@ -186,7 +186,7 @@ func GetTradeByTransactionIDFromSource(transactionIDFromSource string, fromAccou
 func GetTradeByTradeID(tradeID int) (*Trade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	parent_trade_id,
 	from_account_id,
@@ -721,7 +721,7 @@ func InsertTrade(trade Trade) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var tradeID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO trades  
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO trades  
 	(
 		parent_trade_id,
 		from_account_id,
@@ -828,7 +828,7 @@ func InsertTrade(trade Trade) (int, error) {
 func GetMinAndMaxTradeDates() (*MinMaxTradeDates, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	MIN(trade_date),
 	MAX(trade_date)
 	FROM trades 

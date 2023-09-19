@@ -19,7 +19,7 @@ import (
 func GetMarketData(marketDataID int) (*MarketData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -748,7 +748,7 @@ func InsertMarketData(marketData MarketData) (int, error) {
 	defer cancel()
 	var insertID int
 	layoutPostgres := utils.LayoutPostgres
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO market_data 
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO market_data 
 	(
 		name,  
 		uuid,
@@ -1125,7 +1125,7 @@ func InsertMarketDataQuote(marketDataQuote MarketDataQuote) (int, error) {
 	layoutPostgres := utils.LayoutPostgres
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO market_data_quotes 
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO market_data_quotes 
 	(
 		"market_data_id",         //1
 		"base_asset_id",          //2

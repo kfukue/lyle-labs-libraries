@@ -18,7 +18,7 @@ import (
 func GetStrategyMarketDataAsset(strategyMarketDataAssetID int) (*StrategyMarketDataAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 		id,
 		strategy_id,
 		base_asset_id,
@@ -415,7 +415,7 @@ func InsertStrategyMarketDataAsset(strategyMarketDataAsset StrategyMarketDataAss
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var insertID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO strategy_market_data_assets 
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO strategy_market_data_assets 
 	(
 		strategy_id,
 		base_asset_id,

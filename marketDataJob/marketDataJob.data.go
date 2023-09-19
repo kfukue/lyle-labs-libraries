@@ -18,7 +18,7 @@ import (
 func GetMarketDataJob(marketDataID int, jobID int) (*MarketDataJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	market_data_id,  
 	job_id,
 	uuid, 
@@ -77,7 +77,7 @@ func GetMarketDataJob(marketDataID int, jobID int) (*MarketDataJob, error) {
 func GetMarketDataJobByMarketDataID(marketDataID int) (*MarketDataJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	market_data_id,
 	job_id,
 	uuid, 
@@ -314,7 +314,7 @@ func InsertMarketDataJob(marketDataJob MarketDataJob) (int, int, error) {
 	defer cancel()
 	var MarketDataID int
 	var JobID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO market_data_jobs  
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO market_data_jobs  
 	(
 		market_data_id,
 		job_id,

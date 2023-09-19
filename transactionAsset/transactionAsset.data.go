@@ -18,7 +18,7 @@ import (
 func GetTransactionAsset(transactionID int, assetID int) (*TransactionAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	transaction_id,  
 	asset_id,
 	uuid, 
@@ -67,7 +67,7 @@ func GetTransactionAsset(transactionID int, assetID int) (*TransactionAsset, err
 func GetTransactionAssetByUUID(transactionAssetUUID string) (*TransactionAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	transaction_id,  
 	asset_id,
 	uuid, 
@@ -372,7 +372,7 @@ func InsertTransactionAsset(transactionAsset TransactionAsset) (int, int, error)
 	if transactionAsset.UUID == "" {
 		transactionAsset.UUID = transactionAssetUUID.String()
 	}
-	err = database.DbConn.QueryRowContext(ctx, `INSERT INTO transaction_assets  
+	err = database.DbConnPgx.QueryRow(ctx, `INSERT INTO transaction_assets  
 	(
 		transaction_id,  
 		asset_id,

@@ -13,7 +13,7 @@ import (
 func GetProduct(productID int) (*Product, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	productId, 
 	manufacturer, 
 	sku, 

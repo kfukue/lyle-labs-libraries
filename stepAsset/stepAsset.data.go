@@ -18,7 +18,7 @@ import (
 func GetStepAsset(stepAssetID int) (*StepAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 		id,
 		step_id,
 		asset_id,
@@ -347,7 +347,7 @@ func InsertStepAsset(stepAsset StepAsset) (int, error) {
 	defer cancel()
 	var insertID int
 	// layoutPostgres := utils.LayoutPostgres
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO step_assets 
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO step_assets 
 	(
 		step_id,
 		asset_id,

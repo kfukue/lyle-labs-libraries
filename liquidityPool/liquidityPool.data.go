@@ -18,7 +18,7 @@ import (
 func GetLiquidityPool(liquidityPoolID int) (*LiquidityPool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -552,7 +552,7 @@ func InsertLiquidityPool(liquidityPool LiquidityPool) (int, error) {
 	defer cancel()
 	var insertID int
 	// layoutPostgres := utils.LayoutPostgres
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO liquidity_pools 
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO liquidity_pools 
 	(
 		uuid,
 		name,

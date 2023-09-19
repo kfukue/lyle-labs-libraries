@@ -15,7 +15,7 @@ import (
 func GetSource(sourceID int) (*Source, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -191,7 +191,7 @@ func InsertSource(source Source) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var insertID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO sources  
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO sources  
 	(
 		name, 
 		uuid,

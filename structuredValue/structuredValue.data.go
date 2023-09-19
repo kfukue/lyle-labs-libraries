@@ -15,7 +15,7 @@ import (
 func GetStructuredValue(structuredValueID int) (*StructuredValue, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -215,7 +215,7 @@ func InsertStructuredValue(structuredValue StructuredValue) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var insertID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO structured_values  
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO structured_values  
 	(
 		name, 
 		uuid,

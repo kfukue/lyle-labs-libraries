@@ -18,7 +18,7 @@ import (
 func GetStrategy(strategyID int) (*Strategy, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -296,7 +296,7 @@ func InsertStrategy(strategy Strategy) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var insertID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO strategies 
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO strategies 
 	(
 		name,  
 		uuid,

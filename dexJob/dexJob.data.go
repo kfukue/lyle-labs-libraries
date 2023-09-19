@@ -18,7 +18,7 @@ import (
 func GetDexTxnJob(dexTxnID int) (*DexTxnJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,  
 	job_id,
 	uuid, 
@@ -229,7 +229,7 @@ func InsertDexTxnJob(dexTxnJob DexTxnJob) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var ID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO dex_txn_jobs  
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO dex_txn_jobs  
 	(
 		job_id,
 		uuid, 

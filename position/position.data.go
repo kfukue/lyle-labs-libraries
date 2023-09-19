@@ -17,7 +17,7 @@ import (
 func GetPosition(positionID int) (*Position, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -78,7 +78,7 @@ func GetPositionByDates(startDate, endDate time.Time, frequencyID int, baseAsset
 	// log.Println(fmt.Sprintf("using start : %s, end : %s", startDate.Format(layoutPostgres), endDate.Format(layoutPostgres)))
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 		id,
 		uuid, 
 		name, 
@@ -144,7 +144,7 @@ func GetPositionByDatesAndAccount(startDate, endDate time.Time, frequencyID int,
 	// log.Println(fmt.Sprintf("using start : %s, end : %s", startDate.Format(layoutPostgres), endDate.Format(layoutPostgres)))
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConn.QueryRowContext(ctx, `SELECT 
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
 		id,
 		uuid, 
 		name, 
@@ -615,7 +615,7 @@ func InsertPosition(position Position) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	var insertID int
-	err := database.DbConn.QueryRowContext(ctx, `INSERT INTO positions 
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO positions 
 	(
 		name,  
 		uuid,
