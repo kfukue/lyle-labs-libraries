@@ -9,11 +9,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/jackc/pgtype"
-	pgtypeuuid "github.com/jackc/pgtype/ext/gofrs-uuid"
-	shopspring "github.com/jackc/pgtype/ext/shopspring-numeric"
-	"github.com/jackc/pgx/v4"
-	_ "github.com/jackc/pgx/v4/stdlib"
+	pgxdecimal "github.com/jackc/pgx-shopspring-decimal"
+	pgx5 "github.com/jackc/pgx/v5"
+	pgxpool5 "github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	_ "github.com/lib/pq"
@@ -29,14 +28,14 @@ const (
 )
 
 var DbConn *sql.DB
-var DbConnPgx *pgx.Conn
+var DbConnPgx *pgxpool5.Pool
 
 func init() {
-	DbConn, _ = SetupDatabase()
+	DbConn, DbConnPgx, _ = SetupDatabase()
 }
 
 // SetupDatabase
-func SetupDatabase() (*sql.DB, error) {
+func SetupDatabase() (*sql.DB, *pgxpool5.Pool, error) {
 	godotenv.Load()
 	var err error
 	dbURI := "host=%s port=%d user=%s password=%s dbname=%s sslmode=%s  sslrootcert=%s sslcert=%s sslkey=%s"
@@ -92,7 +91,6 @@ func SetupDatabase() (*sql.DB, error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	DbConnPgx, err = pgx.Connect(context.Background(), dbURI)
 
 	if err != nil {
 		log.Fatal(err)
@@ -101,18 +99,18 @@ func SetupDatabase() (*sql.DB, error) {
 	if err != nil {
 		panic(err)
 	}
-	DbConn.SetMaxOpenConns(25)
-	DbConn.SetMaxIdleConns(25)
+	DbConn.SetMaxOpenConns(5000)
+	DbConn.SetMaxIdleConns(5000)
 	DbConn.SetConnMaxLifetime(600 * time.Second)
-	DbConnPgx.ConnInfo().RegisterDataType(pgtype.DataType{
-		Value: &shopspring.Numeric{},
-		Name:  "numeric",
-		OID:   pgtype.NumericOID,
-	})
-	DbConnPgx.ConnInfo().RegisterDataType(pgtype.DataType{
-		Value: &pgtypeuuid.UUID{},
-		Name:  "uuid",
-		OID:   pgtype.UUIDOID,
-	})
-	return DbConn, nil
+	config5, err := pgxpool5.ParseConfig(dbURI)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config5.AfterConnect = func(ctx context.Context, conn *pgx5.Conn) error {
+		pgxdecimal.Register(conn.TypeMap())
+		return nil
+	}
+	DbConnPgx, err = pgxpool5.NewWithConfig(context.Background(), config5)
+
+	return DbConn, DbConnPgx, nil
 }

@@ -61,7 +61,7 @@ func (b *BigInt) Scan(value interface{}) error {
 			return fmt.Errorf("failed to load value to []uint8: %v", value)
 		}
 	default:
-		return fmt.Errorf("Could not scan type %T into BigInt", t)
+		return fmt.Errorf("could not scan type %T into BigInt", t)
 	}
 
 	return nil
@@ -122,7 +122,7 @@ func (b *BigFloat) Scan(value interface{}) error {
 			return fmt.Errorf("failed to load value to []uint8: %v", value)
 		}
 	default:
-		return fmt.Errorf("Could not scan type %T into BigFloat", t)
+		return fmt.Errorf("could not scan type %T into BigFloat", t)
 	}
 
 	return nil
