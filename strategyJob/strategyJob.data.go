@@ -134,7 +134,7 @@ func GetStrategyJobByStrategyID(strategyID int) (*StrategyJob, error) {
 func GetTopTenStrategyJobs() ([]StrategyJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	strategy_id,
 	job_id,
 	uuid, 
@@ -194,7 +194,7 @@ func GetTopTenStrategyJobs() ([]StrategyJob, error) {
 func RemoveStrategyJob(strategyID int, jobID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM strategy_jobs WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM strategy_jobs WHERE 
 	strategy_id = $1 AND job_id =$2`, strategyID, jobID)
 	if err != nil {
 		log.Println(err.Error())
@@ -206,7 +206,7 @@ func RemoveStrategyJob(strategyID int, jobID int) error {
 func GetStrategyJobList() ([]StrategyJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	strategy_id,
 	job_id,
 	uuid, 
@@ -270,7 +270,7 @@ func UpdateStrategyJob(strategyJob StrategyJob) error {
 		return errors.New("strategyJob has invalid ID")
 	}
 	layoutPostgres := utils.LayoutPostgres
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE strategy_jobs SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE strategy_jobs SET 
 		name=$1,  
 		alternate_name=$2, 
 		start_date =$3,

@@ -77,7 +77,7 @@ func GetLiquidityPool(liquidityPoolID int) (*LiquidityPool, error) {
 func RemoveLiquidityPool(liquidityPoolID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM liquidity_pools WHERE id = $1`, liquidityPoolID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM liquidity_pools WHERE id = $1`, liquidityPoolID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -88,7 +88,7 @@ func RemoveLiquidityPool(liquidityPoolID int) error {
 func GetLiquidityPools() ([]LiquidityPool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -176,7 +176,7 @@ func GetLiquidityPoolList(ids []int) ([]LiquidityPool, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -289,7 +289,7 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 	LEFT JOIN assets token1 ON lp.token1_id = token1.id
 	WHERE token0_id = $1
 	`
-	results, err := database.DbConn.QueryContext(ctx, sql, asset0ID)
+	results, err := database.DbConnPgx.Query(ctx, sql, asset0ID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -376,7 +376,7 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 func GetLiquidityPoolsByUUIDs(UUIDList []string) ([]LiquidityPool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -439,7 +439,7 @@ func GetLiquidityPoolsByUUIDs(UUIDList []string) ([]LiquidityPool, error) {
 func GetStartAndEndDateDiffLiquidityPools(diffInDate int) ([]LiquidityPool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -506,7 +506,7 @@ func UpdateLiquidityPool(liquidityPool LiquidityPool) error {
 	if liquidityPool.ID == nil || *liquidityPool.ID == 0 {
 		return errors.New("liquidityPool has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE liquidity_pools SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE liquidity_pools SET 
 		name=$1,
 		alternate_name=$2,
 		pair_address=$3,
@@ -694,7 +694,7 @@ func UpdateLiquidityPoolAssetByUUID(liquidityPoolAsset LiquidityPoolAsset) error
 	if liquidityPoolAsset.LiquidityPoolID == nil || *liquidityPoolAsset.LiquidityPoolID == 0 || liquidityPoolAsset.UUID == "" {
 		return errors.New("liquidityPoolAsset has invalid IDs")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE liquidity_pool_assets SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE liquidity_pool_assets SET 
 		liquidity_pool_id=$1,
 		asset_id=$2,
 		token_number=$3,
@@ -725,7 +725,7 @@ func InsertLiquidityPoolAsset(liquidityPoolAsset LiquidityPoolAsset) (int, error
 	defer cancel()
 	var insertID int
 	// layoutPostgres := utils.LayoutPostgres
-	_, err := database.DbConn.ExecContext(ctx, `INSERT INTO liquidity_pool_assets 
+	_, err := database.DbConnPgx.Query(ctx, `INSERT INTO liquidity_pool_assets 
 	(
 		uuid,
 		liquidity_pool_id,

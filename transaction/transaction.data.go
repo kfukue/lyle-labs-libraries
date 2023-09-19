@@ -70,7 +70,7 @@ func GetTransaction(transactionID int) (*Transaction, error) {
 func GetTopTenTransactions() ([]Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -124,7 +124,7 @@ func GetTopTenTransactions() ([]Transaction, error) {
 func RemoveTransaction(transactionID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM transactions WHERE id = $1`, transactionID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM transactions WHERE id = $1`, transactionID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -158,7 +158,7 @@ func GetTransactions(ids []int) ([]Transaction, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -194,7 +194,7 @@ func GetTransactions(ids []int) ([]Transaction, error) {
 func GetTransactionsByUUIDs(UUIDList []string) ([]Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -249,7 +249,7 @@ func GetTransactionsByUUIDs(UUIDList []string) ([]Transaction, error) {
 func GetStartAndEndDateDiffTransactions(diffInDate int) ([]Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -311,7 +311,7 @@ func UpdateTransaction(transaction Transaction) error {
 	startDate := transaction.StartDate
 	endDate := transaction.EndDate
 	log.Println(fmt.Sprintf("Updating start: %s, end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE transactions SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE transactions SET 
 		name=$1,  
 		alternate_name=$2, 
 		start_date =$3,

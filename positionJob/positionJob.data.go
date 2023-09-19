@@ -135,7 +135,7 @@ func GetPositionJobByUUID(positionJobUUID string) (*PositionJob, error) {
 func GetPositionJobsByUUIDs(UUIDList []string) ([]PositionJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	position_id,  
 	job_id,
 	uuid, 
@@ -196,7 +196,7 @@ func GetPositionJobsByUUIDs(UUIDList []string) ([]PositionJob, error) {
 func GetTopTenPositionJobs() ([]PositionJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	position_id,  
 	job_id,
 	uuid, 
@@ -256,7 +256,7 @@ func GetTopTenPositionJobs() ([]PositionJob, error) {
 func RemovePositionJob(positionID int, jobID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM position_jobs WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM position_jobs WHERE 
 	position_id = $1 AND job_id =$2`, positionID, jobID)
 	if err != nil {
 		log.Println(err.Error())
@@ -268,7 +268,7 @@ func RemovePositionJob(positionID int, jobID int) error {
 func RemovePositionJobByUUID(positionJobUUID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM position_jobs WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM position_jobs WHERE 
 		WHERE text(uuid) = $1`,
 		positionJobUUID)
 	if err != nil {
@@ -281,7 +281,7 @@ func RemovePositionJobByUUID(positionJobUUID string) error {
 func GetPositionJobList() ([]PositionJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	position_id,  
 	job_id,
 	uuid, 
@@ -344,7 +344,7 @@ func UpdatePositionJob(positionJob PositionJob) error {
 	if (positionJob.PositionID == nil || *positionJob.PositionID == 0) || (positionJob.JobID == nil || *positionJob.JobID == 0) {
 		return errors.New("positionJob has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE position_jobs SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE position_jobs SET 
 		name=$1,
 		alternate_name=$2,
 		start_date=$3,
@@ -390,7 +390,7 @@ func UpdatePositionJobByUUID(positionJob PositionJob) error {
 	if (positionJob.PositionID == nil || *positionJob.PositionID == 0) || (positionJob.JobID == nil || *positionJob.JobID == 0) {
 		return errors.New("positionJob has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE position_jobs SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE position_jobs SET 
 		name=$1,
 		alternate_name=$2,
 		start_date=$3,

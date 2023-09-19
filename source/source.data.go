@@ -56,7 +56,7 @@ func GetSource(sourceID int) (*Source, error) {
 func GetTopTenSources() ([]Source, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -100,7 +100,7 @@ func GetTopTenSources() ([]Source, error) {
 func RemoveSource(sourceID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM sources WHERE id = $1`, sourceID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM sources WHERE id = $1`, sourceID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -129,7 +129,7 @@ func GetSourceList(ids []int) ([]Source, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -164,7 +164,7 @@ func UpdateSource(source Source) error {
 	if source.ID == nil || *source.ID == 0 {
 		return errors.New("source has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE sources SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE sources SET 
 		name=$1,  
 		alternate_name=$2, 
 		url=$3,

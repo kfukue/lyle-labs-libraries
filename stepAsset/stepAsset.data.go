@@ -69,7 +69,7 @@ func GetStepAsset(stepAssetID int) (*StepAsset, error) {
 func GetTopTenStrategies() ([]StepAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		step_id,
 		asset_id,
@@ -123,7 +123,7 @@ func GetTopTenStrategies() ([]StepAsset, error) {
 func RemoveStepAsset(stepAssetID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM step_assets WHERE id = $1`, stepAssetID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM step_assets WHERE id = $1`, stepAssetID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -157,7 +157,7 @@ func GetStepAssets(ids []int) ([]StepAsset, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -193,7 +193,7 @@ func GetStepAssets(ids []int) ([]StepAsset, error) {
 func GetStepAssetsByUUIDs(UUIDList []string) ([]StepAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		step_id,
 		asset_id,
@@ -248,7 +248,7 @@ func GetStepAssetsByUUIDs(UUIDList []string) ([]StepAsset, error) {
 func GetStartAndEndDateDiffStepAssets(diffInDate int) ([]StepAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		step_id,
 		asset_id,
@@ -307,7 +307,7 @@ func UpdateStepAsset(stepAsset StepAsset) error {
 	if stepAsset.ID == nil || *stepAsset.ID == 0 {
 		return errors.New("stepAsset has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE step_assets SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE step_assets SET 
 		step_id=$1,
 		asset_id=$2,
 		swap_asset_id=$3,

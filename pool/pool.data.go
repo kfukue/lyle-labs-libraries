@@ -69,7 +69,7 @@ func GetPool(poolID int) (*Pool, error) {
 func GetTopTenStrategies() ([]Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	target_asset_id,
 	strategy_id,
@@ -123,7 +123,7 @@ func GetTopTenStrategies() ([]Pool, error) {
 func RemovePool(poolID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM pools WHERE id = $1`, poolID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM pools WHERE id = $1`, poolID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -157,7 +157,7 @@ func GetPools(ids []int) ([]Pool, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -193,7 +193,7 @@ func GetPools(ids []int) ([]Pool, error) {
 func GetPoolsByStrategyID(strategyID *int) ([]Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		target_asset_id,
 		strategy_id,
@@ -247,7 +247,7 @@ func GetPoolsByStrategyID(strategyID *int) ([]Pool, error) {
 func GetPoolsByUUIDs(UUIDList []string) ([]Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		target_asset_id,
 		strategy_id,
@@ -302,7 +302,7 @@ func GetPoolsByUUIDs(UUIDList []string) ([]Pool, error) {
 func GetStartAndEndDateDiffPools(diffInDate int) ([]Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		target_asset_id,
 		strategy_id,
@@ -361,7 +361,7 @@ func UpdatePool(pool Pool) error {
 	if pool.ID == nil || *pool.ID == 0 {
 		return errors.New("pool has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE pools SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE pools SET 
 		target_asset_id=$1, 
 		strategy_id=$2, 
 		account_id=$3, 

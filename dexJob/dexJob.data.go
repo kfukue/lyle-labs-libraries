@@ -70,7 +70,7 @@ func GetDexTxnJob(dexTxnID int) (*DexTxnJob, error) {
 func GetDexTxnJobByJobId(jobID int) ([]DexTxnJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,  
 	job_id,
 	uuid, 
@@ -123,7 +123,7 @@ func GetDexTxnJobByJobId(jobID int) ([]DexTxnJob, error) {
 func GetDexTxnJobList() ([]DexTxnJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,  
 	job_id,
 	uuid, 
@@ -176,7 +176,7 @@ func GetDexTxnJobList() ([]DexTxnJob, error) {
 func RemoveDexTxnJob(dexTxnID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM dex_txn_jobs WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM dex_txn_jobs WHERE 
 	id = $1`, dexTxnID)
 	if err != nil {
 		log.Println(err.Error())
@@ -192,7 +192,7 @@ func UpdateDexTxnJob(dexTxnJob DexTxnJob) error {
 	if dexTxnJob.ID == nil || *dexTxnJob.ID == 0 {
 		return errors.New("dexTxnJob has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE dex_txn_jobs SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE dex_txn_jobs SET 
 
 		name=$1,
 		alternate_name=$2,

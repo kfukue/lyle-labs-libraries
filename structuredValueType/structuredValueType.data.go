@@ -50,7 +50,7 @@ func GetStructuredValueType(structuredValueTypeID int) (*StructuredValueType, er
 func GetTopTenStructuredValueTypes() ([]StructuredValueType, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -88,7 +88,7 @@ func GetTopTenStructuredValueTypes() ([]StructuredValueType, error) {
 func RemoveStructuredValueType(structuredValueTypeID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM structured_value_types WHERE id = $1`, structuredValueTypeID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM structured_value_types WHERE id = $1`, structuredValueTypeID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -114,7 +114,7 @@ func GetStructuredValueTypeList(ids []int) ([]StructuredValueType, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -146,7 +146,7 @@ func UpdateStructuredValueType(structuredValueType StructuredValueType) error {
 	if structuredValueType.ID == nil || *structuredValueType.ID == 0 {
 		return errors.New("structuredValueType has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE structured_value_types SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE structured_value_types SET 
 		name=$1,  
 		alternate_name=$2, 
 		updated_by=$3, 

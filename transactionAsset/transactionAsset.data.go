@@ -115,7 +115,7 @@ func GetTransactionAssetByUUID(transactionAssetUUID string) (*TransactionAsset, 
 func GetTransactionAssetsByUUIDs(UUIDList []string) ([]TransactionAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	transaction_id,  
 	asset_id,
 	uuid, 
@@ -166,7 +166,7 @@ func GetTransactionAssetsByUUIDs(UUIDList []string) ([]TransactionAsset, error) 
 func GetTopTenTransactionAssets() ([]TransactionAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	transaction_id,  
 	asset_id,
 	uuid, 
@@ -216,7 +216,7 @@ func GetTopTenTransactionAssets() ([]TransactionAsset, error) {
 func RemoveTransactionAsset(transactionID int, assetID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM transaction_assets WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM transaction_assets WHERE 
 	transaction_id = $1 AND asset_id =$2`, transactionID, assetID)
 	if err != nil {
 		log.Println(err.Error())
@@ -228,7 +228,7 @@ func RemoveTransactionAsset(transactionID int, assetID int) error {
 func RemoveTransactionAssetByUUID(transactionAssetUUID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM transaction_assets WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM transaction_assets WHERE 
 		WHERE text(uuid) = $1`,
 		transactionAssetUUID)
 	if err != nil {
@@ -241,7 +241,7 @@ func RemoveTransactionAssetByUUID(transactionAssetUUID string) error {
 func GetTransactionAssetList() ([]TransactionAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	transaction_id,  
 	asset_id,
 	uuid, 
@@ -294,7 +294,7 @@ func UpdateTransactionAsset(transactionAsset TransactionAsset) error {
 	if (transactionAsset.TransactionID == nil || *transactionAsset.TransactionID == 0) || (transactionAsset.AssetID == nil || *transactionAsset.AssetID == 0) {
 		return errors.New("transactionAsset has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE transaction_assets SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE transaction_assets SET 
 		name=$1,
 		alternate_name=$2,
 		description=$3,
@@ -331,7 +331,7 @@ func UpdateTransactionAssetByUUID(transactionAsset TransactionAsset) error {
 	if (transactionAsset.TransactionID == nil || *transactionAsset.TransactionID == 0) || (transactionAsset.AssetID == nil || *transactionAsset.AssetID == 0) {
 		return errors.New("transactionAsset has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE transaction_assets SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE transaction_assets SET 
 		name=$1,
 		alternate_name=$2,
 		description=$3,

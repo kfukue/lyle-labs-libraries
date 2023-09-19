@@ -135,7 +135,7 @@ func GetMarketDataJobByMarketDataID(marketDataID int) (*MarketDataJob, error) {
 func GetTopTenMarketDataJobs() ([]MarketDataJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	market_data_id,
 	job_id,
 	uuid, 
@@ -195,7 +195,7 @@ func GetTopTenMarketDataJobs() ([]MarketDataJob, error) {
 func RemoveMarketDataJob(marketDataID int, jobID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM market_data_jobs WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM market_data_jobs WHERE 
 	market_data_id = $1 AND job_id =$2`, marketDataID, jobID)
 	if err != nil {
 		log.Println(err.Error())
@@ -207,7 +207,7 @@ func RemoveMarketDataJob(marketDataID int, jobID int) error {
 func GetMarketDataJobList() ([]MarketDataJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	market_data_id,
 	job_id,
 	uuid, 
@@ -270,7 +270,7 @@ func UpdateMarketDataJob(marketDataJob MarketDataJob) error {
 	if (marketDataJob.MarketDataID == nil || *marketDataJob.MarketDataID == 0) || (marketDataJob.JobID == nil || *marketDataJob.JobID == 0) {
 		return errors.New("marketDataJob has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE market_data_jobs SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE market_data_jobs SET 
 
 		name=$1,
 		alternate_name=$2,

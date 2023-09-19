@@ -15,7 +15,7 @@ import (
 func GetAllAssetSourceBySourceAndAssetType(sourceID int, assetTypeID int) ([]AssetSource, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	asset_sources.source_id,
 	asset_sources.asset_id,
 	asset_sources.uuid, 
@@ -155,7 +155,7 @@ func GetAssetSourceByTicker(sourceID int, sourceIdentifier string) (*AssetSource
 func GetTopTenAssetSources() ([]AssetSource, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	source_id,
 	asset_id,
 	uuid, 
@@ -201,7 +201,7 @@ func GetTopTenAssetSources() ([]AssetSource, error) {
 func RemoveAssetSource(sourceID int, assetID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM asset_sources WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM asset_sources WHERE 
 	source_id = $1 AND asset_id =$2`, sourceID, assetID)
 	if err != nil {
 		log.Println(err.Error())
@@ -242,7 +242,7 @@ func GetAssetSourceList(assetIds []int, sourceIds []int) ([]AssetSource, error) 
 		}
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -278,7 +278,7 @@ func UpdateAssetSource(assetSource AssetSource) error {
 	if (assetSource.SourceID == nil || *assetSource.SourceID == 0) || (assetSource.AssetID == nil || *assetSource.AssetID == 0) {
 		return errors.New("assetSource has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE asset_sources SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE asset_sources SET 
 		name=$1,  
 		alternate_name=$2, 
 		source_identifier=$3,

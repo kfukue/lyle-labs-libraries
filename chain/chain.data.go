@@ -177,7 +177,7 @@ func GetChainByAlternateName(altenateName string) (*Chain, error) {
 func RemoveChain(chainID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM chains WHERE id = $1`, chainID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM chains WHERE id = $1`, chainID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -212,7 +212,7 @@ func GetChainList(ids []int) ([]Chain, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -253,7 +253,7 @@ func UpdateChain(chain Chain) error {
 	if chain.ID == nil || *chain.ID == 0 {
 		return errors.New("chain has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE chains SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE chains SET 
 		name=$1,
 		alternate_name=$2, 
 		address=$3,

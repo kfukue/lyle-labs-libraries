@@ -46,7 +46,7 @@ func GetProduct(productID int) (*Product, error) {
 func GetTopTenProducts() ([]Product, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	productId, 
 	manufacturer, 
 	sku, 
@@ -80,7 +80,7 @@ func GetTopTenProducts() ([]Product, error) {
 func RemoveProduct(productID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM products where productId = ?`, productID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM products where productId = ?`, productID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -91,7 +91,7 @@ func RemoveProduct(productID int) error {
 func GetProductList() ([]Product, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	productId, 
 	manufacturer, 
 	sku, 
@@ -128,7 +128,7 @@ func UpdateProduct(product Product) error {
 	if product.ProductID == nil || *product.ProductID == 0 {
 		return errors.New("product has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE products SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE products SET 
 		manufacturer=?, 
 		sku=?, 
 		upc=?, 
@@ -153,7 +153,7 @@ func UpdateProduct(product Product) error {
 func InsertProduct(product Product) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	result, err := database.DbConn.ExecContext(ctx, `INSERT INTO products  
+	result, err := database.DbConnPgx.Query(ctx, `INSERT INTO products  
 	(manufacturer, 
 	sku, 
 	upc, 

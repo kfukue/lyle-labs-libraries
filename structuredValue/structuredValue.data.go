@@ -52,7 +52,7 @@ func GetStructuredValue(structuredValueID int) (*StructuredValue, error) {
 func GetTopTenStructuredValues() ([]StructuredValue, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -92,7 +92,7 @@ func GetTopTenStructuredValues() ([]StructuredValue, error) {
 func RemoveStructuredValue(structuredValueID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM structured_values WHERE id = $1`, structuredValueID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM structured_values WHERE id = $1`, structuredValueID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -103,7 +103,7 @@ func RemoveStructuredValue(structuredValueID int) error {
 func GetStructuredValueByStructuredValueTypeIDList(structuredValueID int) ([]StructuredValue, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -159,7 +159,7 @@ func GetStructuredValueList(ids []int) ([]StructuredValue, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -192,7 +192,7 @@ func UpdateStructuredValue(structuredValue StructuredValue) error {
 	if structuredValue.ID == nil || *structuredValue.ID == 0 {
 		return errors.New("structuredValue has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE structured_values SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE structured_values SET 
 		name=$1,  
 		alternate_name=$2, 
 		structured_value_type_id=$3,

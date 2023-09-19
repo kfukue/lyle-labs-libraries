@@ -99,7 +99,7 @@ func GetTransactionStepByUUID(transactionStepUUID string) (*TransactionStep, err
 func GetTransactionStepsByUUIDs(UUIDList []string) ([]TransactionStep, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	transaction_id,  
 	step_id,
 	uuid, 
@@ -142,7 +142,7 @@ func GetTransactionStepsByUUIDs(UUIDList []string) ([]TransactionStep, error) {
 func GetTopTenTransactionSteps() ([]TransactionStep, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	transaction_id,  
 	step_id,
 	uuid, 
@@ -184,7 +184,7 @@ func GetTopTenTransactionSteps() ([]TransactionStep, error) {
 func RemoveTransactionStep(transactionID int, stepID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM transaction_steps WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM transaction_steps WHERE 
 	transaction_id = $1 AND step_id =$2`, transactionID, stepID)
 	if err != nil {
 		log.Println(err.Error())
@@ -196,7 +196,7 @@ func RemoveTransactionStep(transactionID int, stepID int) error {
 func RemoveTransactionStepByUUID(transactionStepUUID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM transaction_steps WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM transaction_steps WHERE 
 		WHERE text(uuid) = $1`,
 		transactionStepUUID)
 	if err != nil {
@@ -209,7 +209,7 @@ func RemoveTransactionStepByUUID(transactionStepUUID string) error {
 func GetTransactionStepList() ([]TransactionStep, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	transaction_id,  
 	step_id,
 	uuid, 
@@ -254,7 +254,7 @@ func UpdateTransactionStep(transactionStep TransactionStep) error {
 	if (transactionStep.TransactionID == nil || *transactionStep.TransactionID == 0) || (transactionStep.StepID == nil || *transactionStep.StepID == 0) {
 		return errors.New("transactionStep has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE transaction_steps SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE transaction_steps SET 
 		name=$1,
 		alternate_name=$2,
 		description=$3,
@@ -283,7 +283,7 @@ func UpdateTransactionStepByUUID(transactionStep TransactionStep) error {
 	if (transactionStep.TransactionID == nil || *transactionStep.TransactionID == 0) || (transactionStep.StepID == nil || *transactionStep.StepID == 0) {
 		return errors.New("transactionStep has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE transaction_steps SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE transaction_steps SET 
 		name=$1,
 		alternate_name=$2,
 		description=$3,

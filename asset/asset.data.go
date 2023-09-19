@@ -346,7 +346,7 @@ func GetAssetByBaseAndQuoteID(baseAssetID *int, quoteAssetID *int) (*Asset, erro
 func GetTopTenAssets() ([]Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -414,7 +414,7 @@ func GetTopTenAssets() ([]Asset, error) {
 func GetGethImportAssets() ([]Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -483,7 +483,7 @@ func GetGethImportAssets() ([]Asset, error) {
 func RemoveAsset(assetID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM assets WHERE id = $1`, assetID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM assets WHERE id = $1`, assetID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -494,7 +494,7 @@ func RemoveAsset(assetID int) error {
 func GetCurrentTradingAssets() ([]Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -546,7 +546,7 @@ func GetCurrentTradingAssets() ([]Asset, error) {
 func GetCryptoAssets() ([]Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -650,7 +650,7 @@ func GetAssetsByAssetTypeAndSource(assetTypeID *int, sourceID *int, excludeIgnor
 		sql += `AND ignore_market_data = FALSE
 		`
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql, *assetTypeID, *sourceID)
+	results, err := database.DbConnPgx.Query(ctx, sql, *assetTypeID, *sourceID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -744,7 +744,7 @@ func GetCryptoAssetsBySourceId(sourceID *int, excludeIgnoreMarketData bool) ([]A
 		sql += `AND ignore_market_data = FALSE
 		`
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql, *sourceID)
+	results, err := database.DbConnPgx.Query(ctx, sql, *sourceID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -905,7 +905,7 @@ func GetAssetWithSourceByAssetIdsAndSourceID(assetIDs []int, sourceID *int, excl
 		query += `AND ignore_market_data = FALSE
 		`
 	}
-	results, err := database.DbConn.QueryContext(ctx, query, pq.Array(assetIDs), &sourceID)
+	results, err := database.DbConnPgx.Query(ctx, query, pq.Array(assetIDs), &sourceID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -980,7 +980,7 @@ func GetAssetList(ids []int) ([]Asset, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -1022,7 +1022,7 @@ func GetAssetList(ids []int) ([]Asset, error) {
 func GetDefaultQuoteAssetListBySourceID(sourceID *int) ([]AssetWithSources, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	assets.id,
 	assets.uuid, 
 	assets.name, 
@@ -1096,7 +1096,7 @@ func GetDefaultQuoteAssetListBySourceID(sourceID *int) ([]AssetWithSources, erro
 func GetDefaultQuoteAssetList() ([]Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -1167,7 +1167,7 @@ func UpdateAsset(asset Asset) error {
 	if asset.ID == nil || *asset.ID == 0 {
 		return errors.New("asset has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE assets SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE assets SET 
 		name=$1,  
 		alternate_name=$2, 
 		cusip=$3,

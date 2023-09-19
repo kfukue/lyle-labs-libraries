@@ -69,7 +69,7 @@ func GetStep(stepID int) (*Step, error) {
 func GetTopTenStrategies() ([]Step, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		pool_id,
 		parent_step_id,
@@ -123,7 +123,7 @@ func GetTopTenStrategies() ([]Step, error) {
 func RemoveStep(stepID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM steps WHERE id = $1`, stepID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM steps WHERE id = $1`, stepID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -157,7 +157,7 @@ func GetSteps(ids []int) ([]Step, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -193,7 +193,7 @@ func GetSteps(ids []int) ([]Step, error) {
 func GetStepsByUUIDs(UUIDList []string) ([]Step, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		pool_id,
 		parent_step_id,
@@ -248,7 +248,7 @@ func GetStepsByUUIDs(UUIDList []string) ([]Step, error) {
 func GetStepsFromPoolID(poolID *int) ([]Step, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		pool_id,
 		parent_step_id,
@@ -303,7 +303,7 @@ func GetStepsFromPoolID(poolID *int) ([]Step, error) {
 func GetStartAndEndDateDiffSteps(diffInDate int) ([]Step, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		pool_id,
 		parent_step_id,
@@ -362,7 +362,7 @@ func UpdateStep(step Step) error {
 	if step.ID == nil || *step.ID == 0 {
 		return errors.New("step has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE steps SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE steps SET 
 		pool_id=$1, 
 		parent_step_id=$2,
 		name=$3, 

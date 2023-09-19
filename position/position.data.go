@@ -211,7 +211,7 @@ func GetPositionByDatesAccountsForAllTradeableAssets(startDate, endDate time.Tim
 	// log.Println(fmt.Sprintf("using start : %s, end : %s", startDate.Format(layoutPostgres), endDate.Format(layoutPostgres)))
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid, 
 		name, 
@@ -283,7 +283,7 @@ func GetPositionBetweenDatesAndAccountAllCurrentAssets(startDate, endDate time.T
 	// log.Println(fmt.Sprintf("using start : %s, end : %s", startDate.Format(layoutPostgres), endDate.Format(layoutPostgres)))
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid, 
 		name, 
@@ -353,7 +353,7 @@ func GetPositionBetweenDatesAndAccountAllCurrentAssets(startDate, endDate time.T
 func RemovePosition(positionID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM positions WHERE id = $1`, positionID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM positions WHERE id = $1`, positionID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -365,7 +365,7 @@ func RemovePositionByDateRangeAndAccount(startDate, endDate time.Time, accountID
 	layoutPostgres := utils.LayoutPostgres
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM positions WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM positions WHERE 
 	start_date BETWEEN $1 AND $2
 	AND	account_id = $3`, startDate.Format(layoutPostgres), endDate.Format(layoutPostgres), accountID)
 	if err != nil {
@@ -378,7 +378,7 @@ func RemovePositionByDateRangeAndAccount(startDate, endDate time.Time, accountID
 func RemoveAllPositionByAccount(accountID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM positions WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM positions WHERE 
 	account_id = $1`, accountID)
 	if err != nil {
 		log.Println(err.Error())
@@ -417,7 +417,7 @@ func GetPositions(ids []int) ([]Position, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -524,7 +524,7 @@ func QueryPositions(positionQuery *PositionQuery) ([]Position, error) {
 		sql += ` WHERE` + additionalQuery
 	}
 	sql += ` ORDER BY start_date asc`
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -569,7 +569,7 @@ func UpdatePosition(position Position) error {
 	if position.ID == nil || *position.ID == 0 {
 		return errors.New("position has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE positions SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE positions SET 
 		name=$1,  
 		alternate_name=$2, 
 		account_id=$3,

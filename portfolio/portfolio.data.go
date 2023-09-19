@@ -64,7 +64,7 @@ func GetPortfolio(portfolioID int) (*Portfolio, error) {
 func GetTopTenPortfolios() ([]Portfolio, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -116,7 +116,7 @@ func GetTopTenPortfolios() ([]Portfolio, error) {
 func RemovePortfolio(portfolioID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM portfolios WHERE id = $1`, portfolioID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM portfolios WHERE id = $1`, portfolioID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -150,7 +150,7 @@ func GetPortfolios(ids []int) ([]Portfolio, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -189,7 +189,7 @@ func UpdatePortfolio(portfolio Portfolio) error {
 	if portfolio.ID == nil || *portfolio.ID == 0 {
 		return errors.New("portfolio has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE portfolios SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE portfolios SET 
 		name=$1,  
 		alternate_name=$2, 
 		start_date =$3,

@@ -71,7 +71,7 @@ func GetStrategyMarketDataAsset(strategyMarketDataAssetID int) (*StrategyMarketD
 func GetTopTenStrategies() ([]StrategyMarketDataAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	strategy_id,
 	base_asset_id,
@@ -127,7 +127,7 @@ func GetTopTenStrategies() ([]StrategyMarketDataAsset, error) {
 func RemoveStrategyMarketDataAsset(strategyMarketDataAssetID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM strategy_market_data_assets WHERE id = $1`, strategyMarketDataAssetID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM strategy_market_data_assets WHERE id = $1`, strategyMarketDataAssetID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -162,7 +162,7 @@ func GetStrategyMarketDataAssets(ids []int) ([]StrategyMarketDataAsset, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -199,7 +199,7 @@ func GetStrategyMarketDataAssets(ids []int) ([]StrategyMarketDataAsset, error) {
 func GetStrategyMarketDataAssetsByUUIDs(UUIDList []string) ([]StrategyMarketDataAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		strategy_id,
 		base_asset_id,
@@ -256,7 +256,7 @@ func GetStrategyMarketDataAssetsByUUIDs(UUIDList []string) ([]StrategyMarketData
 func GetStrategyMarketDataAssetsByStrategyID(strategyID *int) ([]StrategyMarketDataAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		strategy_id,
 		base_asset_id,
@@ -313,7 +313,7 @@ func GetStrategyMarketDataAssetsByStrategyID(strategyID *int) ([]StrategyMarketD
 func GetStartAndEndDateDiffStrategyMarketDataAssets(diffInDate int) ([]StrategyMarketDataAsset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		strategy_id,
 		base_asset_id,
@@ -374,7 +374,7 @@ func UpdateStrategyMarketDataAsset(strategyMarketDataAsset StrategyMarketDataAss
 	if strategyMarketDataAsset.ID == nil || *strategyMarketDataAsset.ID == 0 {
 		return errors.New("strategyMarketDataAsset has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE strategy_market_data_assets SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE strategy_market_data_assets SET 
 		strategy_id=$1, 
 		base_asset_id=$2, 
 		quote_asset_id=$3, 

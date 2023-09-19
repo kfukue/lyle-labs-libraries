@@ -87,7 +87,7 @@ func GetSourceJobBySourceID(sourceID int) (*SourceJob, error) {
 func GetTopTenSourceJobs() ([]SourceJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	market_data_id,
 	job_id,
 	uuid, 
@@ -126,7 +126,7 @@ func GetTopTenSourceJobs() ([]SourceJob, error) {
 func RemoveSourceJob(sourceID int, jobID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM market_data_jobs WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM market_data_jobs WHERE 
 	market_data_id = $1 AND job_id =$2`, sourceID, jobID)
 	if err != nil {
 		log.Println(err.Error())
@@ -138,7 +138,7 @@ func RemoveSourceJob(sourceID int, jobID int) error {
 func GetSourceJobList() ([]SourceJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	market_data_id,
 	job_id,
 	uuid, 
@@ -179,7 +179,7 @@ func UpdateSourceJob(sourceJob SourceJob) error {
 	if (sourceJob.SourceID == nil || *sourceJob.SourceID == 0) || (sourceJob.JobID == nil || *sourceJob.JobID == 0) {
 		return errors.New("sourceJob has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE market_data_jobs SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE market_data_jobs SET 
 		description=$1,
 		updated_by=$2, 
 		updated_at=current_timestamp at time zone 'UTC'

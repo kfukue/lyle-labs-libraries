@@ -76,7 +76,7 @@ func GetJob(jobID int) (*Job, error) {
 func GetTopTenJobs() ([]Job, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -137,7 +137,7 @@ func GetTopTenJobs() ([]Job, error) {
 func RemoveJob(jobID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM jobs WHERE id = $1`, jobID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM jobs WHERE id = $1`, jobID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -174,7 +174,7 @@ func GetJobList(ids []int) ([]Job, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -214,7 +214,7 @@ func GetJobList(ids []int) ([]Job, error) {
 func GetJobListByUUIDs(UUIDList []string) ([]Job, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -276,7 +276,7 @@ func GetJobListByUUIDs(UUIDList []string) ([]Job, error) {
 func GetStartAndEndDateDiffJobList(diffInDate int) ([]Job, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -346,7 +346,7 @@ func UpdateJob(job Job) error {
 	startDate := job.StartDate
 	endDate := job.EndDate
 	log.Println(fmt.Sprintf("Updating start: %s, end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE jobs SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE jobs SET 
 		name=$1,  
 		alternate_name=$2, 
 		start_date =$3,

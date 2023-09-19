@@ -165,7 +165,7 @@ func GetAccountByAlternateName(altenateName string) (*Account, error) {
 func RemoveAccount(accountID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM accounts WHERE id = $1`, accountID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM accounts WHERE id = $1`, accountID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -198,7 +198,7 @@ func GetAccountList(ids []int) ([]Account, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -237,7 +237,7 @@ func UpdateAccount(account Account) error {
 	if account.ID == nil || *account.ID == 0 {
 		return errors.New("account has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE accounts SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE accounts SET 
 	name=$1,
 	alternate_name=$2, 
 	address=$3,

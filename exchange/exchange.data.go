@@ -63,7 +63,7 @@ func GetExchange(exchangeID int) (*Exchange, error) {
 func RemoveExchange(exchangeID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM exchanges WHERE id = $1`, exchangeID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM exchanges WHERE id = $1`, exchangeID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -74,7 +74,7 @@ func RemoveExchange(exchangeID int) error {
 func GetExchanges() ([]Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -141,7 +141,7 @@ func GetExchangeList(ids []int) ([]Exchange, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -173,7 +173,7 @@ func GetExchangeList(ids []int) ([]Exchange, error) {
 func GetExchangesByUUIDs(UUIDList []string) ([]Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -222,7 +222,7 @@ func GetExchangesByUUIDs(UUIDList []string) ([]Exchange, error) {
 func GetStartAndEndDateDiffExchanges(diffInDate int) ([]Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -275,7 +275,7 @@ func UpdateExchange(exchange Exchange) error {
 	if exchange.ID == nil || *exchange.ID == 0 {
 		return errors.New("exchange has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE exchanges SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE exchanges SET 
 		name=$1,
 		alternate_name=$2,
 		exchange_type_id =$3,
@@ -414,7 +414,7 @@ func UpdateExchangeChainByUUID(exchangeChain ExchangeChain) error {
 	if exchangeChain.ExchangeID == nil || *exchangeChain.ExchangeID == 0 || exchangeChain.ChainID == nil || *exchangeChain.ChainID == 0 {
 		return errors.New("exchangeChain has invalid IDs")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE exchange_chains SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE exchange_chains SET 
 		
 		exchange_id=$1,
 		chain_id=$2,

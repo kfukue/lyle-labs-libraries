@@ -94,7 +94,7 @@ func GetMarketData(marketDataID int) (*MarketData, error) {
 func GetTopTenMarketDatas() ([]MarketData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -170,7 +170,7 @@ func GetTopTenMarketDatas() ([]MarketData, error) {
 func RemoveMarketData(marketDataID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM market_data WHERE id = $1`, marketDataID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM market_data WHERE id = $1`, marketDataID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -187,7 +187,7 @@ func RemoveMarketDataFromBaseAssetBetweenDates(assetID int, startDate, endDate t
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err = database.DbConn.ExecContext(ctx, `DELETE FROM market_data 
+	_, err = database.DbConnPgx.Query(ctx, `DELETE FROM market_data 
 		WHERE asset_id = $1
 			AND start_date BETWEEN $2 and $3
 	`, assetID, startDate, endDate)
@@ -201,7 +201,7 @@ func RemoveMarketDataFromBaseAssetBetweenDates(assetID int, startDate, endDate t
 func RemoveMarketDataQuoteFromBaseAssetBetweenDates(assetID int, startDate, endDate time.Time) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `
+	_, err := database.DbConnPgx.Query(ctx, `
 		DELETE FROM market_data_quotes
 		WHERE market_data_id IN (
 			SELECT ID
@@ -254,7 +254,7 @@ func GetMarketDataList(ids []int) ([]MarketData, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -301,7 +301,7 @@ func GetMarketDataList(ids []int) ([]MarketData, error) {
 func GetMarketDataListByUUIDs(UUIDList []string) ([]MarketData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -378,7 +378,7 @@ func GetMarketDataListByUUIDs(UUIDList []string) ([]MarketData, error) {
 func GetStartAndEndDateDiffMarketDataList(diffInDate int) ([]MarketData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -454,7 +454,7 @@ func GetStartAndEndDateDiffMarketDataList(diffInDate int) ([]MarketData, error) 
 func GetLatestLiveMarketData() ([]MarketDataQuoteResults, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `
+	results, err := database.DbConnPgx.Query(ctx, `
 	SELECT 
 	m.start_date,
 	mj.end_date,
@@ -567,7 +567,7 @@ func GetLatestLiveMarketData() ([]MarketDataQuoteResults, error) {
 func GetAllMarketDataFromStrategyID(strategyID *int) ([]MarketDataQuoteResults, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `
+	results, err := database.DbConnPgx.Query(ctx, `
 	SELECT 
 	m.start_date,
 	mj.end_date,
@@ -687,7 +687,7 @@ func UpdateMarketData(marketData MarketData) error {
 	startDate := marketData.StartDate
 	endDate := marketData.EndDate
 	log.Println(fmt.Sprintf("Updating start: %s, end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE market_data SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE market_data SET 
 		name=$1,  
 		alternate_name=$2, 
 		start_date =$3,

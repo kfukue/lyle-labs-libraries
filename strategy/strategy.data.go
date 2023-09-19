@@ -61,7 +61,7 @@ func GetStrategy(strategyID int) (*Strategy, error) {
 func GetTopTenStrategies() ([]Strategy, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -107,7 +107,7 @@ func GetTopTenStrategies() ([]Strategy, error) {
 func RemoveStrategy(strategyID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM strategies WHERE id = $1`, strategyID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM strategies WHERE id = $1`, strategyID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -137,7 +137,7 @@ func GetStrategies(ids []int) ([]Strategy, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConn.QueryContext(ctx, sql)
+	results, err := database.DbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -169,7 +169,7 @@ func GetStrategies(ids []int) ([]Strategy, error) {
 func GetStrategiesByUUIDs(UUIDList []string) ([]Strategy, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -216,7 +216,7 @@ func GetStrategiesByUUIDs(UUIDList []string) ([]Strategy, error) {
 func GetStartAndEndDateDiffStrategies(diffInDate int) ([]Strategy, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -267,7 +267,7 @@ func UpdateStrategy(strategy Strategy) error {
 	if strategy.ID == nil || *strategy.ID == 0 {
 		return errors.New("strategy has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE strategies SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE strategies SET 
 		name=$1,  
 		alternate_name=$2, 
 		start_date =$3,

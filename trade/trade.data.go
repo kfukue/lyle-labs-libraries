@@ -272,7 +272,7 @@ func GetTradeByTradeID(tradeID int) (*Trade, error) {
 func GetTradeByStartAndEndDates(startDate, endDate time.Time) ([]Trade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		parent_trade_id,
 		from_account_id,
@@ -362,7 +362,7 @@ func GetTradeByStartAndEndDates(startDate, endDate time.Time) ([]Trade, error) {
 func GetTradeByFromAccountStartAndEndDates(fromAccountID *int, startDate, endDate time.Time) ([]Trade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		parent_trade_id,
 		from_account_id,
@@ -455,7 +455,7 @@ func GetTradeByFromAccountStartAndEndDates(fromAccountID *int, startDate, endDat
 func GetTradeByToAccountStartAndEndDates(toAccountID *int, startDate, endDate time.Time) ([]Trade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 		id,
 		parent_trade_id,
 		from_account_id,
@@ -547,7 +547,7 @@ func GetTradeByToAccountStartAndEndDates(toAccountID *int, startDate, endDate ti
 func RemoveTrade(tradeID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM trades WHERE id = $1`, tradeID)
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM trades WHERE id = $1`, tradeID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -558,7 +558,7 @@ func RemoveTrade(tradeID int) error {
 func GetTradeList() ([]Trade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConn.QueryContext(ctx, `SELECT 
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
 	id,
 	parent_trade_id,
 	from_account_id,
@@ -649,7 +649,7 @@ func UpdateTrade(trade Trade) error {
 	if (trade.SourceID == nil || *trade.SourceID == 0) || (trade.AssetID == nil || *trade.AssetID == 0) {
 		return errors.New("trade has invalid ID")
 	}
-	_, err := database.DbConn.ExecContext(ctx, `UPDATE trades SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE trades SET 
 		parent_trade_id=$1,
 		from_account_id=$2,
 		to_account_id=$3,
