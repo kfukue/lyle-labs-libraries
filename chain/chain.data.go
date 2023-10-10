@@ -253,27 +253,21 @@ func GetChainListByPagination(_start, _end *int, _order, _sort string, _filters 
 	sql := `SELECT 
 	id,
 	uuid, 
+	base_asset_id,
 	name, 
 	alternate_name, 
-	cusip,
-	ticker,
-	base_asset_id,
-	quote_asset_id,
+	address,
+	chain_type_id,
 	description,
-	asset_type_id,
 	created_by, 
 	created_at, 
 	updated_by, 
 	updated_at,
+	COALESCE(rpc_url, ''),
 	chain_id,
-	category_id,
-	sub_category_id,
-	is_default_quote,
-	ignore_market_data,
-	decimals,
-	contract_address,
-	starting_block_number,
-	import_geth
+	COALESCE(block_explorer_url, ''),
+	COALESCE(rpc_url_dev, ''),
+	COALESCE(rpc_url_prod, '') 
 	FROM chains
 	`
 	if len(_filters) > 0 {
