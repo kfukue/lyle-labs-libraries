@@ -1019,6 +1019,114 @@ func GetAssetList(ids []int) ([]Asset, error) {
 	}
 	return assets, nil
 }
+
+func GetAssetListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]Asset, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	sql := `SELECT 
+	id,
+	uuid, 
+	name, 
+	alternate_name, 
+	cusip,
+	ticker,
+	base_asset_id,
+	quote_asset_id,
+	description,
+	asset_type_id,
+	created_by, 
+	created_at, 
+	updated_by, 
+	updated_at,
+	chain_id,
+	category_id,
+	sub_category_id,
+	is_default_quote,
+	ignore_market_data,
+	decimals,
+	contract_address,
+	starting_block_number,
+	import_geth
+	FROM assets
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " AND "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if _start != nil && _end != nil {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := database.DbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	assets := make([]Asset, 0)
+	for results.Next() {
+		var asset Asset
+		results.Scan(
+			&asset.ID,
+			&asset.UUID,
+			&asset.Name,
+			&asset.AlternateName,
+			&asset.Cusip,
+			&asset.Ticker,
+			&asset.BaseAssetID,
+			&asset.QuoteAssetID,
+			&asset.Description,
+			&asset.AssetTypeID,
+			&asset.CreatedBy,
+			&asset.CreatedAt,
+			&asset.UpdatedBy,
+			&asset.UpdatedAt,
+			&asset.ChainID,
+			&asset.CategoryID,
+			&asset.SubCategoryID,
+			&asset.IsDefaultQuote,
+			&asset.IgnoreMarketData,
+			&asset.Decimals,
+			&asset.ContractAddress,
+			&asset.StartingBlockNumber,
+			&asset.ImportGeth,
+		)
+
+		assets = append(assets, asset)
+	}
+	return assets, nil
+}
+
+func GetTotalAssetCount() (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM assets
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
+}
 func GetDefaultQuoteAssetListBySourceID(sourceID *int) ([]AssetWithSources, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()

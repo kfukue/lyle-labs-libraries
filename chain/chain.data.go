@@ -246,6 +246,108 @@ func GetChainList(ids []int) ([]Chain, error) {
 	return chains, nil
 }
 
+func GetChainListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]Chain, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	sql := `SELECT 
+	id,
+	uuid, 
+	name, 
+	alternate_name, 
+	cusip,
+	ticker,
+	base_asset_id,
+	quote_asset_id,
+	description,
+	asset_type_id,
+	created_by, 
+	created_at, 
+	updated_by, 
+	updated_at,
+	chain_id,
+	category_id,
+	sub_category_id,
+	is_default_quote,
+	ignore_market_data,
+	decimals,
+	contract_address,
+	starting_block_number,
+	import_geth
+	FROM chains
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " AND "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if _start != nil && _end != nil {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := database.DbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	chains := make([]Chain, 0)
+	for results.Next() {
+		var chain Chain
+		results.Scan(
+			&chain.ID,
+			&chain.UUID,
+			&chain.BaseAssetID,
+			&chain.Name,
+			&chain.AlternateName,
+			&chain.Address,
+			&chain.ChainTypeID,
+			&chain.Description,
+			&chain.CreatedBy,
+			&chain.CreatedAt,
+			&chain.UpdatedBy,
+			&chain.UpdatedAt,
+			&chain.RpcURL,
+			&chain.ChainID,
+			&chain.BlockExplorerURL,
+			&chain.RpcURLDev,
+			&chain.RpcURLProd,
+		)
+
+		chains = append(chains, chain)
+	}
+	return chains, nil
+}
+
+func GetTotalAssetCount() (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM chains
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
+}
+
 func UpdateChain(chain Chain) error {
 	// if the chain id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
