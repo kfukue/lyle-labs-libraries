@@ -1062,7 +1062,7 @@ func GetAssetListByPagination(_start, _end *int, _order, _sort string, _filters 
 	if _order != "" && _sort != "" {
 		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
 	}
-	if _start != nil && _end != nil {
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
 		pageSize := *_end - *_start
 		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
 	}
