@@ -1,4 +1,4 @@
-package mylogger
+package main
 
 // this is just for testing.
 import "log"
@@ -13,4 +13,9 @@ func LogWarning(message string) {
 
 func LogError(message string) {
 	log.Printf("ERROR - %v", message)
+}
+
+func main() {
+	log.Print("Running main.go....")
+	log.Print("Finished!")
 }
