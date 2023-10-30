@@ -285,7 +285,7 @@ func InsertAssetTax(assetTax AssetTax) (int, int, error) {
 			$7,
 			$8,
 			current_timestamp at time zone 'UTC',
-			$,
+			$8,
 			current_timestamp at time zone 'UTC'
 		)
 		RETURNING tax_id, asset_id`,
