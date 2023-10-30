@@ -358,8 +358,8 @@ func InsertTax(tax Tax) (int, error) {
 		tax.TaxRateTypeID,      //8
 		tax.ContractAddressStr, //9
 		tax.ContractAddressID,  //10
-		tax.Description,        //11
-		tax.TaxTypeID,          //12
+		tax.TaxTypeID,          //11
+		tax.Description,        //12
 		tax.CreatedBy,          //13
 	).Scan(&insertID)
 
