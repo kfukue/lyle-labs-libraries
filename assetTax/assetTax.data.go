@@ -22,6 +22,7 @@ func GetAllAssetTaxesByTaxType(taxTypeID int) ([]AssetTax, error) {
 	asset_taxes.name, 
 	asset_taxes.alternate_name, 
 	asset_taxes.tax_rate_override,
+	asset_taxes.tax_rate_type_id,
 	asset_taxes.description,
 	asset_taxes.created_by, 
 	asset_taxes.created_at, 
@@ -48,6 +49,7 @@ func GetAllAssetTaxesByTaxType(taxTypeID int) ([]AssetTax, error) {
 			&assetTax.Name,
 			&assetTax.AlternateName,
 			&assetTax.TaxRateOverride,
+			&assetTax.TaxRateTypeID,
 			&assetTax.Description,
 			&assetTax.CreatedBy,
 			&assetTax.CreatedAt,
@@ -69,6 +71,7 @@ func GetAssetTax(taxID int, assetID int) (*AssetTax, error) {
 	name, 
 	alternate_name, 
 	tax_rate_override,
+	tax_rate_type_id,
 	description,
 	created_by, 
 	created_at, 
@@ -87,6 +90,7 @@ func GetAssetTax(taxID int, assetID int) (*AssetTax, error) {
 		&assetTax.Name,
 		&assetTax.AlternateName,
 		&assetTax.TaxRateOverride,
+		&assetTax.TaxRateTypeID,
 		&assetTax.Description,
 		&assetTax.CreatedBy,
 		&assetTax.CreatedAt,
@@ -112,6 +116,7 @@ func GetAssetTaxByTicker(taxID int, taxIdentifier string) (*AssetTax, error) {
 	name, 
 	alternate_name, 
 	tax_rate_override,
+	tax_rate_type_id,
 	description,
 	created_by, 
 	created_at, 
@@ -130,6 +135,7 @@ func GetAssetTaxByTicker(taxID int, taxIdentifier string) (*AssetTax, error) {
 		&assetTax.Name,
 		&assetTax.AlternateName,
 		&assetTax.TaxRateOverride,
+		&assetTax.TaxRateTypeID,
 		&assetTax.Description,
 		&assetTax.CreatedBy,
 		&assetTax.CreatedAt,
@@ -167,6 +173,7 @@ func GetAssetTaxList(assetIds []int, taxIds []int) ([]AssetTax, error) {
 	name, 
 	alternate_name, 
 	tax_rate_override,
+	tax_rate_type_id,
 	description,
 	created_by, 
 	created_at, 
@@ -204,6 +211,7 @@ func GetAssetTaxList(assetIds []int, taxIds []int) ([]AssetTax, error) {
 			&assetTax.Name,
 			&assetTax.AlternateName,
 			&assetTax.TaxRateOverride,
+			&assetTax.TaxRateTypeID,
 			&assetTax.Description,
 			&assetTax.CreatedBy,
 			&assetTax.CreatedAt,
@@ -227,17 +235,19 @@ func UpdateAssetTax(assetTax AssetTax) error {
 		name=$1,  
 		alternate_name=$2, 
 		tax_rate_override=$3,
-		description=$4,
-		updated_by=$5, 
+		tax_rate_type_id=$4,
+		description=$5,
+		updated_by=$6, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE tax_id=$6 AND asset_id=$7`,
+		WHERE tax_id=$7 AND asset_id=$8`,
 		assetTax.Name,            //1
 		assetTax.AlternateName,   //2
 		assetTax.TaxRateOverride, //3
-		assetTax.Description,     //4
-		assetTax.UpdatedBy,       //5
-		assetTax.TaxID,           //6
-		assetTax.AssetID,         //7
+		assetTax.TaxRateTypeID,   //4
+		assetTax.Description,     //5
+		assetTax.UpdatedBy,       //6
+		assetTax.TaxID,           //7
+		assetTax.AssetID,         //8
 	)
 	if err != nil {
 		log.Println(err.Error())
@@ -259,6 +269,7 @@ func InsertAssetTax(assetTax AssetTax) (int, int, error) {
 		name, 
 		alternate_name,  
 		tax_rate_override,
+		tax_rate_type_id,
 		description,
 		created_by, 
 		created_at, 
@@ -272,18 +283,20 @@ func InsertAssetTax(assetTax AssetTax) (int, int, error) {
 			$5,
 			$6,
 			$7,
+			$8,
 			current_timestamp at time zone 'UTC',
-			$7,
+			$,
 			current_timestamp at time zone 'UTC'
 		)
 		RETURNING tax_id, asset_id`,
-		assetTax.TaxID,           // 1
-		assetTax.AssetID,         // 2
-		assetTax.Name,            // 3
+		assetTax.TaxID,           //1
+		assetTax.AssetID,         //2
+		assetTax.Name,            //3
 		assetTax.AlternateName,   //4
 		assetTax.TaxRateOverride, //5
-		assetTax.Description,     //6
-		assetTax.CreatedBy,       //7
+		assetTax.TaxRateTypeID,   //6
+		assetTax.Description,     //7
+		assetTax.CreatedBy,       //8
 	).Scan(&TaxID, &AssetID)
 	if err != nil {
 		log.Println(err.Error())

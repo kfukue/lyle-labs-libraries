@@ -8,12 +8,14 @@ CREATE TABLE asset_taxes
   name VARCHAR(255) NOT NULL,
   alternate_name VARCHAR(255) NULL,
   tax_rate_override NUMERIC NULL,
+  tax_rate_type_id INT NULL,
   description TEXT NULL,
   created_by VARCHAR(255) NOT NULL,
   created_at timestamp NOT NULL,
   updated_by VARCHAR(255) NOT NULL,
   updated_at timestamp NOT NULL,
   PRIMARY KEY(tax_id, asset_id),
+  CONSTRAINT fk_tax_rate_type_id FOREIGN KEY(tax_rate_type_id) REFERENCES structured_values(id),
   CONSTRAINT fk_tax FOREIGN KEY(tax_id) REFERENCES taxes(id),
   CONSTRAINT fk_asset FOREIGN KEY(asset_id) REFERENCES assets(id)
 );

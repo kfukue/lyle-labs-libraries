@@ -14,6 +14,7 @@ type AssetTax struct {
 	Name            string           `json:"name"`
 	AlternateName   string           `json:"alternateName"`
 	TaxRateOverride *decimal.Decimal `json:"taxRateOverride"`
+	TaxRateTypeID   *int             `json:"taxRateTypeId"`
 	Description     string           `json:"description"`
 	CreatedBy       string           `json:"createdBy"`
 	CreatedAt       time.Time        `json:"createdAt"`
