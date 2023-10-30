@@ -25,6 +25,8 @@ func GetTax(taxID int) (*Tax, error) {
 	alternate_name, 
 	start_date,
 	end_date,
+	start_block,
+	end_block,
 	tax_rate,
 	tax_rate_type_id,
 	contract_address_str,
@@ -46,6 +48,8 @@ func GetTax(taxID int) (*Tax, error) {
 		&tax.AlternateName,
 		&tax.StartDate,
 		&tax.EndDate,
+		&tax.StartBlock,
+		&tax.EndBlock,
 		&tax.TaxRate,
 		&tax.TaxRateTypeID,
 		&tax.ContractAddressStr,
@@ -76,6 +80,8 @@ func GetTopTenTaxes() ([]Tax, error) {
 	alternate_name, 
 	start_date,
 	end_date,
+	start_block,
+	end_block,
 	tax_rate,
 	tax_rate_type_id,
 	contract_address_str,
@@ -103,6 +109,8 @@ func GetTopTenTaxes() ([]Tax, error) {
 			&tax.AlternateName,
 			&tax.StartDate,
 			&tax.EndDate,
+			&tax.StartBlock,
+			&tax.EndBlock,
 			&tax.TaxRate,
 			&tax.TaxRateTypeID,
 			&tax.ContractAddressStr,
@@ -141,6 +149,8 @@ func GetTaxes(ids []int) ([]Tax, error) {
 	alternate_name, 
 	start_date,
 	end_date,
+	start_block,
+	end_block,
 	tax_rate,
 	tax_rate_type_id,
 	contract_address_str,
@@ -173,6 +183,8 @@ func GetTaxes(ids []int) ([]Tax, error) {
 			&tax.AlternateName,
 			&tax.StartDate,
 			&tax.EndDate,
+			&tax.StartBlock,
+			&tax.EndBlock,
 			&tax.TaxRate,
 			&tax.TaxRateTypeID,
 			&tax.ContractAddressStr,
@@ -200,6 +212,8 @@ func GetTaxesByUUIDs(UUIDList []string) ([]Tax, error) {
 	alternate_name, 
 	start_date,
 	end_date,
+	start_block,
+	end_block,
 	tax_rate,
 	tax_rate_type_id,
 	contract_address_str,
@@ -228,6 +242,8 @@ func GetTaxesByUUIDs(UUIDList []string) ([]Tax, error) {
 			&tax.AlternateName,
 			&tax.StartDate,
 			&tax.EndDate,
+			&tax.StartBlock,
+			&tax.EndBlock,
 			&tax.TaxRate,
 			&tax.TaxRateTypeID,
 			&tax.ContractAddressStr,
@@ -257,27 +273,31 @@ func UpdateTax(tax Tax) error {
 		alternate_name=$2, 
 		start_date =$3,
 		end_date =$4,
-		tax_rate =$5,
-		tax_rate_type_id=$6,
-		contract_address_str=$7,
-		contract_address_id=$8,
-		tax_type_id=$9,
-		description=$10, 
-		updated_by=$11, 
+		start_block=$5,
+		end_block=$6,
+		tax_rate =$7,
+		tax_rate_type_id=$8,
+		contract_address_str=$9,
+		contract_address_id=$10,
+		tax_type_id=$11,
+		description=$12, 
+		updated_by=$13, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$12`,
+		WHERE id=$14`,
 		tax.Name,               //1
 		tax.AlternateName,      //2
 		tax.StartDate,          //3
 		tax.EndDate,            //4
-		tax.TaxRate,            //5
-		tax.TaxRateTypeID,      //6
-		tax.ContractAddressStr, //7
-		tax.ContractAddressID,  //8
-		tax.TaxTypeID,          //9
-		tax.Description,        //10
-		tax.UpdatedBy,          //11
-		tax.ID)                 //12
+		tax.StartBlock,         //5
+		tax.EndBlock,           //6
+		tax.TaxRate,            //7
+		tax.TaxRateTypeID,      //8
+		tax.ContractAddressStr, //9
+		tax.ContractAddressID,  //10
+		tax.TaxTypeID,          //11
+		tax.Description,        //12
+		tax.UpdatedBy,          //13
+		tax.ID)                 //14
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -296,6 +316,8 @@ func InsertTax(tax Tax) (int, error) {
 		alternate_name, 
 		start_date,
 		end_date,
+		start_block,
+		end_block,
 		tax_rate,
 		tax_rate_type_id,
 		contract_address_str,
@@ -319,8 +341,10 @@ func InsertTax(tax Tax) (int, error) {
 			$9,
 			$10,
 			$11,
+			$12,
+			$13,
 			current_timestamp at time zone 'UTC',
-			$11,
+			$13,
 			current_timestamp at time zone 'UTC'
 		)
 		RETURNING id`,
@@ -328,13 +352,15 @@ func InsertTax(tax Tax) (int, error) {
 		tax.AlternateName,      //2
 		tax.StartDate,          //3
 		tax.EndDate,            //4
-		tax.TaxRate,            //5
-		tax.TaxRateTypeID,      //6
-		tax.ContractAddressStr, //7
-		tax.ContractAddressID,  //8
-		tax.Description,        //9
-		tax.TaxTypeID,          //10
-		tax.CreatedBy,          //11
+		tax.StartBlock,         //5
+		tax.EndBlock,           //6
+		tax.TaxRate,            //7
+		tax.TaxRateTypeID,      //8
+		tax.ContractAddressStr, //9
+		tax.ContractAddressID,  //10
+		tax.Description,        //11
+		tax.TaxTypeID,          //12
+		tax.CreatedBy,          //13
 	).Scan(&insertID)
 
 	if err != nil {
@@ -349,7 +375,7 @@ func InsertTaxes(taxes []Tax) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range taxes {
+	for i := range taxes {
 		tax := taxes[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(tax.UUID)
@@ -359,16 +385,18 @@ func InsertTaxes(taxes []Tax) error {
 			tax.AlternateName,      //3
 			tax.StartDate,          //4
 			tax.EndDate,            //5
-			tax.TaxRate,            //6
-			tax.TaxRateTypeID,      //7
-			tax.ContractAddressStr, //8
-			tax.ContractAddressID,  //9
-			tax.TaxTypeID,          //10
-			tax.Description,        //11
-			tax.CreatedBy,          //12
-			&now,                   //13
+			tax.StartBlock,         //6
+			tax.EndBlock,           //7
+			tax.TaxRate,            //8
+			tax.TaxRateTypeID,      //9
+			tax.ContractAddressStr, //10
+			tax.ContractAddressID,  //11
+			tax.TaxTypeID,          //12
+			tax.Description,        //13
 			tax.CreatedBy,          //14
 			&now,                   //15
+			tax.CreatedBy,          //16
+			&now,                   //17
 		}
 		rows = append(rows, row)
 	}
@@ -381,16 +409,18 @@ func InsertTaxes(taxes []Tax) error {
 			"alternate_name",       //3
 			"start_date",           //4
 			"end_date",             //5
-			"tax_rate",             //6
-			"tax_rate_type_id",     //7
-			"contract_address_str", //8
-			"contract_address_id",  //9
-			"tax_type_id",          //10
-			"description",          //11
-			"created_by",           //12
-			"created_at",           //13
-			"updated_by",           //14
-			"updated_at",           //15
+			"start_block",          //6
+			"end_block",            //7
+			"tax_rate",             //8
+			"tax_rate_type_id",     //9
+			"contract_address_str", //10
+			"contract_address_id",  //11
+			"tax_type_id",          //12
+			"description",          //13
+			"created_by",           //14
+			"created_at",           //15
+			"updated_by",           //16
+			"updated_at",           //17
 		},
 		pgx.CopyFromRows(rows),
 	)

@@ -14,6 +14,8 @@ type Tax struct {
 	AlternateName      string           `json:"alternateName"`
 	StartDate          *time.Time       `json:"startDate"`
 	EndDate            *time.Time       `json:"endDate"`
+	StartBlock         *int             `json:"startBlock"`
+	EndBlock           *int             `json:"endBlock"`
 	TaxRate            *decimal.Decimal `json:"taxRate"`
 	TaxRateTypeID      *int             `json:"taxRateTypeId"`
 	ContractAddressStr string           `json:"contractAddressStr"`

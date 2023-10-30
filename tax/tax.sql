@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS taxes CASCADE;
+
 CREATE TABLE taxes
 (
   id SERIAL,
@@ -6,6 +8,8 @@ CREATE TABLE taxes
   alternate_name VARCHAR(255) NULL,
   start_date timestamp NULL,
   end_date timestamp NULL,
+  start_block INT NULL,
+  end_block INT NULL,
   tax_rate NUMERIC NOT NULL,
   tax_rate_type_id INT NULL,
   contract_address_str VARCHAR(255) UNIQUE NULL,
