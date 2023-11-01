@@ -344,7 +344,7 @@ func InsertStrategies(strategies []Strategy) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range strategies {
+	for i := range strategies {
 		strategy := strategies[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(strategy.UUID)

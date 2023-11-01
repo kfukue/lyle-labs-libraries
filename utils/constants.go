@@ -40,6 +40,7 @@ const (
 	SMART_CONTRACT_TAX_STRUCTURED_VALUE_ID                   = 95
 	FIXED_STRUCTURED_VALUE_ID                                = 94
 	PERCENTAGE_STRUCTURED_VALUE_ID                           = 93
+	IMPORT_TRADES_GETH_STRUCTURED_VALUE_ID                   = 96
 	// structured value type ids
 	JOB_STATUS_STRUCTURED_VALUE_TYPE_ID            = 14
 	JOB_CATEGORY_STRUCTURED_VALUE_TYPE_ID          = 15

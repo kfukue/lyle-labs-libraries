@@ -153,24 +153,22 @@ func UpdateProduct(product Product) error {
 func InsertProduct(product Product) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	result, err := database.DbConnPgx.Query(ctx, `INSERT INTO products  
+	var insertID int
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO products  
 	(manufacturer, 
 	sku, 
 	upc, 
 	pricePerUnit, 
 	quantityOnHand, 
-	productName) VALUES (?, ?, ?, ?, ?, ?)`,
+	productName) VALUES (?, ?, ?, ?, ?, ?)
+	RETURNING id
+	`,
 		product.Manufacturer,
 		product.Sku,
 		product.Upc,
 		product.PricePerUnit,
 		product.QuantityOnHand,
-		product.ProductName)
-	if err != nil {
-		log.Println(err.Error())
-		return 0, err
-	}
-	insertID, err := result.LastInsertId()
+		product.ProductName).Scan(&insertID)
 	if err != nil {
 		log.Println(err.Error())
 		return 0, err

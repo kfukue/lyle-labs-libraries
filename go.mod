@@ -13,6 +13,9 @@ require (
 	github.com/lib/pq v1.10.6
 	github.com/shopspring/decimal v1.3.1
 	google.golang.org/genproto v0.0.0-20220616135557-88e70c0c3a90
+	github.com/jackc/pgx/v5 v5.4.3 
+	github.com/jackc/pgx-shopspring-decimal v0.0.0-20220624020537-1d36b5a1853e 
+	github.com/ethereum/go-ethereum v1.13.4 
 )
 
 require (
@@ -29,7 +32,7 @@ require (
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/ethereum/c-kzg-4844 v0.3.1 // indirect
-	github.com/ethereum/go-ethereum v1.13.4 // indirect
+	
 	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
@@ -38,15 +41,14 @@ require (
 	github.com/googleapis/gax-go/v2 v2.2.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/holiman/uint256 v1.2.3 // indirect
-	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
+	
 	github.com/jackc/pgconn v1.12.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
-	github.com/jackc/pgx-shopspring-decimal v0.0.0-20220624020537-1d36b5a1853e // indirect
-	github.com/jackc/pgx/v5 v5.4.3 // indirect
-	github.com/jackc/puddle v1.2.1 // indirect
+	
+	
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect

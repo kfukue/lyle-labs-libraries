@@ -202,6 +202,65 @@ func GetTaxes(ids []int) ([]Tax, error) {
 	return taxes, nil
 }
 
+func GetTaxesByAssetID(assetID *int) ([]Tax, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	taxes.id,
+	taxes.uuid, 
+	taxes.name, 
+	taxes.alternate_name, 
+	taxes.start_date,
+	taxes.end_date,
+	taxes.start_block,
+	taxes.end_block,
+	taxes.tax_rate,
+	taxes.tax_rate_type_id,
+	taxes.contract_address_str,
+	taxes.contract_address_id,
+	taxes.tax_type_id,
+	taxes.description,
+	taxes.created_by, 
+	taxes.created_at, 
+	taxes.updated_by, 
+	taxes.updated_at 
+	FROM taxes 
+	JOIN asset_taxes ON taxes.id = asset_taxes.tax_id
+	WHERE asset_taxes.asset_id = $1
+	`, assetID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	taxes := make([]Tax, 0)
+	for results.Next() {
+		var tax Tax
+		results.Scan(
+			&tax.ID,
+			&tax.UUID,
+			&tax.Name,
+			&tax.AlternateName,
+			&tax.StartDate,
+			&tax.EndDate,
+			&tax.StartBlock,
+			&tax.EndBlock,
+			&tax.TaxRate,
+			&tax.TaxRateTypeID,
+			&tax.ContractAddressStr,
+			&tax.ContractAddressID,
+			&tax.TaxTypeID,
+			&tax.Description,
+			&tax.CreatedBy,
+			&tax.CreatedAt,
+			&tax.UpdatedBy,
+			&tax.UpdatedAt,
+		)
+		taxes = append(taxes, tax)
+	}
+	return taxes, nil
+}
+
 func GetTaxesByUUIDs(UUIDList []string) ([]Tax, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()

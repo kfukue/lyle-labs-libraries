@@ -32,7 +32,7 @@ func GetAllAssetTaxesByTaxType(taxTypeID int) ([]AssetTax, error) {
 	LEFT JOIN taxes
 	ON taxes.tax_id = taxes.id 
 	WHERE 
-	taxes.tax_type_id = $2
+	taxes.tax_type_id = $1
 	`, taxTypeID)
 	if err != nil {
 		log.Println(err.Error())
