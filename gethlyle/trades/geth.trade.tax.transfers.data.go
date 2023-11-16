@@ -264,7 +264,7 @@ func InsertGethTradeTaxTransfers(gethTradeTaxTransfers []*GethTradeTaxTransfer) 
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range gethTradeTaxTransfers {
+	for i := range gethTradeTaxTransfers {
 		gethTradeTaxTransfer := gethTradeTaxTransfers[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(gethTradeTaxTransfer.UUID)

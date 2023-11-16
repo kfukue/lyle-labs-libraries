@@ -255,7 +255,7 @@ func InsertGethTradeSwaps(gethTradeSwaps []*GethTradeSwap) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range gethTradeSwaps {
+	for i := range gethTradeSwaps {
 		gethTradeSwap := gethTradeSwaps[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(gethTradeSwap.UUID)

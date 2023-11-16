@@ -502,7 +502,7 @@ func GetStartAndEndBlockForNewTradesByAssetID(assetID *int) (*uint64, *uint64, e
 
 }
 
-func removeGethTrade(gethTradeID int) error {
+func RemoveGethTrade(gethTradeID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_trades WHERE id = $1`, gethTradeID)
@@ -524,7 +524,7 @@ func DeleteGethTradesByToken0Id(token0ID *int) error {
 	return nil
 }
 
-func getGethTradeList() ([]GethTrade, error) {
+func GetGethTradeList() ([]GethTrade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
