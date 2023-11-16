@@ -510,7 +510,7 @@ func GetGethTransfersByTxnHash(txnHash string) ([]GethTransfer, error) {
 	return gethTransfers, nil
 }
 
-func removeGethTransfer(gethTransferID int) error {
+func RemoveGethTransfer(gethTransferID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_transfers WHERE id = $1`, gethTransferID)
@@ -532,7 +532,7 @@ func RemoveGethTransfersFromAssetIDAndStartBlockNumber(assetID *int, startBlockN
 	return nil
 }
 
-func getGethTransferList() ([]GethTransfer, error) {
+func GetGethTransferList() ([]GethTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `SELECT
