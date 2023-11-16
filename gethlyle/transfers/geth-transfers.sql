@@ -10,7 +10,7 @@ CREATE TABLE geth_transfers
   uuid uuid NOT NULL DEFAULT uuid_generate_v4(),
   chain_id INT NOT NULL,
   token_address VARCHAR(255) NULL,
-  token_address_id INT NOT NULL,
+  token_address_id INT NULL,
   asset_id INT NULL,
   block_number NUMERIC NULL,
   index_number NUMERIC NULL,

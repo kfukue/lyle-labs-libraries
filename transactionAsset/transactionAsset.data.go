@@ -2,7 +2,6 @@ package transactionasset
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -55,7 +54,7 @@ func GetTransactionAsset(transactionID int, assetID int) (*TransactionAsset, err
 		&transactionAsset.UpdatedBy,
 		&transactionAsset.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -103,7 +102,7 @@ func GetTransactionAssetByUUID(transactionAssetUUID string) (*TransactionAsset, 
 		&transactionAsset.UpdatedBy,
 		&transactionAsset.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)

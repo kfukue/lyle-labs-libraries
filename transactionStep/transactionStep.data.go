@@ -2,7 +2,6 @@ package transactionstep
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -47,7 +46,7 @@ func GetTransactionStep(transactionID int, stepID int) (*TransactionStep, error)
 		&transactionStep.UpdatedBy,
 		&transactionStep.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -87,7 +86,7 @@ func GetTransactionStepByUUID(transactionStepUUID string) (*TransactionStep, err
 		&transactionStep.UpdatedBy,
 		&transactionStep.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)

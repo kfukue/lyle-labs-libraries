@@ -37,7 +37,7 @@ func CreateOrGetContractAddressFromAsset(asset *asset.Asset) (*GethAddress, erro
 	// add as new address (contract) if doesn't exists
 	if contractAddress == nil {
 		contractName := fmt.Sprintf("Contract : %s", asset.Name)
-		contractTypeID := utils.CONTRACT_ADDRESS_TYPE_STRUCTURED_VALUE_TYPE_ID
+		contractTypeID := utils.CONTRACT_ADDRESS_TYPE_STRUCTURED_VALUE_ID
 		newContractAddress := GethAddress{
 			Name:          contractName,
 			AlternateName: contractName,
@@ -47,7 +47,7 @@ func CreateOrGetContractAddressFromAsset(asset *asset.Asset) (*GethAddress, erro
 		}
 		contractAddressId, err := InsertGethAddress(newContractAddress)
 		if err != nil {
-			log.Printf("Failed InsertGethAddress: %v\n", err.Error())
+			log.Printf("Failed in CreateOrGetContractAddressFromAsset :  InsertGethAddress: %v\n", err.Error())
 			log.Fatal(err)
 			return nil, err
 		}
@@ -55,6 +55,26 @@ func CreateOrGetContractAddressFromAsset(asset *asset.Asset) (*GethAddress, erro
 		contractAddress = &newContractAddress
 	}
 	return contractAddress, nil
+}
+
+func CreateOrGetAddress(gethAddress *GethAddress) (*GethAddress, error) {
+	address, err := GetGethAddressByAddressStr(gethAddress.AddressStr)
+	if err != nil {
+		log.Printf("Failed GetGethAddressByAddressStr: %v\n", err.Error())
+		log.Fatal(err)
+		return nil, err
+	}
+	// add as new address (contract) if doesn't exists
+	if address == nil {
+		contractAddressId, err := InsertGethAddress(*gethAddress)
+		if err != nil {
+			log.Printf("Failed CreateOrGetAddress : InsertGethAddress: %v\n", err.Error())
+			log.Fatal(err)
+			return nil, err
+		}
+		gethAddress.ID = &contractAddressId
+	}
+	return gethAddress, nil
 }
 
 func CreateOrGetEOAAddress(addressStr string) (*GethAddress, error) {
@@ -77,7 +97,7 @@ func CreateOrGetEOAAddress(addressStr string) (*GethAddress, error) {
 		}
 		contractAddressId, err := InsertGethAddress(newContractAddress)
 		if err != nil {
-			log.Printf("Failed InsertGethAddress: %v\n", err.Error())
+			log.Printf("Failed CreateOrGetEOAAddress : InsertGethAddress: %v\n", err.Error())
 			log.Fatal(err)
 			return nil, err
 		}
@@ -97,7 +117,7 @@ func CreateOrGetContractAddress(addressStr string) (*GethAddress, error) {
 	// add as new address (contract) if doesn't exists
 	if contractAddress == nil {
 		contractName := fmt.Sprintf("Contract: %s", addressStr)
-		contractTypeID := utils.CONTRACT_ADDRESS_TYPE_STRUCTURED_VALUE_TYPE_ID
+		contractTypeID := utils.CONTRACT_ADDRESS_TYPE_STRUCTURED_VALUE_ID
 		newContractAddress := GethAddress{
 			Name:          contractName,
 			AlternateName: contractName,
@@ -107,7 +127,7 @@ func CreateOrGetContractAddress(addressStr string) (*GethAddress, error) {
 		}
 		contractAddressId, err := InsertGethAddress(newContractAddress)
 		if err != nil {
-			log.Printf("Failed InsertGethAddress: %v\n", err.Error())
+			log.Printf("Failed CreateOrGetContractAddress: InsertGethAddress: %v\n", err.Error())
 			log.Fatal(err)
 			return nil, err
 		}
@@ -117,12 +137,12 @@ func CreateOrGetContractAddress(addressStr string) (*GethAddress, error) {
 	return contractAddress, nil
 }
 
-func CreateContractAddress(addressStr string, isEOA bool) *GethAddress {
+func CreateGethAddress(addressStr string, isEOA bool) *GethAddress {
 	var addressName string
 	var contractTypeID int
 	gethAddressUUID, err := uuid.NewV4()
 	if err != nil {
-		msg := fmt.Sprintf("error: uuid.NewV4(), during CreateContractAddress : %s", err.Error)
+		msg := fmt.Sprintf("error: uuid.NewV4(), during CreateContractAddress : %s", err.Error())
 		log.Fatal(msg)
 		return nil
 	}
@@ -131,7 +151,7 @@ func CreateContractAddress(addressStr string, isEOA bool) *GethAddress {
 		contractTypeID = utils.EOA_ADDRESS_TYPE_STRUCTURED_VALUE_ID
 	} else {
 		addressName = fmt.Sprintf("Contract: %s", addressStr)
-		contractTypeID = utils.CONTRACT_ADDRESS_TYPE_STRUCTURED_VALUE_TYPE_ID
+		contractTypeID = utils.CONTRACT_ADDRESS_TYPE_STRUCTURED_VALUE_ID
 	}
 
 	gethAddress := GethAddress{
@@ -149,7 +169,7 @@ func CreateEOAOrContractAddress(addressStr string, cl *ethclient.Client) (*GethA
 	address := common.HexToAddress(addressStr)
 	codeAtResult, err := cl.CodeAt(context.Background(), address, nil)
 	if err != nil {
-		log.Printf("Failed CodeAt: %v\n", err.Error())
+		log.Printf("Failed CreateEOAOrContractAddress:  CodeAt: %v\n", err.Error())
 		log.Fatal(err)
 		return nil, err
 	}
@@ -162,6 +182,6 @@ func CreateEOAOrContractAddress(addressStr string, cl *ethclient.Client) (*GethA
 	} else {
 		isEOA = false
 	}
-	gethAddress = CreateContractAddress(addressStr, isEOA)
+	gethAddress = CreateGethAddress(addressStr, isEOA)
 	return gethAddress, nil
 }

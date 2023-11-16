@@ -2,13 +2,13 @@ package position
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx"
 	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
@@ -64,7 +64,7 @@ func GetPosition(positionID int) (*Position, error) {
 		&position.UpdatedBy,
 		&position.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -130,7 +130,7 @@ func GetPositionByDates(startDate, endDate time.Time, frequencyID int, baseAsset
 		&position.UpdatedBy,
 		&position.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -197,7 +197,7 @@ func GetPositionByDatesAndAccount(startDate, endDate time.Time, frequencyID int,
 		&position.UpdatedBy,
 		&position.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)

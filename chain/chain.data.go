@@ -2,12 +2,12 @@ package chain
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 	"time"
 
+	"github.com/jackc/pgx"
 	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
@@ -57,7 +57,7 @@ func GetChain(chainID int) (*Chain, error) {
 		&chain.RpcURLDev,
 		&chain.RpcURLProd,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -111,7 +111,7 @@ func GetChainByAddress(address string) (*Chain, error) {
 		&chain.RpcURLDev,
 		&chain.RpcURLProd,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -165,7 +165,7 @@ func GetChainByAlternateName(altenateName string) (*Chain, error) {
 		&chain.RpcURLDev,
 		&chain.RpcURLProd,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -333,7 +333,7 @@ func GetTotalAssetCount() (*int, error) {
 	err := row.Scan(
 		&totalCount,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)

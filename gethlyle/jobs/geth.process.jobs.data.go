@@ -2,7 +2,6 @@ package gethlylejobs
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -11,6 +10,7 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
 	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
 func GetGethProcessJob(gethProcessJobID int) (*GethProcessJob, error) {
@@ -60,7 +60,68 @@ func GetGethProcessJob(gethProcessJobID int) (*GethProcessJob, error) {
 		&gethProcessJob.UpdatedAt,
 		&gethProcessJob.AssetID,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return gethProcessJob, nil
+}
+
+func GetLatestGethProcessJobByImportTypeIDAndAssetID(importTypeID int, assetID int) (*GethProcessJob, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	id,  
+	uuid, 
+	name,
+	alternate_name,
+	start_date,
+	end_date,
+	description,
+	status_id,
+	job_category_id,
+	import_type_id,
+	chain_id,
+	start_block_number,
+	end_block_number,
+	created_by, 
+	created_at, 
+	updated_by, 
+	updated_at,
+	asset_id
+	FROM geth_process_jobs 
+	WHERE import_type_id = $1
+	AND asset_id = $2
+	-- needs to be success
+	AND status_id =$3
+	ORDER BY id desc
+	LIMIT 1
+	`, importTypeID, assetID, utils.SUCCESS_STRUCTURED_VALUE_ID)
+
+	gethProcessJob := &GethProcessJob{}
+	err := row.Scan(
+		&gethProcessJob.ID,
+		&gethProcessJob.UUID,
+		&gethProcessJob.Name,
+		&gethProcessJob.AlternateName,
+		&gethProcessJob.StartDate,
+		&gethProcessJob.EndDate,
+		&gethProcessJob.Description,
+		&gethProcessJob.StatusID,
+		&gethProcessJob.JobCategoryID,
+		&gethProcessJob.ImportTypeID,
+		&gethProcessJob.ChainID,
+		&gethProcessJob.StartBlockNumber,
+		&gethProcessJob.EndBlockNumber,
+		&gethProcessJob.CreatedBy,
+		&gethProcessJob.CreatedAt,
+		&gethProcessJob.UpdatedBy,
+		&gethProcessJob.UpdatedAt,
+		&gethProcessJob.AssetID,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -254,7 +315,7 @@ func InsertGethProcessJobList(gethProcessJobList []GethProcessJob) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range gethProcessJobList {
+	for i := range gethProcessJobList {
 		gethProcessJob := gethProcessJobList[i]
 
 		uuidString := &pgtype.UUID{}

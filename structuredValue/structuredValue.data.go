@@ -2,12 +2,12 @@ package structuredvalue
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 	"time"
 
+	"github.com/jackc/pgx"
 	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
@@ -40,7 +40,7 @@ func GetStructuredValue(structuredValueID int) (*StructuredValue, error) {
 		&structuredValue.UpdatedBy,
 		&structuredValue.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)

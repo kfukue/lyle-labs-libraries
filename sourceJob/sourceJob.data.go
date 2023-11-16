@@ -2,11 +2,11 @@ package sourcejob
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"log"
 	"time"
 
+	"github.com/jackc/pgx"
 	"github.com/kfukue/lyle-labs-libraries/database"
 )
 
@@ -39,7 +39,7 @@ func GetSourceJob(sourceID int, jobID int) (*SourceJob, error) {
 		&sourceJob.UpdatedBy,
 		&sourceJob.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -75,7 +75,7 @@ func GetSourceJobBySourceID(sourceID int) (*SourceJob, error) {
 		&sourceJob.UpdatedBy,
 		&sourceJob.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)

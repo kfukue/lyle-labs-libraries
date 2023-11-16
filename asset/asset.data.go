@@ -2,12 +2,12 @@ package asset
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
@@ -69,7 +69,7 @@ func GetAsset(assetID int) (*Asset, error) {
 		&asset.StartingBlockNumber,
 		&asset.ImportGeth,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -135,7 +135,7 @@ func GetAssetByTicker(ticker string) (*Asset, error) {
 		&asset.StartingBlockNumber,
 		&asset.ImportGeth,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -201,7 +201,7 @@ func GetAssetByContractAddress(contractAddress string) (*Asset, error) {
 		&asset.StartingBlockNumber,
 		&asset.ImportGeth,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -267,7 +267,7 @@ func GetAssetByCusip(cusip string) (*Asset, error) {
 		&asset.StartingBlockNumber,
 		&asset.ImportGeth,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -334,7 +334,7 @@ func GetAssetByBaseAndQuoteID(baseAssetID *int, quoteAssetID *int) (*Asset, erro
 		&asset.StartingBlockNumber,
 		&asset.ImportGeth,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -856,7 +856,7 @@ func GetAssetWithSourceByAssetIdAndSourceID(assetID *int, sourceID *int, exclude
 		&assetWithSources.Asset.StartingBlockNumber,
 		&assetWithSources.Asset.ImportGeth,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -1020,6 +1020,74 @@ func GetAssetList(ids []int) ([]Asset, error) {
 	return assets, nil
 }
 
+func GetAssetsByChainId(chainID *int) ([]Asset, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	id,
+	uuid, 
+	name, 
+	alternate_name, 
+	cusip,
+	ticker,
+	base_asset_id,
+	quote_asset_id,
+	description,
+	asset_type_id,
+	created_by, 
+	created_at, 
+	updated_by, 
+	updated_at,
+	chain_id,
+	category_id,
+	sub_category_id,
+	is_default_quote,
+	ignore_market_data,
+	decimals,
+	contract_address,
+	starting_block_number,
+	import_geth
+	FROM assets
+	WHERE chain_id = $1`, chainID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	assets := make([]Asset, 0)
+	for results.Next() {
+		var asset Asset
+		results.Scan(
+			&asset.ID,
+			&asset.UUID,
+			&asset.Name,
+			&asset.AlternateName,
+			&asset.Cusip,
+			&asset.Ticker,
+			&asset.BaseAssetID,
+			&asset.QuoteAssetID,
+			&asset.Description,
+			&asset.AssetTypeID,
+			&asset.CreatedBy,
+			&asset.CreatedAt,
+			&asset.UpdatedBy,
+			&asset.UpdatedAt,
+			&asset.ChainID,
+			&asset.CategoryID,
+			&asset.SubCategoryID,
+			&asset.IsDefaultQuote,
+			&asset.IgnoreMarketData,
+			&asset.Decimals,
+			&asset.ContractAddress,
+			&asset.StartingBlockNumber,
+			&asset.ImportGeth,
+		)
+
+		assets = append(assets, asset)
+	}
+	return assets, nil
+}
+
 func GetAssetListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -1119,7 +1187,7 @@ func GetTotalAssetCount() (*int, error) {
 	err := row.Scan(
 		&totalCount,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -1275,7 +1343,7 @@ func UpdateAsset(asset Asset) error {
 	if asset.ID == nil || *asset.ID == 0 {
 		return errors.New("asset has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE assets SET 
+	_, err := database.DbConnPgx.Exec(ctx, `UPDATE assets SET 
 		name=$1,  
 		alternate_name=$2, 
 		cusip=$3,

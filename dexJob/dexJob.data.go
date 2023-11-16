@@ -2,7 +2,6 @@ package dexjob
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -58,7 +57,7 @@ func GetDexTxnJob(dexTxnID int) (*DexTxnJob, error) {
 		&dexTxnJob.UpdatedBy,
 		&dexTxnJob.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)

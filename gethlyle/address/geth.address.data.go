@@ -2,7 +2,6 @@ package gethlyleaddresses
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -47,7 +46,7 @@ func GetGethAddress(gethAddressID int) (*GethAddress, error) {
 		&gethAddress.UpdatedBy,
 		&gethAddress.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -89,7 +88,7 @@ func GetGethAddressByAddressStr(addressStr string) (*GethAddress, error) {
 		&gethAddress.UpdatedBy,
 		&gethAddress.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -176,7 +175,7 @@ func GetGethAddressListByAddressStr(addressStrList []string) (*GethAddress, erro
 		&gethAddress.UpdatedBy,
 		&gethAddress.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -218,7 +217,7 @@ func GetGethAddressListByIds(addressIDs []int) (*GethAddress, error) {
 		&gethAddress.UpdatedBy,
 		&gethAddress.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -319,7 +318,7 @@ func InsertGethAddressList(gethAddressList []*GethAddress) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range gethAddressList {
+	for i := range gethAddressList {
 		gethAddress := gethAddressList[i]
 
 		uuidString := &pgtype.UUID{}

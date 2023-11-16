@@ -2,7 +2,6 @@ package transactionjob
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -65,7 +64,7 @@ func GetTransactionJob(transactionID int, jobID int) (*TransactionJob, error) {
 		&transactionJob.UpdatedBy,
 		&transactionJob.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -123,7 +122,7 @@ func GetTransactionJobByUUID(transactionJobUUID string) (*TransactionJob, error)
 		&transactionJob.UpdatedBy,
 		&transactionJob.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)

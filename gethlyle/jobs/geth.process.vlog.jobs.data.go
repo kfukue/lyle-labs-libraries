@@ -2,7 +2,6 @@ package gethlylejobs
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -67,7 +66,7 @@ func GetGethProcessVlogJob(gethProcessJobID int) (*GethProcessVlogJob, error) {
 		&gethProcessJob.UpdatedBy,
 		&gethProcessJob.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -282,7 +281,7 @@ func InsertGethProcessVlogJobList(gethProcessJobList []GethProcessVlogJob) error
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range gethProcessJobList {
+	for i := range gethProcessJobList {
 		gethProcessJob := gethProcessJobList[i]
 
 		uuidString := &pgtype.UUID{}

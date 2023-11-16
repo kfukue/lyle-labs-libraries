@@ -2,11 +2,11 @@ package product
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"log"
 	"time"
 
+	"github.com/jackc/pgx"
 	"github.com/kfukue/lyle-labs-libraries/database"
 )
 
@@ -34,7 +34,7 @@ func GetProduct(productID int) (*Product, error) {
 		&product.QuantityOnHand,
 		&product.ProductName,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)

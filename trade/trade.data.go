@@ -2,11 +2,11 @@ package trade
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"log"
 	"time"
 
+	"github.com/jackc/pgx"
 	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
@@ -88,7 +88,7 @@ func GetTrade(tradeID int) (*Trade, error) {
 		&trade.UpdatedBy,
 		&trade.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -175,7 +175,7 @@ func GetTradeByTransactionIDFromSource(transactionIDFromSource string, fromAccou
 		&trade.UpdatedBy,
 		&trade.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -260,7 +260,7 @@ func GetTradeByTradeID(tradeID int) (*Trade, error) {
 		&trade.UpdatedBy,
 		&trade.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -839,7 +839,7 @@ func GetMinAndMaxTradeDates() (*MinMaxTradeDates, error) {
 		&minMaxTradeDates.MinTradeDate,
 		&minMaxTradeDates.MaxTradeDate,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)

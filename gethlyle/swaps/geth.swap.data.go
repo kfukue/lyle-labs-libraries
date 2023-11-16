@@ -2,7 +2,6 @@ package gethlyleswaps
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -90,7 +89,7 @@ func GetGethSwapByBlockChain(txnHash string, blockNumber *uint64, indexNumber *u
 		&gethSwap.TopicsStr,
 		&gethSwap.StatusID,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -170,7 +169,7 @@ func GetGethSwap(gethSwapID int) (*GethSwap, error) {
 		&gethSwap.TopicsStr,
 		&gethSwap.StatusID,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -197,7 +196,7 @@ func GetHighestSwapBlockFromAsset0Id(assetID *int) (*uint64, error) {
 		err = row.Scan(
 			&maxBlockNumber)
 	}
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return utils.Ptr[uint64](0), nil
 	} else if err != nil {
 		log.Println(err)
@@ -464,41 +463,43 @@ func GetGethSwapByTxnHash(txnHash string) ([]GethSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `SELECT
-		id,
-		uuid,
-		chain_id,
-		exchange_id,
-		block_number,
-		index_number,
-		swap_date,
-		trade_type_id,
-		txn_hash,
-		maker_address,
-		maker_address_id,
-		is_buy,
-		price,
-		price_usd,
-		token1_price_usd,
-		total_amount_usd,
-		pair_address,
-		liquidity_pool_id,
-		token0_asset_id,
-		token1_asset_id,
-		token0_amount,
-		token1_Amount,
-		description,
-		created_by,
-		created_at,
-		updated_by,
-		updated_at,
-		geth_process_job_id,
-		topics_str,
-		status_id
-		FROM geth_swaps
+		gs.id,
+		gs.uuid,
+		gs.chain_id,
+		gs.exchange_id,
+		gs.block_number,
+		gs.index_number,
+		gs.swap_date,
+		gs.trade_type_id,
+		gs.txn_hash,
+		gs.maker_address,
+		gs.maker_address_id,
+		gs.is_buy,
+		gs.price,
+		gs.price_usd,
+		gs.token1_price_usd,
+		gs.total_amount_usd,
+		gs.pair_address,
+		gs.liquidity_pool_id,
+		gs.token0_asset_id,
+		gs.token1_asset_id,
+		gs.token0_amount,
+		gs.token1_Amount,
+		gs.description,
+		gs.created_by,
+		gs.created_at,
+		gs.updated_by,
+		gs.updated_at,
+		gs.geth_process_job_id,
+		gs.topics_str,
+		gs.status_id
+		FROM geth_swaps gs
+		LEFT JOIN geth_addresses addresses ON gs.maker_address_id = addresses.id
 		WHERE
-		txn_hash = $1
-		ORDER BY gethSwap_date asc`,
-		txnHash,
+		gs.txn_hash = $1 AND
+		addresses.address_type_id = $2
+		ORDER BY gs.swap_date, gs.index_number asc`,
+		txnHash, utils.EOA_ADDRESS_TYPE_STRUCTURED_VALUE_ID,
 	)
 	if err != nil {
 		log.Println(err.Error())
@@ -543,6 +544,61 @@ func GetGethSwapByTxnHash(txnHash string) ([]GethSwap, error) {
 		gethSwaps = append(gethSwaps, gethSwap)
 	}
 	return gethSwaps, nil
+}
+
+func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(assetID *int, startingBlock *uint64) ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `
+		
+	SELECT DISTINCT txn_hash FROM geth_swaps
+	WHERE block_number >= $1
+	AND token0_asset_id = $2
+	`,
+		*startingBlock, *assetID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	txnHashes := make([]string, 0)
+	for results.Next() {
+		var txnHash string
+		results.Scan(
+			&txnHash,
+		)
+		txnHashes = append(txnHashes, txnHash)
+	}
+	return txnHashes, nil
+}
+
+func GetHighestBlockFromAssetId(assetID *int) (*uint64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	row, err := database.DbConnPgx.Query(ctx, `SELECT COALESCE (MAX(block_number), 0) FROM geth_swaps
+	WHERE token0_asset_id=$1
+		`,
+		assetID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer row.Close()
+
+	var maxBlockNumber uint64
+	for row.Next() {
+		err = row.Scan(
+			&maxBlockNumber)
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		// no transfers
+		zeroHeight := uint64(0)
+		return &zeroHeight, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &maxBlockNumber, nil
 }
 
 func GetDistinctMakerAddressesFromToken0AssetID(token0AssetID *int) ([]*int, error) {
@@ -927,6 +983,49 @@ func InsertGethSwaps(gethSwaps []*GethSwap) error {
 	if err != nil {
 		log.Fatal(err)
 		// handle error that occurred while using *pgx.Conn
+	}
+	return nil
+}
+
+func GetNullAddressStrsFromSwaps() ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `
+		SELECT DISTINCT maker_address as address  
+		FROM geth_swaps
+		WHERE maker_address_id IS NULL
+		`,
+	)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethNullAddressStrs := make([]string, 0)
+	for results.Next() {
+		var gethNullAddressStr string
+		results.Scan(
+			&gethNullAddressStr,
+		)
+		gethNullAddressStrs = append(gethNullAddressStrs, gethNullAddressStr)
+	}
+	return gethNullAddressStrs, nil
+}
+
+func UpdateGethSwapAddresses() error {
+	// update address ids from existing addresses in geth_addresses
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	_, err := database.DbConnPgx.Exec(ctx, `
+		UPDATE geth_swaps as gs SET
+		maker_address_id = ga.id from geth_addresses as ga
+			WHERE gs.maker_address = ga.address_str
+			AND gs.maker_address_id IS NULL;
+	`,
+	)
+	if err != nil {
+		log.Println(err.Error())
+		return err
 	}
 	return nil
 }

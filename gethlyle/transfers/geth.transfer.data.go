@@ -2,7 +2,6 @@ package gethlyletransfers
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -72,7 +71,7 @@ func GetGethTransfer(gethTransferID int) (*GethTransfer, error) {
 		&gethTransfer.TopicsStr,
 		&gethTransfer.StatusID,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -140,7 +139,7 @@ func GetGethTransferByBlockChain(txnHash string, blockNumber *uint64, indexNumbe
 		&gethTransfer.TopicsStr,
 		&gethTransfer.StatusID,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -238,6 +237,33 @@ func GetDistinctAddressesFromAssetId(assetID *int) ([]gethlyleaddresses.GethAddr
 
 }
 
+func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(assetID *int, startingBlock *uint64) ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `
+		
+	SELECT DISTINCT txn_hash FROM geth_transfers
+	WHERE block_number >= $1
+	AND asset_id = $2
+	`,
+		*startingBlock, *assetID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	txnHashes := make([]string, 0)
+	for results.Next() {
+		var txnHash string
+		results.Scan(
+			&txnHash,
+		)
+		txnHashes = append(txnHashes, txnHash)
+	}
+	return txnHashes, nil
+
+}
+
 func GetHighestBlockFromAssetId(assetID *int) (*uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -256,7 +282,7 @@ func GetHighestBlockFromAssetId(assetID *int) (*uint64, error) {
 		err = row.Scan(
 			&maxBlockNumber)
 	}
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		// no transfers
 		zeroHeight := uint64(0)
 		return &zeroHeight, nil
@@ -373,6 +399,78 @@ func GetGethTransferByFromMakerAddressAndTokenAddressID(makerAddressID *int, tok
 			to_address_id = $2)
 		`,
 		tokenAddressID, makerAddressID,
+	)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTransfers := make([]GethTransfer, 0)
+	for results.Next() {
+		var gethTransfer GethTransfer
+		results.Scan(
+			&gethTransfer.ID,
+			&gethTransfer.UUID,
+			&gethTransfer.ChainID,
+			&gethTransfer.TokenAddress,
+			&gethTransfer.TokenAddressID,
+			&gethTransfer.AssetID,
+			&gethTransfer.BlockNumber,
+			&gethTransfer.IndexNumber,
+			&gethTransfer.TransferDate,
+			&gethTransfer.TxnHash,
+			&gethTransfer.SenderAddress,
+			&gethTransfer.SenderAddressID,
+			&gethTransfer.ToAddress,
+			&gethTransfer.ToAddressID,
+			&gethTransfer.Amount,
+			&gethTransfer.Description,
+			&gethTransfer.CreatedBy,
+			&gethTransfer.CreatedAt,
+			&gethTransfer.UpdatedBy,
+			&gethTransfer.UpdatedAt,
+			&gethTransfer.GethProcessJobID,
+			&gethTransfer.TopicsStr,
+			&gethTransfer.StatusID,
+		)
+		gethTransfers = append(gethTransfers, gethTransfer)
+	}
+	return gethTransfers, nil
+}
+
+func GetGethTransfersByTxnHash(txnHash string) ([]GethTransfer, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `SELECT
+		id,
+		uuid,
+		chain_id,
+		token_address,
+		token_address_id,
+		asset_id,
+		block_number,
+		index_number,
+		transfer_date,
+		txn_hash,
+		sender_address,
+		sender_address_id,
+		to_address,
+		to_address_id,
+		to_address,
+		amount,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at,
+		geth_process_job_id,
+		topics_str,
+		status_id
+		FROM geth_transfers
+		WHERE
+		txn_hash = $1
+		`,
+		txnHash,
 	)
 	if err != nil {
 		log.Println(err.Error())
@@ -723,6 +821,10 @@ func UpdateGethTransferAddresses() error {
 			to_address_id = ga.id from geth_addresses as ga
 			WHERE gt.to_address = ga.address_str
 			AND gt.to_address_id IS NULL;
+		UPDATE geth_transfers as gt SET
+			asset_id = assets.id
+			from assets as assets
+			WHERE LOWER(gt.token_address) = LOWER(assets.contract_address);
 	`,
 	)
 	if err != nil {
@@ -731,6 +833,7 @@ func UpdateGethTransferAddresses() error {
 	}
 	return nil
 }
+
 func GetNullAddressStrsFromTransfers() ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -763,4 +866,22 @@ func GetNullAddressStrsFromTransfers() ([]string, error) {
 		gethNullAddressStrs = append(gethNullAddressStrs, gethNullAddressStr)
 	}
 	return gethNullAddressStrs, nil
+}
+
+func UpdateGethTransfersAssetIDs() error {
+	// update address ids from existing addresses in geth_addresses
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	_, err := database.DbConnPgx.Exec(ctx, `
+		UPDATE geth_transfers as gt SET
+		asset_id = assets.id from assets as assets
+			WHERE gt.token_address = assets.contract_address AND
+			gt.asset_id is NULL
+	`,
+	)
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+	return nil
 }

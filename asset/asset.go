@@ -1,6 +1,7 @@
 package asset
 
 import (
+	"strings"
 	"time"
 )
 
@@ -36,4 +37,19 @@ type AssetWithSources struct {
 	Asset
 	SourceID         *int   `json:"sourceId"`
 	SourceIdentifier string `json:"sourceIdentifier"`
+}
+
+// lowercase for the contract address
+func CreateLookupByContractAddressFromAssetList(assetList []Asset) map[string]*Asset {
+	assetLookup := make(map[string]*Asset)
+	for _, asset := range assetList {
+		if asset.ContractAddress != "" {
+			loweredAddress := strings.ToLower(asset.ContractAddress)
+			_, foundAsset := assetLookup[loweredAddress]
+			if !foundAsset {
+				assetLookup[loweredAddress] = &asset
+			}
+		}
+	}
+	return assetLookup
 }

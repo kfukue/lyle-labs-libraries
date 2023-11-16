@@ -2,7 +2,6 @@ package strategyjob
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -64,7 +63,7 @@ func GetStrategyJob(strategyID int, jobID int) (*StrategyJob, error) {
 		&strategyJob.UpdatedBy,
 		&strategyJob.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
@@ -122,7 +121,7 @@ func GetStrategyJobByStrategyID(strategyID int) (*StrategyJob, error) {
 		&strategyJob.UpdatedBy,
 		&strategyJob.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)

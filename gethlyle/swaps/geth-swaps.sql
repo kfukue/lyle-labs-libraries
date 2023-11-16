@@ -14,7 +14,7 @@ CREATE TABLE geth_swaps
   trade_type_id INT NULL,
   txn_hash VARCHAR(255) NOT NULL,
   maker_address VARCHAR(255) NOT NULL,
-  maker_address_id INT NOT NULL,
+  maker_address_id INT NULL,
   is_buy BOOLEAN NULL,
   price         NUMERIC NULL,
   price_usd NUMERIC NULL,

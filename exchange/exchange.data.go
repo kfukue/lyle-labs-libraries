@@ -2,7 +2,6 @@ package exchange
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -51,7 +50,7 @@ func GetExchange(exchangeID int) (*Exchange, error) {
 		&exchange.UpdatedBy,
 		&exchange.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)

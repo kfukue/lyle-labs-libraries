@@ -2,7 +2,6 @@ package strategy
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -49,7 +48,7 @@ func GetStrategy(strategyID int) (*Strategy, error) {
 		&strategy.UpdatedBy,
 		&strategy.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)

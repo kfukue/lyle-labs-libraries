@@ -2,8 +2,8 @@ CREATE TABLE assets
 (
   id SERIAL,
   uuid uuid NOT NULL DEFAULT uuid_generate_v4() ,
-  name VARCHAR(255) NOT NULL,
-  alternate_name VARCHAR(255) NULL,
+  name TEXT NOT NULL,
+  alternate_name TEXT NULL,
   cusip VARCHAR(255) NULL,
   ticker VARCHAR(255) NULL,
   base_asset_id INT NULL,
@@ -49,5 +49,14 @@ ROLLBACK
 START TRANSACTION;
 ALTER TABLE assets
   ADD  import_geth BOOLEAN NOT NULL DEFAULT FALSE;
+  COMMIT
+-- end
+-- make name alt name to text 2023-11-14
+ROLLBACK
+START TRANSACTION;
+ALTER TABLE assets
+  ALTER COLUMN name TYPE text;
+  ALTER COLUMN alternate_name TYPE text;
+  
   COMMIT
 -- end
