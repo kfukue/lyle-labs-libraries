@@ -7,7 +7,7 @@ CREATE TABLE geth_swaps
   id SERIAL,
   uuid uuid NOT NULL DEFAULT uuid_generate_v4(),
   chain_id INT NOT NULL,
-  exchange_id INT NOT NULL,
+  exchange_id INT NULL,
   block_number NUMERIC NULL,
   index_number NUMERIC NULL,
   swap_date timestamp NULL,
