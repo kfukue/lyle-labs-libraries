@@ -390,7 +390,7 @@ func GetMissingTradesFromSwapsByToken0AssetID(token0AssetID *int) ([]gethlyleswa
 	return gethSwaps, nil
 }
 
-func GetMissingTxnHashesFromSwapsByToken0AssetID(token0AssetID *int) ([]string, error) {
+func GetMissingTxnHashesFromSwapsByToken0AssetID(token0AssetID, maxBlockNumber *int) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
@@ -405,9 +405,10 @@ func GetMissingTxnHashesFromSwapsByToken0AssetID(token0AssetID *int) ([]string, 
 			gs.token0_asset_id = $1
 				AND
 			gs.status_id = $2
-		
+			AND
+			gs.block_number > $3
 		`,
-		token0AssetID, utils.SUCCESS_STRUCTURED_VALUE_ID,
+		token0AssetID, utils.SUCCESS_STRUCTURED_VALUE_ID, *maxBlockNumber,
 	)
 	if err != nil {
 		log.Println(err.Error())
@@ -450,4 +451,46 @@ func GetMinMaxBlocksOfMissingSwapByToken0AssetID(token0AssetID *int) (int, int, 
 		return -1, -1, err
 	}
 	return minBlock, maxBlock, nil
+}
+
+func GetFirstNonProcessedSwapBlockNumberForTrades(token0AssetID *int) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	var startingBlock int
+	err := database.DbConnPgx.QueryRow(ctx, `
+	WITH max_existing_block_swaps as (
+		SELECT COALESCE(MAX(block_number),0) as min_block_number from  geth_swaps gs
+		LEFT JOIN geth_trade_swaps gts
+			ON gs.id = gts.geth_swap_id
+		WHERE
+			gts.geth_swap_id IS NOT NULL
+				AND 
+			gs.token0_asset_id = $1
+				AND
+			gs.status_id = $2
+		),
+		min_missing_block_swaps as (
+		SELECT COALESCE(MIN(block_number),0) as min_block_number from  geth_swaps gs
+		LEFT JOIN geth_trade_swaps gts
+			ON gs.id = gts.geth_swap_id
+		WHERE
+			gts.geth_swap_id IS NULL
+				AND 
+			gs.token0_asset_id = $1
+				AND
+			gs.status_id = $2
+			)
+		SELECT MAX(min_block_number) 
+		FROM (
+			SELECT min_block_number FROM max_existing_block_swaps
+			UNION 
+			SELECT min_block_number FROM min_missing_block_swaps
+				)   missing_and_existing_swap
+		`, token0AssetID, utils.SUCCESS_STRUCTURED_VALUE_ID,
+	).Scan(&startingBlock)
+	if err != nil {
+		log.Println(err.Error())
+		return -1, err
+	}
+	return startingBlock, nil
 }
