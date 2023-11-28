@@ -1019,7 +1019,7 @@ func UpdateGethSwapAddresses() error {
 	_, err := database.DbConnPgx.Exec(ctx, `
 		UPDATE geth_swaps as gs SET
 		maker_address_id = ga.id from geth_addresses as ga
-			WHERE gs.maker_address = ga.address_str
+			WHERE LOWER(gs.maker_address) = LOWER(ga.address_str)
 			AND gs.maker_address_id IS NULL;
 	`,
 	)

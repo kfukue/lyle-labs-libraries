@@ -815,11 +815,11 @@ func UpdateGethTransferAddresses() error {
 	_, err := database.DbConnPgx.Exec(ctx, `
 		UPDATE geth_transfers as gt SET
 			sender_address_id = ga.id from geth_addresses as ga
-			WHERE gt.sender_address = ga.address_str
+			WHERE LOWER(gt.sender_address) = LOWER(ga.address_str)
 			AND gt.sender_address_id IS NULL;
 		UPDATE geth_transfers as gt SET
 			to_address_id = ga.id from geth_addresses as ga
-			WHERE gt.to_address = ga.address_str
+			WHERE LOWER(gt.to_address) = LOWER(ga.address_str)
 			AND gt.to_address_id IS NULL;
 		UPDATE geth_transfers as gt SET
 			asset_id = assets.id
@@ -875,7 +875,7 @@ func UpdateGethTransfersAssetIDs() error {
 	_, err := database.DbConnPgx.Exec(ctx, `
 		UPDATE geth_transfers as gt SET
 		asset_id = assets.id from assets as assets
-			WHERE gt.token_address = assets.contract_address AND
+			WHERE LOWER(gt.token_address) = LOWER(assets.contract_address) AND
 			gt.asset_id is NULL
 	`,
 	)
