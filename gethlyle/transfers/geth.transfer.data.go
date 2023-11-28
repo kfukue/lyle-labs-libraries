@@ -839,12 +839,12 @@ func GetNullAddressStrsFromTransfers() ([]string, error) {
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
 		WITH sender_table as(
-			SELECT DISTINCT sender_address as address  
+			SELECT DISTINCT LOWER(sender_address) as address  
 			FROM geth_transfers
 			WHERE sender_address_id IS NULL
 		),
 		to_table as(
-			SELECT DISTINCT to_address as address FROM geth_transfers
+			SELECT DISTINCT LOWER(to_address) as address FROM geth_transfers
 			WHERE to_address_id IS NULL
 		)
 		SELECT * FROM sender_table
