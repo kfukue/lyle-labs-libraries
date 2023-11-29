@@ -550,7 +550,6 @@ func GetGethTransferList() ([]GethTransfer, error) {
 		sender_address_id,
 		to_address,
 		to_address_id,
-		to_address,
 		amount,
 		description,
 		created_by,
