@@ -5,8 +5,6 @@ CREATE TABLE geth_process_job_topics
   uuid uuid NOT NULL DEFAULT uuid_generate_v4(),
   name VARCHAR(255) NOT NULL,
   alternate_name VARCHAR(255) NULL,
-  start_date timestamp NOT NULL,
-  end_date timestamp NOT NULL,
   description TEXT NULL,
   status_id int NOT NULL,
   topic_str TEXT NULL,
