@@ -37,7 +37,8 @@ func GetLiquidityPool(liquidityPoolID int) (*LiquidityPool, error) {
 		created_by, 
 		created_at, 
 		updated_by, 
-		updated_at
+		updated_at,
+		base_asset_id
 	FROM liquidity_pools 
 	WHERE id = $1`, liquidityPoolID)
 
@@ -63,6 +64,7 @@ func GetLiquidityPool(liquidityPoolID int) (*LiquidityPool, error) {
 		&liquidityPool.CreatedAt,
 		&liquidityPool.UpdatedBy,
 		&liquidityPool.UpdatedAt,
+		&liquidityPool.BaseAssetID,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -107,7 +109,8 @@ func GetLiquidityPools() ([]LiquidityPool, error) {
 		created_by, 
 		created_at, 
 		updated_by, 
-		updated_at
+		updated_at,
+		base_asset_id
 	FROM liquidity_pools`)
 	if err != nil {
 		log.Println(err.Error())
@@ -138,6 +141,7 @@ func GetLiquidityPools() ([]LiquidityPool, error) {
 			&liquidityPool.CreatedAt,
 			&liquidityPool.UpdatedBy,
 			&liquidityPool.UpdatedAt,
+			&liquidityPool.BaseAssetID,
 		)
 
 		liquidityPools = append(liquidityPools, liquidityPool)
@@ -168,7 +172,8 @@ func GetLiquidityPoolList(ids []int) ([]LiquidityPool, error) {
 		created_by, 
 		created_at, 
 		updated_by, 
-		updated_at
+		updated_at,
+		base_asset_id
 	FROM liquidity_pools`
 	if len(ids) > 0 {
 		strIds := utils.SplitToString(ids, ",")
@@ -205,6 +210,7 @@ func GetLiquidityPoolList(ids []int) ([]LiquidityPool, error) {
 			&liquidityPool.CreatedAt,
 			&liquidityPool.UpdatedBy,
 			&liquidityPool.UpdatedAt,
+			&liquidityPool.BaseAssetID,
 		)
 		liquidityPools = append(liquidityPools, liquidityPool)
 	}
@@ -235,6 +241,7 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 	lp.created_at, 
 	lp.updated_by, 
 	lp.updated_at,
+	lp.base_asset_id,
 	-- asset0
 	token0.id as token0_id,
 	token0.uuid as token0_uuid, 
@@ -318,6 +325,7 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 			&liquidityPoolWithTokens.CreatedAt,
 			&liquidityPoolWithTokens.UpdatedBy,
 			&liquidityPoolWithTokens.UpdatedAt,
+			&liquidityPoolWithTokens.BaseAssetID,
 			// token 0
 			&liquidityPoolWithTokens.Token0.ID,
 			&liquidityPoolWithTokens.Token0.UUID,
@@ -395,7 +403,8 @@ func GetLiquidityPoolsByUUIDs(UUIDList []string) ([]LiquidityPool, error) {
 		created_by, 
 		created_at, 
 		updated_by, 
-		updated_at
+		updated_at,
+		base_asset_id
 	FROM liquidity_pools
 	WHERE text(uuid) = ANY($1)
 	`, pq.Array(UUIDList))
@@ -428,6 +437,7 @@ func GetLiquidityPoolsByUUIDs(UUIDList []string) ([]LiquidityPool, error) {
 			&liquidityPool.CreatedAt,
 			&liquidityPool.UpdatedBy,
 			&liquidityPool.UpdatedAt,
+			&liquidityPool.BaseAssetID,
 		)
 
 		liquidityPools = append(liquidityPools, liquidityPool)
@@ -458,7 +468,8 @@ func GetStartAndEndDateDiffLiquidityPools(diffInDate int) ([]LiquidityPool, erro
 		created_by, 
 		created_at, 
 		updated_by, 
-		updated_at
+		updated_at,
+		base_asset_id
 	FROM liquidity_pools
 	WHERE DATE_PART('day', AGE(start_date, end_date)) =$1
 	`, diffInDate)
@@ -491,6 +502,7 @@ func GetStartAndEndDateDiffLiquidityPools(diffInDate int) ([]LiquidityPool, erro
 			&liquidityPool.CreatedAt,
 			&liquidityPool.UpdatedBy,
 			&liquidityPool.UpdatedAt,
+			&liquidityPool.BaseAssetID,
 		)
 
 		liquidityPools = append(liquidityPools, liquidityPool)
@@ -521,8 +533,9 @@ func UpdateLiquidityPool(liquidityPool LiquidityPool) error {
 		IsActive=$13,
 		description=$14,
 		updated_by=$15, 
-		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$16`,
+		updated_at=current_timestamp at time zone 'UTC',
+		base_asset_id=$16
+		WHERE id=$17`,
 		liquidityPool.Name,                //1
 		liquidityPool.AlternateName,       //2
 		liquidityPool.PairAddress,         //3
@@ -538,7 +551,9 @@ func UpdateLiquidityPool(liquidityPool LiquidityPool) error {
 		liquidityPool.IsActive,            //13
 		liquidityPool.Description,         //14
 		liquidityPool.UpdatedBy,           //15
-		liquidityPool.ID)                  //16
+		liquidityPool.BaseAssetID,         //16
+		liquidityPool.ID)                  //17
+
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -571,7 +586,8 @@ func InsertLiquidityPool(liquidityPool LiquidityPool) (int, error) {
 		created_by, 
 		created_at, 
 		updated_by, 
-		updated_at
+		updated_at,
+		base_asset_id
 		) VALUES (
 			uuid_generate_v4(),
 			$1,
@@ -591,7 +607,8 @@ func InsertLiquidityPool(liquidityPool LiquidityPool) (int, error) {
 			$15,
 			current_timestamp at time zone 'UTC',
 			$15,
-			current_timestamp at time zone 'UTC'
+			current_timestamp at time zone 'UTC',
+			$16
 		)
 		RETURNING id`,
 		liquidityPool.Name,                 //1
@@ -609,6 +626,7 @@ func InsertLiquidityPool(liquidityPool LiquidityPool) (int, error) {
 		&liquidityPool.IsActive,            //13
 		liquidityPool.Description,          //14
 		liquidityPool.CreatedBy,            //15
+		liquidityPool.BaseAssetID,          //16
 	).Scan(&insertID)
 
 	if err != nil {
@@ -647,6 +665,7 @@ func InsertLiquidityPools(liquidityPools []LiquidityPool) error {
 			&now,                               //17
 			liquidityPool.CreatedBy,            //18
 			&now,                               //19
+			*liquidityPool.BaseAssetID,         //20
 		}
 		rows = append(rows, row)
 	}
@@ -673,6 +692,7 @@ func InsertLiquidityPools(liquidityPools []LiquidityPool) error {
 			"created_at",             //17
 			"updated_by",             //18
 			"updated_at",             //19
+			"base_asset_id",          //20
 		},
 		pgx.CopyFromRows(rows),
 	)

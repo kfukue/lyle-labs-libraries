@@ -25,13 +25,24 @@ CREATE TABLE liquidity_pools
   created_at timestamp NOT NULL,
   updated_by VARCHAR(255) NOT NULL,
   updated_at timestamp NOT NULL,
+  base_asset_id INT NULL,
   PRIMARY KEY(id),
   CONSTRAINT fk_chain_id FOREIGN KEY(chain_id) REFERENCES chains(id),
   CONSTRAINT fk_exchange_id FOREIGN KEY(exchange_id) REFERENCES exchanges(id),
   CONSTRAINT fk_liquidity_pool_type_id FOREIGN KEY(liquidity_pool_type_id) REFERENCES structured_values(id),
   CONSTRAINT fk_token0_id FOREIGN KEY(token0_id) REFERENCES assets(id),
-  CONSTRAINT fk_token1_id FOREIGN KEY(token1_id) REFERENCES assets(id)
+  CONSTRAINT fk_token1_id FOREIGN KEY(token1_id) REFERENCES assets(id),
+  CONSTRAINT fk_base_asset_id FOREIGN KEY(base_asset_id) REFERENCES assets(id)
 );
+-- new colun 2023-11-30
+ROLLBACK
+START TRANSACTION;
+ALTER TABLE liquidity_pools
+  ADD base_asset_id INT NULL;
+ALTER TABLE liquidity_pools
+  ADD CONSTRAINT fk_base_asset_id FOREIGN KEY(base_asset_id) REFERENCES assets(id);
+COMMIT
+-- end
 
 CREATE TABLE liquidity_pool_assets
 (

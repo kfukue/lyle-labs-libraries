@@ -47,7 +47,8 @@ func GetGethSwapByBlockChain(txnHash string, blockNumber *uint64, indexNumber *u
 	updated_at,
 	geth_process_job_id,
 	topics_str,
-	status_id
+	status_id,
+	base_asset_id
 	FROM geth_swaps
 	WHERE txn_hash= $1
 	AND block_number = $2
@@ -88,6 +89,7 @@ func GetGethSwapByBlockChain(txnHash string, blockNumber *uint64, indexNumber *u
 		&gethSwap.GethProcessJobID,
 		&gethSwap.TopicsStr,
 		&gethSwap.StatusID,
+		&gethSwap.BaseAssetID,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -131,7 +133,8 @@ func GetGethSwap(gethSwapID int) (*GethSwap, error) {
 	updated_at,
 	geth_process_job_id,
 	topics_str,
-	status_id
+	status_id,
+	base_asset_id
 	FROM geth_swaps
 	WHERE id = $1
 	`, gethSwapID)
@@ -168,6 +171,7 @@ func GetGethSwap(gethSwapID int) (*GethSwap, error) {
 		&gethSwap.GethProcessJobID,
 		&gethSwap.TopicsStr,
 		&gethSwap.StatusID,
+		&gethSwap.BaseAssetID,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -238,7 +242,8 @@ func GetGethSwapByStartAndEndDates(startDate, endDate time.Time) ([]GethSwap, er
 		updated_at,
 		geth_process_job_id,
 		topics_str,
-		status_id
+		status_id,
+		base_asset_id
 		FROM geth_swaps
 		WHERE swap_date BETWEEN $1 AND $2
 		`,
@@ -282,6 +287,7 @@ func GetGethSwapByStartAndEndDates(startDate, endDate time.Time) ([]GethSwap, er
 			&gethSwap.GethProcessJobID,
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
+			&gethSwap.BaseAssetID,
 		)
 
 		gethSwaps = append(gethSwaps, gethSwap)
@@ -322,7 +328,8 @@ func GetGethSwapByFromMakerAddress(makerAddress string) ([]GethSwap, error) {
 		updated_at,
 		geth_process_job_id,
 		topics_str,
-		status_id
+		status_id,
+		base_asset_id
 		FROM geth_swaps
 		WHERE
 		maker_address = $1
@@ -368,6 +375,7 @@ func GetGethSwapByFromMakerAddress(makerAddress string) ([]GethSwap, error) {
 			&gethSwap.GethProcessJobID,
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
+			&gethSwap.BaseAssetID,
 		)
 		gethSwaps = append(gethSwaps, gethSwap)
 	}
@@ -407,7 +415,8 @@ func GetGethSwapByFromMakerAddressId(makerAddressID *int) ([]*GethSwap, error) {
 		updated_at,
 		geth_process_job_id,
 		topics_str,
-		status_id
+		status_id,
+		base_asset_id
 		FROM geth_swaps
 		WHERE
 		maker_address_id = $1
@@ -453,6 +462,7 @@ func GetGethSwapByFromMakerAddressId(makerAddressID *int) ([]*GethSwap, error) {
 			&gethSwap.GethProcessJobID,
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
+			&gethSwap.BaseAssetID,
 		)
 		gethSwaps = append(gethSwaps, &gethSwap)
 	}
@@ -492,7 +502,8 @@ func GetGethSwapByTxnHash(txnHash string) ([]GethSwap, error) {
 		gs.updated_at,
 		gs.geth_process_job_id,
 		gs.topics_str,
-		gs.status_id
+		gs.status_id,
+		gs.base_asset_id
 		FROM geth_swaps gs
 		LEFT JOIN geth_addresses addresses ON gs.maker_address_id = addresses.id
 		WHERE
@@ -540,6 +551,7 @@ func GetGethSwapByTxnHash(txnHash string) ([]GethSwap, error) {
 			&gethSwap.GethProcessJobID,
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
+			&gethSwap.BaseAssetID,
 		)
 		gethSwaps = append(gethSwaps, gethSwap)
 	}
@@ -639,6 +651,17 @@ func removeGethSwap(gethSwapID int) error {
 	return nil
 }
 
+func RemoveGethSwapsFromAssetIDAndStartBlockNumber(baseAssetID *int, startBlockNumber *int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_swaps WHERE base_asset_id = $1 AND block_number >= $2`, *baseAssetID, *startBlockNumber)
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+	return nil
+}
+
 func DeleteGethSwapsByToken0Id(token0ID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -683,7 +706,8 @@ func getGethSwapList() ([]GethSwap, error) {
 	updated_at,
 	geth_process_job_id,
 	topics_str,
-	status_id
+	status_id,
+	base_asset_id
 	FROM geth_swaps `)
 	if err != nil {
 		log.Println(err.Error())
@@ -723,6 +747,7 @@ func getGethSwapList() ([]GethSwap, error) {
 			&gethSwap.GethProcessJobID,
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
+			&gethSwap.BaseAssetID,
 		)
 
 		gethSwaps = append(gethSwaps, gethSwap)
@@ -763,8 +788,9 @@ func UpdateGethSwap(gethSwap GethSwap) error {
 		updated_at=current_timestamp at time zone 'UTC',
 		geth_process_job_id=$23,
 		topics_str$=24,
-		status_id=$25
-		WHERE id=$26`,
+		status_id=$25,
+		base_asset_id=$26
+		WHERE id=$27`,
 		gethSwap.ChainID,             //1
 		gethSwap.ExchangeID,          //2
 		gethSwap.BlockNumber,         //3
@@ -789,8 +815,9 @@ func UpdateGethSwap(gethSwap GethSwap) error {
 		gethSwap.UpdatedBy,           //22
 		gethSwap.GethProcessJobID,    //23
 		pq.Array(gethSwap.TopicsStr), //24
-		gethSwap.ID,                  //25
-		gethSwap.StatusID,            //26
+		gethSwap.StatusID,            //25
+		gethSwap.BaseAssetID,         //26
+		gethSwap.ID,                  //27
 	)
 	if err != nil {
 		log.Println(err.Error())
@@ -834,7 +861,8 @@ func InsertGethSwap(gethSwap *GethSwap) (int, string, error) {
 		updated_at,
 		geth_process_job_id,
 		topics_str,
-		status_id
+		status_id,
+		base_asset_id
 		) VALUES (
 		uuid_generate_v4(),
 		$1,
@@ -864,7 +892,8 @@ func InsertGethSwap(gethSwap *GethSwap) (int, string, error) {
 		current_timestamp at time zone 'UTC',
 		$23,
 		$24,
-		$25
+		$25,
+		$26
 		)
 		RETURNING id, uuid`,
 		gethSwap.ChainID,             //1
@@ -892,6 +921,7 @@ func InsertGethSwap(gethSwap *GethSwap) (int, string, error) {
 		gethSwap.GethProcessJobID,    //23
 		pq.Array(gethSwap.TopicsStr), //24
 		gethSwap.StatusID,            //25
+		gethSwap.BaseAssetID,         //26
 	).Scan(&gethSwapID, &gethSwapUUID)
 	if err != nil {
 		log.Println(err)
@@ -940,6 +970,7 @@ func InsertGethSwaps(gethSwaps []*GethSwap) error {
 			gethSwap.GethProcessJobID,    //27
 			pq.Array(gethSwap.TopicsStr), //28
 			gethSwap.StatusID,            //29
+			gethSwap.BaseAssetID,         //30
 		}
 		rows = append(rows, row)
 	}
@@ -975,7 +1006,8 @@ func InsertGethSwaps(gethSwaps []*GethSwap) error {
 			"updated_at",          //26
 			"geth_process_job_id", //27
 			"topics_str",          //28
-			"status_id",           //29
+			"status_id",           //29,
+			"base_asset_id",       //30
 		},
 		pgx.CopyFromRows(rows),
 	)

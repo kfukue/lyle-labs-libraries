@@ -37,6 +37,7 @@ type GethSwap struct {
 	GethProcessJobID *int             `json:"gethProcessJobId"`
 	TopicsStr        []string         `json:"topicsStr"`
 	StatusID         *int             `json:"statusId"`
+	BaseAssetID      *int             `json:"baseAssetId"`
 }
 
 type GethSwapAudit struct {
