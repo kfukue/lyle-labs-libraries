@@ -838,13 +838,20 @@ func GetNullAddressStrsFromTransfers() ([]string, error) {
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
 		WITH sender_table as(
-			SELECT DISTINCT LOWER(sender_address) as address  
-			FROM geth_transfers
-			WHERE sender_address_id IS NULL
+			SELECT DISTINCT LOWER(gt.sender_address) as address  
+			FROM geth_transfers gt
+				LEFT JOIN geth_addresses as ga
+				ON LOWER(gt.sender_address) = LOWER(ga.address_str)
+			WHERE gt.sender_address_id IS NULL
+			AND ga.id IS NULL
 		),
 		to_table as(
-			SELECT DISTINCT LOWER(to_address) as address FROM geth_transfers
-			WHERE to_address_id IS NULL
+			SELECT DISTINCT LOWER(gt.to_address) as address 
+			FROM geth_transfers gt
+				LEFT JOIN geth_addresses as ga
+				ON LOWER(gt.to_address) = LOWER(ga.address_str)
+			WHERE gt.to_address_id IS NULL
+			AND ga.id IS NULL
 		)
 		SELECT * FROM sender_table
 		UNION

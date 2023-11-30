@@ -991,9 +991,12 @@ func GetNullAddressStrsFromSwaps() ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
-		SELECT DISTINCT maker_address as address  
-		FROM geth_swaps
-		WHERE maker_address_id IS NULL
+		SELECT DISTINCT gs.maker_address as address  
+		FROM geth_swaps gs
+		LEFT JOIN geth_addresses as ga
+			ON LOWER(gs.maker_address) = LOWER(ga.address_str)
+		WHERE gs.maker_address_id IS NULL
+		AND ga.id IS NULL
 		`,
 	)
 	if err != nil {
