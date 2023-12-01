@@ -613,7 +613,7 @@ func GetHighestBlockFromAssetId(assetID *int) (*uint64, error) {
 	return &maxBlockNumber, nil
 }
 
-func GetDistinctMakerAddressesFromToken0AssetID(token0AssetID *int) ([]*int, error) {
+func GetDistinctMakerAddressesFromBaseTokenAssetID(baseAssetID *int) ([]*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `SELECT
@@ -622,7 +622,7 @@ func GetDistinctMakerAddressesFromToken0AssetID(token0AssetID *int) ([]*int, err
 		WHERE
 		base_asset_id = $1
 		`,
-		token0AssetID,
+		baseAssetID,
 	)
 	if err != nil {
 		log.Println(err.Error())
