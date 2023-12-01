@@ -584,7 +584,7 @@ func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(assetID *int, start
 	return txnHashes, nil
 }
 
-func GetHighestBlockFromAssetId(assetID *int) (*uint64, error) {
+func GetHighestBlockFromBaseAssetId(assetID *int) (*uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	row, err := database.DbConnPgx.Query(ctx, `SELECT COALESCE (MAX(block_number), 0) FROM geth_swaps

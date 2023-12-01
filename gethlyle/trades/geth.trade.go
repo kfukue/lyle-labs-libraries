@@ -35,6 +35,7 @@ type GethTrade struct {
 	CreatedAt              time.Time        `json:"createdAt"`
 	UpdatedBy              string           `json:"updatedBy"`
 	UpdatedAt              time.Time        `json:"updatedAt"`
+	BaseAssetID            *int             `json:"baseAssetId"`
 }
 
 type NetTransferByAddress struct {

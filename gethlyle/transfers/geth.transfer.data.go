@@ -40,7 +40,8 @@ func GetGethTransfer(gethTransferID int) (*GethTransfer, error) {
 		updated_at,
 		geth_process_job_id,
 		topics_str,
-		status_id
+		status_id,
+		base_asset_id
 	FROM geth_transfers
 	WHERE id = $1
 	`, gethTransferID)
@@ -70,6 +71,7 @@ func GetGethTransfer(gethTransferID int) (*GethTransfer, error) {
 		&gethTransfer.GethProcessJobID,
 		&gethTransfer.TopicsStr,
 		&gethTransfer.StatusID,
+		&gethTransfer.BaseAssetID,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -106,7 +108,8 @@ func GetGethTransferByBlockChain(txnHash string, blockNumber *uint64, indexNumbe
 		updated_at,
 		geth_process_job_id,
 		topics_str,
-		status_id
+		status_id,
+		base_asset_id
 	FROM geth_transfers
 	WHERE txn_hash = $1
 	AND block_number = $2
@@ -137,6 +140,7 @@ func GetGethTransferByBlockChain(txnHash string, blockNumber *uint64, indexNumbe
 		&gethTransfer.UpdatedAt,
 		&gethTransfer.GethProcessJobID,
 		&gethTransfer.TopicsStr,
+		&gethTransfer.StatusID,
 		&gethTransfer.StatusID,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -264,13 +268,13 @@ func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(assetID *int, start
 
 }
 
-func GetHighestBlockFromAssetId(assetID *int) (*uint64, error) {
+func GetHighestBlockFromBaseAssetId(baseAssetID *int) (*uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	row, err := database.DbConnPgx.Query(ctx, `SELECT COALESCE (MAX(block_number), 0) FROM geth_transfers
-	WHERE asset_id=$1
+	WHERE base_asset_id=$1
 		`,
-		assetID)
+		baseAssetID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -320,7 +324,8 @@ func GetGethTransferByFromTokenAddress(tokenAddressID *int) ([]GethTransfer, err
 		updated_at,
 		geth_process_job_id,
 		topics_str,
-		status_id
+		status_id,
+		base_asset_id
 		FROM geth_transfers
 		WHERE
 		token_address_id = $1
@@ -391,7 +396,8 @@ func GetGethTransferByFromMakerAddressAndTokenAddressID(makerAddressID *int, tok
 		updated_at,
 		geth_process_job_id,
 		topics_str,
-		status_id
+		status_id,
+		base_asset_id
 		FROM geth_transfers
 		WHERE
 		asset_id = $1
@@ -432,6 +438,7 @@ func GetGethTransferByFromMakerAddressAndTokenAddressID(makerAddressID *int, tok
 			&gethTransfer.GethProcessJobID,
 			&gethTransfer.TopicsStr,
 			&gethTransfer.StatusID,
+			&gethTransfer.BaseAssetID,
 		)
 		gethTransfers = append(gethTransfers, gethTransfer)
 	}
@@ -465,7 +472,8 @@ func GetGethTransfersByTxnHash(txnHash string) ([]GethTransfer, error) {
 		updated_at,
 		geth_process_job_id,
 		topics_str,
-		status_id
+		status_id,
+		base_asset_id
 		FROM geth_transfers
 		WHERE
 		txn_hash = $1
@@ -504,6 +512,7 @@ func GetGethTransfersByTxnHash(txnHash string) ([]GethTransfer, error) {
 			&gethTransfer.GethProcessJobID,
 			&gethTransfer.TopicsStr,
 			&gethTransfer.StatusID,
+			&gethTransfer.BaseAssetID,
 		)
 		gethTransfers = append(gethTransfers, gethTransfer)
 	}
@@ -521,10 +530,10 @@ func RemoveGethTransfer(gethTransferID int) error {
 	return nil
 }
 
-func RemoveGethTransfersFromAssetIDAndStartBlockNumber(assetID *int, startBlockNumber *int) error {
+func RemoveGethTransfersFromBaseAssetIDAndStartBlockNumber(baseAssetID *int, startBlockNumber *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_transfers WHERE asset_id = $1 AND block_number >=  $2`, *assetID, *startBlockNumber)
+	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_transfers WHERE base_asset_id = $1 AND block_number >=  $2`, *baseAssetID, *startBlockNumber)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -558,7 +567,8 @@ func GetGethTransferList() ([]GethTransfer, error) {
 		updated_at,
 		geth_process_job_id,
 		topics_str,
-		status_id
+		status_id,
+		base_asset_id
 	FROM geth_transfers `)
 	if err != nil {
 		log.Println(err.Error())
@@ -591,6 +601,7 @@ func GetGethTransferList() ([]GethTransfer, error) {
 			&gethTransfer.GethProcessJobID,
 			&gethTransfer.TopicsStr,
 			&gethTransfer.StatusID,
+			&gethTransfer.BaseAssetID,
 		)
 
 		gethTransfers = append(gethTransfers, gethTransfer)
@@ -624,8 +635,9 @@ func UpdateGethTransfer(gethTransfer GethTransfer) error {
 		updated_at=current_timestamp at time zone 'UTC',
 		geth_process_job_id =$16,
 		topics_str=$17,
-		status_id=$18
-		WHERE id=$19`,
+		status_id=$18,
+		base_asset_id=$19,
+		WHERE id=$20`,
 		gethTransfer.ChainID,             //1
 		gethTransfer.TokenAddress,        //2
 		gethTransfer.TokenAddressID,      //3
@@ -644,7 +656,8 @@ func UpdateGethTransfer(gethTransfer GethTransfer) error {
 		gethTransfer.GethProcessJobID,    //16
 		pq.Array(gethTransfer.TopicsStr), //17
 		gethTransfer.StatusID,            //18
-		gethTransfer.ID,                  //19
+		gethTransfer.BaseAssetID,         //19
+		gethTransfer.ID,                  //20
 	)
 	if err != nil {
 		log.Println(err.Error())
@@ -681,7 +694,8 @@ func InsertGethTransfer(gethTransfer GethTransfer) (int, string, error) {
 		updated_at,
 		geth_process_job_id,
 		topics_str,
-		status_id
+		status_id,
+		base_asset_id
 		) VALUES (
 		uuid_generate_v4(),
 		$1,
@@ -704,7 +718,8 @@ func InsertGethTransfer(gethTransfer GethTransfer) (int, string, error) {
 		current_timestamp at time zone 'UTC', 
 		$16,
 		$17,
-		$18
+		$18,
+		$19
 		)
 		RETURNING id, uuid`,
 		gethTransfer.ChainID,             //1
@@ -725,6 +740,7 @@ func InsertGethTransfer(gethTransfer GethTransfer) (int, string, error) {
 		gethTransfer.GethProcessJobID,    //16
 		pq.Array(gethTransfer.TopicsStr), //17
 		gethTransfer.StatusID,            //18
+		gethTransfer.BaseAssetID,         //19
 	).Scan(&gethTransferID, &gethTransferUUID)
 	if err != nil {
 		log.Println(err.Error())
@@ -766,6 +782,7 @@ func InsertGethTransfers(gethTransfers []*GethTransfer) error {
 			gethTransfer.GethProcessJobID,    //20
 			pq.Array(gethTransfer.TopicsStr), //21
 			gethTransfer.StatusID,            //22
+			gethTransfer.BaseAssetID,         //23
 
 		}
 		rows = append(rows, row)
@@ -796,6 +813,7 @@ func InsertGethTransfers(gethTransfers []*GethTransfer) error {
 			"geth_process_job_id", //20
 			"topics_str",          //21
 			"status_id",           //22
+			"base_asset_id",       //23
 		},
 		pgx.CopyFromRows(rows),
 	)

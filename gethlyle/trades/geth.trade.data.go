@@ -44,7 +44,8 @@ func GetGethTrade(gethTradeID int) (*GethTrade, error) {
 		created_by,
 		created_at,
 		updated_by,
-		updated_at
+		updated_at,
+		base_asset_id
 	FROM geth_trades
 	WHERE id = $1
 	`, gethTradeID)
@@ -78,6 +79,7 @@ func GetGethTrade(gethTradeID int) (*GethTrade, error) {
 		&gethTrade.CreatedAt,
 		&gethTrade.UpdatedBy,
 		&gethTrade.UpdatedAt,
+		&gethTrade.BaseAssetID,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -119,7 +121,8 @@ func GetGethTradeByStartAndEndDates(startDate, endDate time.Time) ([]GethTrade, 
 			created_by,
 			created_at,
 			updated_by,
-			updated_at
+			updated_at,
+			base_asset_id
 		FROM geth_trades
 		WHERE trade_date BETWEEN $1 AND $2
 		`,
@@ -160,6 +163,7 @@ func GetGethTradeByStartAndEndDates(startDate, endDate time.Time) ([]GethTrade, 
 			&gethTrade.CreatedAt,
 			&gethTrade.UpdatedBy,
 			&gethTrade.UpdatedAt,
+			&gethTrade.BaseAssetID,
 		)
 
 		gethTrades = append(gethTrades, gethTrade)
@@ -198,7 +202,8 @@ func GetGethTradeByFromAddress(addressStr string) ([]GethTrade, error) {
 			created_by,
 			created_at,
 			updated_by,
-			updated_at
+			updated_at,
+			base_asset_id
 		WHERE
 		address_str = $1
 		ORDER BY gethTrade_date asc`,
@@ -240,6 +245,7 @@ func GetGethTradeByFromAddress(addressStr string) ([]GethTrade, error) {
 			&gethTrade.CreatedAt,
 			&gethTrade.UpdatedBy,
 			&gethTrade.UpdatedAt,
+			&gethTrade.BaseAssetID,
 		)
 		gethTrades = append(gethTrades, gethTrade)
 	}
@@ -277,7 +283,8 @@ func GetGethTradeByFromAddressId(addressID *int) ([]*GethTrade, error) {
 			created_by,
 			created_at,
 			updated_by,
-			updated_at
+			updated_at,
+			base_asset_id
 		FROM geth_trades
 		WHERE
 		address_id = $1
@@ -320,6 +327,7 @@ func GetGethTradeByFromAddressId(addressID *int) ([]*GethTrade, error) {
 			&gethTrade.CreatedAt,
 			&gethTrade.UpdatedBy,
 			&gethTrade.UpdatedAt,
+			&gethTrade.BaseAssetID,
 		)
 		gethTrades = append(gethTrades, &gethTrade)
 	}
@@ -357,7 +365,8 @@ func GetGethTradeByUUIDs(UUIDList []string) ([]*GethTrade, error) {
 			created_by,
 			created_at,
 			updated_by,
-			updated_at
+			updated_at,
+			base_asset_id
 		FROM geth_trades
 		WHERE text(uuid) = ANY($1)
 	`, pq.Array(UUIDList))
@@ -397,6 +406,7 @@ func GetGethTradeByUUIDs(UUIDList []string) ([]*GethTrade, error) {
 			&gethTrade.CreatedAt,
 			&gethTrade.UpdatedBy,
 			&gethTrade.UpdatedAt,
+			&gethTrade.BaseAssetID,
 		)
 		gethTrades = append(gethTrades, &gethTrade)
 	}
@@ -473,7 +483,7 @@ func GetNetTransfersByTxnHashAndAddressStrs(txnHash string, addressStr string) (
 	return netTransfersByAddress, nil
 }
 
-func GetStartAndEndBlockForNewTradesByAssetID(assetID *int) (*uint64, *uint64, error) {
+func GetStartAndEndBlockForNewTradesByBaseAssetID(baseAssetID *int) (*uint64, *uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	// TODO: Need to relook at this logic
@@ -482,9 +492,9 @@ func GetStartAndEndBlockForNewTradesByAssetID(assetID *int) (*uint64, *uint64, e
 		MAX(geth_swaps.BlockNumber),
 	FROM geth_trade_swaps
 	LEFT JOIN geth_swaps ON geth_trade_swaps.get_swap_id = geth_swaps.id
-	WHERE geth_swaps.token0_asset_id = $1
+	WHERE geth_swaps.base_asset_id = $1
 	AND geth_swaps.get_swap_id = NULL
-	`, assetID)
+	`, baseAssetID)
 
 	var startBlockNumber, endBlockNumber *uint64
 	err := row.Scan(
@@ -513,10 +523,10 @@ func RemoveGethTrade(gethTradeID int) error {
 	return nil
 }
 
-func DeleteGethTradesByToken0Id(token0ID *int) error {
+func DeleteGethTradesByBaseAssetId(baseAssetID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_trades WHERE token0_asset_id = $1`, *token0ID)
+	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_trades WHERE base_asset_id = $1`, *baseAssetID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -555,7 +565,8 @@ func GetGethTradeList() ([]GethTrade, error) {
 		created_by,
 		created_at,
 		updated_by,
-		updated_at
+		updated_at,
+		base_asset_id
 	FROM geth_trades `)
 	if err != nil {
 		log.Println(err.Error())
@@ -593,6 +604,7 @@ func GetGethTradeList() ([]GethTrade, error) {
 			&gethTrade.CreatedAt,
 			&gethTrade.UpdatedBy,
 			&gethTrade.UpdatedAt,
+			&gethTrade.BaseAssetID,
 		)
 
 		gethTrades = append(gethTrades, gethTrade)
@@ -631,7 +643,8 @@ func UpdateGethTrade(gethTrade GethTrade) error {
 		description=$21,
 		updated_by=$22,
 		updated_at=current_timestamp at time zone 'UTC',
-		WHERE id=$23`,
+		base_asset_id=$23
+		WHERE id=$24`,
 
 		gethTrade.Name,                   //1
 		gethTrade.AlternateName,          //2
@@ -655,7 +668,8 @@ func UpdateGethTrade(gethTrade GethTrade) error {
 		gethTrade.TradeTypeID,            //20
 		gethTrade.Description,            //21
 		gethTrade.UpdatedBy,              //22
-		gethTrade.ID,                     //23
+		gethTrade.BaseAssetID,            //23
+		gethTrade.ID,                     //24
 	)
 	if err != nil {
 		log.Println(err.Error())
@@ -696,7 +710,8 @@ func InsertGethTrade(gethTrade *GethTrade) (int, string, error) {
 		created_by,
 		created_at,
 		updated_by,
-		updated_at
+		updated_at,
+		base_asset_id
 		) VALUES (
 		uuid_generate_v4(),
 		$1,
@@ -724,6 +739,7 @@ func InsertGethTrade(gethTrade *GethTrade) (int, string, error) {
 		current_timestamp at time zone 'UTC',
 		$22,
 		current_timestamp at time zone 'UTC',
+		$23
 		)
 		RETURNING id, uuid`,
 		gethTrade.Name,                   //1
@@ -748,6 +764,7 @@ func InsertGethTrade(gethTrade *GethTrade) (int, string, error) {
 		gethTrade.TradeTypeID,            //20
 		gethTrade.Description,            //21
 		gethTrade.CreatedBy,              //22
+		gethTrade.BaseAssetID,            //23
 	).Scan(&gethTradeID, &gethTradeUUID)
 	if err != nil {
 		log.Println(err)
@@ -794,6 +811,7 @@ func InsertGethTrades(gethTrades []*GethTrade) error {
 			&now,                             //24
 			gethTrade.CreatedBy,              //25
 			&now,                             //26
+			gethTrade.BaseAssetID,            //27
 		}
 		rows = append(rows, row)
 	}
@@ -827,6 +845,7 @@ func InsertGethTrades(gethTrades []*GethTrade) error {
 			"created_at",                //24
 			"updated_by",                //25
 			"updated_at",                //26
+			"base_asset_id",             //27
 		},
 		pgx.CopyFromRows(rows),
 	)

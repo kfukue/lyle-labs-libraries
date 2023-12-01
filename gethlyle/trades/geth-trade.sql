@@ -31,13 +31,15 @@ CREATE TABLE geth_trades
   created_at                    timestamp NOT NULL,
   updated_by                    VARCHAR(255) NOT NULL,
   updated_at                    timestamp NOT NULL,
+  base_asset_id                 INT NOT NULL,
   PRIMARY KEY(id),
   CONSTRAINT fk_address FOREIGN KEY(address_id) REFERENCES geth_addresses(id),
   CONSTRAINT fk_token0_asset FOREIGN KEY(token0_asset_id) REFERENCES assets(id),
   CONSTRAINT fk_token1_asset FOREIGN KEY(token1_asset_id) REFERENCES assets(id),
   CONSTRAINT fk_geth_process_jobs FOREIGN KEY(geth_process_job_id) REFERENCES geth_process_jobs(id),
   CONSTRAINT fk_status FOREIGN KEY(status_id) REFERENCES structured_values(id),
-  CONSTRAINT fk_trade_type FOREIGN KEY(trade_type_id) REFERENCES structured_values(id)
+  CONSTRAINT fk_trade_type FOREIGN KEY(trade_type_id) REFERENCES structured_values(id),
+  CONSTRAINT fk_base_asset FOREIGN KEY(base_asset_id) REFERENCES assets(id)
 );
 
 
