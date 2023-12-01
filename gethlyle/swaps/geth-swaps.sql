@@ -42,7 +42,7 @@ CREATE TABLE geth_swaps
   CONSTRAINT fk_liquidity_pool FOREIGN KEY(liquidity_pool_id) REFERENCES liquidity_pools(id),
   CONSTRAINT fk_maker_address FOREIGN KEY(maker_address_id) REFERENCES geth_addresses(id),
   CONSTRAINT fk_geth_process_jobs FOREIGN KEY(geth_process_job_id) REFERENCES geth_process_jobs(id),
-  CONSTRAINT fk_statuses FOREIGN KEY(status_id) REFERENCES structured_values(id)
+  CONSTRAINT fk_statuses FOREIGN KEY(status_id) REFERENCES structured_values(id),
   CONSTRAINT fk_base_asset FOREIGN KEY(base_asset_id) REFERENCES assets(id)
 );
 

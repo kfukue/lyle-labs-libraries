@@ -93,7 +93,7 @@ CREATE TABLE geth_swaps
   id SERIAL,
   uuid uuid NOT NULL DEFAULT uuid_generate_v4(),
   chain_id INT NOT NULL,
-  exchange_id INT NOT NULL,
+  exchange_id INT NULL,
   block_number NUMERIC NULL,
   index_number NUMERIC NULL,
   swap_date timestamp NULL,
@@ -120,6 +120,7 @@ CREATE TABLE geth_swaps
   geth_process_job_id INT NULL,
   topics_str TEXT[] NULL,
   status_id INT NOT NULL,
+  base_asset_id INT NOT NULL,
   PRIMARY KEY(id),
   CONSTRAINT fk_chain FOREIGN KEY(chain_id) REFERENCES chains(id),
   CONSTRAINT fk_exchange FOREIGN KEY(exchange_id) REFERENCES exchanges(id),
@@ -127,9 +128,9 @@ CREATE TABLE geth_swaps
   CONSTRAINT fk_liquidity_pool FOREIGN KEY(liquidity_pool_id) REFERENCES liquidity_pools(id),
   CONSTRAINT fk_maker_address FOREIGN KEY(maker_address_id) REFERENCES geth_addresses(id),
   CONSTRAINT fk_geth_process_jobs FOREIGN KEY(geth_process_job_id) REFERENCES geth_process_jobs(id),
-  CONSTRAINT fk_statuses FOREIGN KEY(status_id) REFERENCES structured_values(id)
+  CONSTRAINT fk_statuses FOREIGN KEY(status_id) REFERENCES structured_values(id),
+  CONSTRAINT fk_base_asset FOREIGN KEY(base_asset_id) REFERENCES assets(id)
 );
-
 
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO "asset-tracker-user";
 GRANT SELECT,INSERT,UPDATE,DELETE  ON ALL TABLES IN SCHEMA public TO "asset-tracker-user";

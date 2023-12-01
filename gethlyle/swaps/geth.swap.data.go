@@ -182,11 +182,11 @@ func GetGethSwap(gethSwapID int) (*GethSwap, error) {
 	return gethSwap, nil
 }
 
-func GetHighestSwapBlockFromAsset0Id(assetID *int) (*uint64, error) {
+func GetHighestSwapBlockFromBaseAssetId(assetID *int) (*uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	row, err := database.DbConnPgx.Query(ctx, `SELECT coalesce(MAX(block_number),0) FROM geth_swaps
-	WHERE token0_asset_id =$1
+	WHERE base_asset_id =$1
 		`,
 		*assetID)
 	if err != nil {
@@ -565,7 +565,7 @@ func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(assetID *int, start
 		
 	SELECT DISTINCT txn_hash FROM geth_swaps
 	WHERE block_number >= $1
-	AND token0_asset_id = $2
+	AND base_asset_id = $2
 	`,
 		*startingBlock, *assetID)
 	if err != nil {
@@ -588,7 +588,7 @@ func GetHighestBlockFromAssetId(assetID *int) (*uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	row, err := database.DbConnPgx.Query(ctx, `SELECT COALESCE (MAX(block_number), 0) FROM geth_swaps
-	WHERE token0_asset_id=$1
+	WHERE base_asset_id=$1
 		`,
 		assetID)
 	if err != nil {
@@ -620,7 +620,7 @@ func GetDistinctMakerAddressesFromToken0AssetID(token0AssetID *int) ([]*int, err
 		DISTINCT maker_address_id
 		FROM geth_swaps
 		WHERE
-		token0_asset_id = $1
+		base_asset_id = $1
 		`,
 		token0AssetID,
 	)
@@ -662,10 +662,10 @@ func RemoveGethSwapsFromAssetIDAndStartBlockNumber(baseAssetID *int, startBlockN
 	return nil
 }
 
-func DeleteGethSwapsByToken0Id(token0ID *int) error {
+func DeleteGethSwapsByBaseAssetId(baseAssetID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_swaps WHERE token0_asset_id = $1`, *token0ID)
+	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_swaps WHERE base_asset_id = $1`, *baseAssetID)
 	if err != nil {
 		log.Println(err.Error())
 		return err
