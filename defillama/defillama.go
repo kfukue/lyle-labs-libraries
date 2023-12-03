@@ -10,3 +10,8 @@ type DefiLlamaCurrentPriceCoinResults struct {
 	TimeStamp  *float64 `json:"timestamp"`
 	Confidence *float64 `json:"confidence"`
 }
+
+type DefiLlamaClosestBlockResults struct {
+	Height    *float64 `json:"height"`
+	TimeStamp *float64 `json:"timestamp"`
+}

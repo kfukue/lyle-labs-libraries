@@ -413,7 +413,7 @@ func GetGethTradeByUUIDs(UUIDList []string) ([]*GethTrade, error) {
 	return gethTrades, nil
 }
 
-func GetNetTransfersByTxnHashAndAddressStrs(txnHash string, addressStr string) ([]*NetTransferByAddress, error) {
+func GetNetTransfersByTxnHashAndAddressStrs(txnHash, addressStr string, baseAssetID *int) ([]*NetTransferByAddress, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
@@ -421,11 +421,13 @@ func GetNetTransfersByTxnHashAndAddressStrs(txnHash string, addressStr string) (
 	WITH to_address as (
 		SELECT to_address as receiving_address, asset_id as asset_id, SUM(amount) as in_amount FROM geth_transfers 
 		WHERE txn_hash = $1
+		AND base_asset_id =$3
 		GROUP BY to_address, asset_id
 		),
 		sender_address as (
 		SELECT sender_address as sender_address,asset_id as asset_id, SUM(-amount) as out_amount FROM geth_transfers 
 		WHERE txn_hash = $1
+		AND base_asset_id =$3
 		GROUP BY sender_address, asset_id
 			)
 		SELECT
@@ -441,7 +443,7 @@ func GetNetTransfersByTxnHashAndAddressStrs(txnHash string, addressStr string) (
 			LEFT JOIN assets assets
 				 ON addresses.asset_id = assets.id
 		WHERE address = $2
-	`, txnHash, addressStr)
+	`, txnHash, addressStr, baseAssetID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
