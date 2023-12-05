@@ -12,6 +12,7 @@ const (
 	BIG_INT_EXP         = 18
 	COINGECKO_SOURCE_ID = 3
 	USD_ID              = 34
+	ETH_ID              = 35
 	// structured value id
 	ASSET_TYPE_CRYPTO_STRUCTURED_VALUE_ID                    = 1
 	LIVE_INTERVAL_STRUCTURED_VALUE_ID                        = 58
