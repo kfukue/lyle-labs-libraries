@@ -315,7 +315,6 @@ func GetGethTransferByFromTokenAddress(tokenAddressID *int) ([]GethTransfer, err
 		sender_address_id,
 		to_address,
 		to_address_id,
-		to_address,
 		amount,
 		description,
 		created_by,
@@ -541,7 +540,6 @@ func GetGethTransfersByTxnHash(txnHash string, baseAssetID *int) ([]GethTransfer
 		sender_address_id,
 		to_address,
 		to_address_id,
-		to_address,
 		amount,
 		description,
 		created_by,
@@ -558,6 +556,80 @@ func GetGethTransfersByTxnHash(txnHash string, baseAssetID *int) ([]GethTransfer
 		AND base_asset_id = $2
 		`,
 		txnHash, *baseAssetID,
+	)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTransfers := make([]GethTransfer, 0)
+	for results.Next() {
+		var gethTransfer GethTransfer
+		results.Scan(
+			&gethTransfer.ID,
+			&gethTransfer.UUID,
+			&gethTransfer.ChainID,
+			&gethTransfer.TokenAddress,
+			&gethTransfer.TokenAddressID,
+			&gethTransfer.AssetID,
+			&gethTransfer.BlockNumber,
+			&gethTransfer.IndexNumber,
+			&gethTransfer.TransferDate,
+			&gethTransfer.TxnHash,
+			&gethTransfer.SenderAddress,
+			&gethTransfer.SenderAddressID,
+			&gethTransfer.ToAddress,
+			&gethTransfer.ToAddressID,
+			&gethTransfer.Amount,
+			&gethTransfer.Description,
+			&gethTransfer.CreatedBy,
+			&gethTransfer.CreatedAt,
+			&gethTransfer.UpdatedBy,
+			&gethTransfer.UpdatedAt,
+			&gethTransfer.GethProcessJobID,
+			&gethTransfer.TopicsStr,
+			&gethTransfer.StatusID,
+			&gethTransfer.BaseAssetID,
+		)
+		gethTransfers = append(gethTransfers, gethTransfer)
+	}
+	return gethTransfers, nil
+}
+
+func GetGethTransfersByTxnHashes(txnHashes []string, baseAssetID *int) ([]GethTransfer, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `SELECT
+		id,
+		uuid,
+		chain_id,
+		token_address,
+		token_address_id,
+		asset_id,
+		block_number,
+		index_number,
+		transfer_date,
+		txn_hash,
+		sender_address,
+		sender_address_id,
+		to_address,
+		to_address_id,
+		amount,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at,
+		geth_process_job_id,
+		topics_str,
+		status_id,
+		base_asset_id
+		FROM geth_transfers
+		WHERE
+		txn_hash IN ANY($1)
+		AND base_asset_id = $2
+		`,
+		pq.Array(txnHashes), *baseAssetID,
 	)
 	if err != nil {
 		log.Println(err.Error())

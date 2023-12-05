@@ -39,6 +39,7 @@ type GethTrade struct {
 }
 
 type NetTransferByAddress struct {
+	TxnHash    string           `json:"txnHash"`
 	AddressStr string           `json:"addressStr"`
 	AssetID    *int             `json:"addressId"`
 	NetAmount  *decimal.Decimal `json:"netAmount"`

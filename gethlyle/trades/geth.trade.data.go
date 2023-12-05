@@ -430,19 +430,20 @@ func GetNetTransfersByTxnHashAndAddressStrs(txnHash, addressStr string, baseAsse
 		AND base_asset_id =$3
 		GROUP BY sender_address, asset_id
 			)
-		SELECT
-			address,
-			asset_id,
-			net_amount,
-			assets.*
-			FROM (
-			SELECT receiving_address as address, asset_id, in_amount as net_amount FROM to_address
-			UNION 
-			SELECT  sender_address as address, asset_id, out_amount as net_amount FROM sender_address
-				) addresses 
-			LEFT JOIN assets assets
-				 ON addresses.asset_id = assets.id
-		WHERE address = $2
+	SELECT
+		txn_hash,
+		address,
+		asset_id,
+		net_amount,
+		assets.*
+		FROM (
+		SELECT receiving_address as address, asset_id, in_amount as net_amount FROM to_address
+		UNION 
+		SELECT  sender_address as address, asset_id, out_amount as net_amount FROM sender_address
+			) addresses 
+		LEFT JOIN assets assets
+				ON addresses.asset_id = assets.id
+	WHERE address = $2
 	`, txnHash, addressStr, baseAssetID)
 	if err != nil {
 		log.Println(err.Error())
@@ -453,6 +454,93 @@ func GetNetTransfersByTxnHashAndAddressStrs(txnHash, addressStr string, baseAsse
 	for results.Next() {
 		var netTransferByAddress NetTransferByAddress
 		results.Scan(
+			&netTransferByAddress.TxnHash,
+			&netTransferByAddress.AddressStr,
+			&netTransferByAddress.AssetID,
+			&netTransferByAddress.NetAmount,
+			&netTransferByAddress.Asset.ID,
+			&netTransferByAddress.Asset.UUID,
+			&netTransferByAddress.Asset.Name,
+			&netTransferByAddress.Asset.AlternateName,
+			&netTransferByAddress.Asset.Cusip,
+			&netTransferByAddress.Asset.Ticker,
+			&netTransferByAddress.Asset.BaseAssetID,
+			&netTransferByAddress.Asset.QuoteAssetID,
+			&netTransferByAddress.Asset.Description,
+			&netTransferByAddress.Asset.AssetTypeID,
+			&netTransferByAddress.Asset.CreatedBy,
+			&netTransferByAddress.Asset.CreatedAt,
+			&netTransferByAddress.Asset.UpdatedBy,
+			&netTransferByAddress.Asset.UpdatedAt,
+			&netTransferByAddress.Asset.ChainID,
+			&netTransferByAddress.Asset.CategoryID,
+			&netTransferByAddress.Asset.SubCategoryID,
+			&netTransferByAddress.Asset.IsDefaultQuote,
+			&netTransferByAddress.Asset.IgnoreMarketData,
+			&netTransferByAddress.Asset.Decimals,
+			&netTransferByAddress.Asset.ContractAddress,
+			&netTransferByAddress.StartingBlockNumber,
+			&netTransferByAddress.ImportGeth,
+		)
+		netTransfersByAddress = append(netTransfersByAddress, &netTransferByAddress)
+	}
+	return netTransfersByAddress, nil
+}
+
+func GetFromNetTransfersByTxnHashesAndAddressStrs(txnHashes []string, baseAssetID *int) ([]*NetTransferByAddress, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `
+	WITH to_address as (
+		SELECT 
+			txn_hash as txn_hash,
+			to_address as receiving_address,
+			asset_id as asset_id,
+			SUM(amount) as in_amount 
+		FROM geth_transfers 
+		WHERE
+			txn_hash = ANY($1)
+			AND base_asset_id =$2
+		GROUP BY 
+			txn_hash,
+			to_address,
+			asset_id
+		),
+	sender_address as (
+		SELECT
+			txn_hash as txn_hash,
+			sender_address as sender_address,
+			asset_id as asset_id,
+			SUM(-amount) as out_amount 
+		FROM geth_transfers 
+		WHERE 
+			txn_hash = ANY($1)
+			AND base_asset_id =$2
+		GROUP BY
+			txn_hash,
+			sender_address,
+			asset_id
+	)
+	SELECT
+		netT.txn_hash,
+		netT.address,
+		netT.asset_id,
+		netT.net_amount,
+		assets.*
+	FROM temp_net_transfer_by_address netT 
+	LEFT JOIN assets assets
+			ON netT.asset_id = assets.id
+	`, txnHashes, *baseAssetID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	netTransfersByAddress := make([]*NetTransferByAddress, 0)
+	for results.Next() {
+		var netTransferByAddress NetTransferByAddress
+		results.Scan(
+			&netTransferByAddress.TxnHash,
 			&netTransferByAddress.AddressStr,
 			&netTransferByAddress.AssetID,
 			&netTransferByAddress.NetAmount,

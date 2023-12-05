@@ -648,6 +648,97 @@ func GetGethSwapByTxnHash(txnHash string, baseAssetID *int) ([]GethSwap, error) 
 	return gethSwaps, nil
 }
 
+// bulk swap methods
+func GetGethSwapsByTxnHashes(txnHashes []string, baseAssetID *int) ([]GethSwap, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `SELECT
+		gs.id,
+		gs.uuid,
+		gs.chain_id,
+		gs.exchange_id,
+		gs.block_number,
+		gs.index_number,
+		gs.swap_date,
+		gs.trade_type_id,
+		gs.txn_hash,
+		gs.maker_address,
+		gs.maker_address_id,
+		gs.is_buy,
+		gs.price,
+		gs.price_usd,
+		gs.token1_price_usd,
+		gs.total_amount_usd,
+		gs.pair_address,
+		gs.liquidity_pool_id,
+		gs.token0_asset_id,
+		gs.token1_asset_id,
+		gs.token0_amount,
+		gs.token1_Amount,
+		gs.description,
+		gs.created_by,
+		gs.created_at,
+		gs.updated_by,
+		gs.updated_at,
+		gs.geth_process_job_id,
+		gs.topics_str,
+		gs.status_id,
+		gs.base_asset_id
+		FROM geth_swaps gs
+		LEFT JOIN geth_addresses addresses ON gs.maker_address_id = addresses.id
+		WHERE
+		txn_hash = ANY($1)
+		AND addresses.address_type_id = $2
+		AND gs.base_asset_id  = $3
+		ORDER BY gs.swap_date, gs.index_number asc`,
+		pq.Array(txnHashes), utils.EOA_ADDRESS_TYPE_STRUCTURED_VALUE_ID, *baseAssetID,
+	)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethSwaps := make([]GethSwap, 0)
+	for results.Next() {
+		var gethSwap GethSwap
+		results.Scan(
+			&gethSwap.ID,
+			&gethSwap.UUID,
+			&gethSwap.ChainID,
+			&gethSwap.ExchangeID,
+			&gethSwap.BlockNumber,
+			&gethSwap.IndexNumber,
+			&gethSwap.SwapDate,
+			&gethSwap.TradeTypeID,
+			&gethSwap.TxnHash,
+			&gethSwap.MakerAddress,
+			&gethSwap.MakerAddressID,
+			&gethSwap.IsBuy,
+			&gethSwap.Price,
+			&gethSwap.PriceUSD,
+			&gethSwap.Token1PriceUSD,
+			&gethSwap.TotalAmountUSD,
+			&gethSwap.PairAddress,
+			&gethSwap.LiquidityPoolID,
+			&gethSwap.Token0AssetId,
+			&gethSwap.Token1AssetId,
+			&gethSwap.Token0Amount,
+			&gethSwap.Token1Amount,
+			&gethSwap.Description,
+			&gethSwap.CreatedBy,
+			&gethSwap.CreatedAt,
+			&gethSwap.UpdatedBy,
+			&gethSwap.UpdatedAt,
+			&gethSwap.GethProcessJobID,
+			&gethSwap.TopicsStr,
+			&gethSwap.StatusID,
+			&gethSwap.BaseAssetID,
+		)
+		gethSwaps = append(gethSwaps, gethSwap)
+	}
+	return gethSwaps, nil
+}
+
 func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(assetID *int, startingBlock *uint64) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
