@@ -522,10 +522,10 @@ func GetFromNetTransfersByTxnHashesAndAddressStrs(txnHashes []string, baseAssetI
 			asset_id
 	)
 	SELECT
-		netT.txn_hash,
-		netT.address,
-		netT.asset_id,
-		netT.net_amount,
+		addresses.txn_hash,
+		addresses.address,
+		addresses.asset_id,
+		addresses.net_amount,
 		assets.*
 		FROM (
 			SELECT receiving_address as address, asset_id, in_amount as net_amount FROM to_address
