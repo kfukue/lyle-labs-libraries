@@ -527,9 +527,13 @@ func GetFromNetTransfersByTxnHashesAndAddressStrs(txnHashes []string, baseAssetI
 		netT.asset_id,
 		netT.net_amount,
 		assets.*
-	FROM temp_net_transfer_by_address netT 
-	LEFT JOIN assets assets
-			ON netT.asset_id = assets.id
+		FROM (
+			SELECT receiving_address as address, asset_id, in_amount as net_amount FROM to_address
+			UNION 
+			SELECT  sender_address as address, asset_id, out_amount as net_amount FROM sender_address
+		) addresses 
+		LEFT JOIN assets assets
+			ON addresses.asset_id = assets.id
 	`, txnHashes, *baseAssetID)
 	if err != nil {
 		log.Println(err.Error())
