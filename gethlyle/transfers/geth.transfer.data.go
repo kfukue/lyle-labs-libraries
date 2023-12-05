@@ -626,7 +626,7 @@ func GetGethTransfersByTxnHashes(txnHashes []string, baseAssetID *int) ([]GethTr
 		base_asset_id
 		FROM geth_transfers
 		WHERE
-		txn_hash IN ANY($1)
+		txn_hash = ANY($1)
 		AND base_asset_id = $2
 		`,
 		pq.Array(txnHashes), *baseAssetID,
