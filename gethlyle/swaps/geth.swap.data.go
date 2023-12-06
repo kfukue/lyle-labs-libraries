@@ -1123,35 +1123,35 @@ func InsertGethSwaps(gethSwaps []*GethSwap) error {
 		uuidString.Set(gethSwap.UUID)
 		row := []interface{}{
 			uuidString,                   //1
-			*gethSwap.ChainID,            //2
-			*gethSwap.ExchangeID,         //3
-			*gethSwap.BlockNumber,        //4
-			*gethSwap.IndexNumber,        //5
+			gethSwap.ChainID,             //2
+			gethSwap.ExchangeID,          //3
+			gethSwap.BlockNumber,         //4
+			gethSwap.IndexNumber,         //5
 			gethSwap.SwapDate,            //6
-			*gethSwap.TradeTypeID,        //7
+			gethSwap.TradeTypeID,         //7
 			gethSwap.TxnHash,             //8
 			gethSwap.MakerAddress,        //9
-			*gethSwap.MakerAddressID,     //10
+			gethSwap.MakerAddressID,      //10
 			gethSwap.IsBuy,               //11
-			*gethSwap.Price,              //12
-			*gethSwap.PriceUSD,           //13
-			*gethSwap.Token1PriceUSD,     //14
-			*gethSwap.TotalAmountUSD,     //15
+			gethSwap.Price,               //12
+			gethSwap.PriceUSD,            //13
+			gethSwap.Token1PriceUSD,      //14
+			gethSwap.TotalAmountUSD,      //15
 			gethSwap.PairAddress,         //16
-			*gethSwap.LiquidityPoolID,    //17
-			*gethSwap.Token0AssetId,      //18
-			*gethSwap.Token1AssetId,      //19
-			*gethSwap.Token0Amount,       //20
-			*gethSwap.Token1Amount,       //21
+			gethSwap.LiquidityPoolID,     //17
+			gethSwap.Token0AssetId,       //18
+			gethSwap.Token1AssetId,       //19
+			gethSwap.Token0Amount,        //20
+			gethSwap.Token1Amount,        //21
 			gethSwap.Description,         //22
 			gethSwap.CreatedBy,           //23
 			&now,                         //24
 			gethSwap.CreatedBy,           //25
 			&now,                         //26
-			*gethSwap.GethProcessJobID,   //27
+			gethSwap.GethProcessJobID,    //27
 			pq.Array(gethSwap.TopicsStr), //28
-			*gethSwap.StatusID,           //29
-			*gethSwap.BaseAssetID,        //30
+			gethSwap.StatusID,            //29
+			gethSwap.BaseAssetID,         //30
 		}
 		rows = append(rows, row)
 	}

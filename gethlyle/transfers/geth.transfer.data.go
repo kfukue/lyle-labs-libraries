@@ -912,28 +912,28 @@ func InsertGethTransfers(gethTransfers []*GethTransfer) error {
 		uuidString.Set(gethTransfer.UUID)
 		row := []interface{}{
 			uuidString,                       //1
-			*gethTransfer.ChainID,            //2
+			gethTransfer.ChainID,             //2
 			gethTransfer.TokenAddress,        //3
-			*gethTransfer.TokenAddressID,     //4
-			*gethTransfer.AssetID,            //5
-			*gethTransfer.BlockNumber,        //6
-			*gethTransfer.IndexNumber,        //7
+			gethTransfer.TokenAddressID,      //4
+			gethTransfer.AssetID,             //5
+			gethTransfer.BlockNumber,         //6
+			gethTransfer.IndexNumber,         //7
 			gethTransfer.TransferDate,        //8
 			gethTransfer.TxnHash,             //9
 			gethTransfer.SenderAddress,       //10
-			*gethTransfer.SenderAddressID,    //11
+			gethTransfer.SenderAddressID,     //11
 			gethTransfer.ToAddress,           //12
-			*gethTransfer.ToAddressID,        //13
-			*gethTransfer.Amount,             //14
+			gethTransfer.ToAddressID,         //13
+			gethTransfer.Amount,              //14
 			gethTransfer.Description,         //15
 			gethTransfer.CreatedBy,           //16
 			&now,                             //17
 			gethTransfer.CreatedBy,           //18
 			&now,                             //19
-			*gethTransfer.GethProcessJobID,   //20
+			gethTransfer.GethProcessJobID,    //20
 			pq.Array(gethTransfer.TopicsStr), //21
-			*gethTransfer.StatusID,           //22
-			*gethTransfer.BaseAssetID,        //23
+			gethTransfer.StatusID,            //22
+			gethTransfer.BaseAssetID,         //23
 
 		}
 		rows = append(rows, row)
