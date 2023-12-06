@@ -1008,6 +1008,7 @@ func UpdateGethTransferAddresses(baseAssetID *int) error {
 			asset_id = assets.id
 			from assets as assets
 			WHERE LOWER(gt.token_address) = LOWER(assets.contract_address)
+			AND gt.asset_id IS NULL
 			AND gt.base_asset_id = $1
 	`, *baseAssetID,
 	)
