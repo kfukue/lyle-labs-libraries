@@ -507,7 +507,7 @@ func GetGethSwapByFromMakerAddressIdAndBeforeBlockNumber(baseAssetID, makerAddre
 		FROM geth_swaps
 		WHERE
 		base_asset_id = $1
-		maker_address_id = $2
+		AND maker_address_id = $2
 		AND block_number <= $3
 		ORDER BY swap_date asc`,
 		*baseAssetID, *makerAddressID, *blockNumber,
@@ -1228,7 +1228,7 @@ func GetNullAddressStrsFromSwaps() ([]string, error) {
 	return gethNullAddressStrs, nil
 }
 
-func UpdateGethSwapAddresses() error {
+func UpdateGethSwapAddresses(baseAssetID *int) error {
 	// update address ids from existing addresses in geth_addresses
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -1236,8 +1236,9 @@ func UpdateGethSwapAddresses() error {
 		UPDATE geth_swaps as gs SET
 		maker_address_id = ga.id from geth_addresses as ga
 			WHERE LOWER(gs.maker_address) = LOWER(ga.address_str)
-			AND gs.maker_address_id IS NULL;
-	`,
+			AND gs.maker_address_id IS NULL
+			AND gs.base_asset_id = $1;
+	`, *baseAssetID,
 	)
 	if err != nil {
 		log.Println(err.Error())

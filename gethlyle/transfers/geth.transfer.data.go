@@ -479,7 +479,7 @@ func GetGethTransferByFromMakerAddressAndTokenAddressIDAndBeforeBlockNumber(make
 		base_asset_id =$1
 		AND (sender_address_id =$2 OR 
 			to_address_id = $2)
-		AND block_number <= blockNumber
+		AND block_number <= $3
 		`,
 		*baseAssetID, *makerAddressID, *blockNumber,
 	)
@@ -976,7 +976,7 @@ func InsertGethTransfers(gethTransfers []*GethTransfer) error {
 	return nil
 }
 
-func UpdateGethTransferAddresses() error {
+func UpdateGethTransferAddresses(baseAssetID *int) error {
 	// update address ids from existing addresses in geth_addresses
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -984,16 +984,32 @@ func UpdateGethTransferAddresses() error {
 		UPDATE geth_transfers as gt SET
 			sender_address_id = ga.id from geth_addresses as ga
 			WHERE LOWER(gt.sender_address) = LOWER(ga.address_str)
-			AND gt.sender_address_id IS NULL;
-		UPDATE geth_transfers as gt SET
+			AND gt.sender_address_id IS NULL
+			AND gt.base_asset_id = $1
+			`, *baseAssetID,
+	)
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+	_, err = database.DbConnPgx.Exec(ctx, `
+			UPDATE geth_transfers as gt SET
 			to_address_id = ga.id from geth_addresses as ga
 			WHERE LOWER(gt.to_address) = LOWER(ga.address_str)
-			AND gt.to_address_id IS NULL;
-		UPDATE geth_transfers as gt SET
+			AND gt.to_address_id IS NULL
+			AND gt.base_asset_id = $1
+			`, *baseAssetID,
+	)
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+	_, err = database.DbConnPgx.Exec(ctx, `UPDATE geth_transfers as gt SET
 			asset_id = assets.id
 			from assets as assets
-			WHERE LOWER(gt.token_address) = LOWER(assets.contract_address);
-	`,
+			WHERE LOWER(gt.token_address) = LOWER(assets.contract_address)
+			AND gt.base_asset_id = $1
+	`, *baseAssetID,
 	)
 	if err != nil {
 		log.Println(err.Error())
