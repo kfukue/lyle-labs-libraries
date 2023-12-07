@@ -558,6 +558,94 @@ func GetGethSwapByFromMakerAddressIdAndBeforeBlockNumber(baseAssetID, makerAddre
 	return gethSwaps, nil
 }
 
+func GetGethSwapByFromBaseAssetAndBeforeBlockNumber(baseAssetID, blockNumber *int) ([]*GethSwap, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `SELECT
+		id,
+		uuid,
+		chain_id,
+		exchange_id,
+		block_number,
+		index_number,
+		swap_date,
+		trade_type_id,
+		txn_hash,
+		maker_address,
+		maker_address_id,
+		is_buy,
+		price,
+		price_usd,
+		token1_price_usd,
+		total_amount_usd,
+		pair_address,
+		liquidity_pool_id,
+		token0_asset_id,
+		token1_asset_id,
+		token0_amount,
+		token1_Amount,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at,
+		geth_process_job_id,
+		topics_str,
+		status_id,
+		base_asset_id
+		FROM geth_swaps
+		WHERE
+		base_asset_id = $1
+		AND block_number <= $2
+		ORDER BY swap_date asc`,
+		*baseAssetID, *blockNumber,
+	)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethSwaps := make([]*GethSwap, 0)
+	for results.Next() {
+		var gethSwap GethSwap
+		results.Scan(
+			&gethSwap.ID,
+			&gethSwap.UUID,
+			&gethSwap.ChainID,
+			&gethSwap.ExchangeID,
+			&gethSwap.BlockNumber,
+			&gethSwap.IndexNumber,
+			&gethSwap.SwapDate,
+			&gethSwap.TradeTypeID,
+			&gethSwap.TxnHash,
+			&gethSwap.MakerAddress,
+			&gethSwap.MakerAddressID,
+			&gethSwap.IsBuy,
+			&gethSwap.Price,
+			&gethSwap.PriceUSD,
+			&gethSwap.Token1PriceUSD,
+			&gethSwap.TotalAmountUSD,
+			&gethSwap.PairAddress,
+			&gethSwap.LiquidityPoolID,
+			&gethSwap.Token0AssetId,
+			&gethSwap.Token1AssetId,
+			&gethSwap.Token0Amount,
+			&gethSwap.Token1Amount,
+			&gethSwap.Description,
+			&gethSwap.CreatedBy,
+			&gethSwap.CreatedAt,
+			&gethSwap.UpdatedBy,
+			&gethSwap.UpdatedAt,
+			&gethSwap.GethProcessJobID,
+			&gethSwap.TopicsStr,
+			&gethSwap.StatusID,
+			&gethSwap.BaseAssetID,
+		)
+		gethSwaps = append(gethSwaps, &gethSwap)
+	}
+	return gethSwaps, nil
+}
+
 func GetGethSwapByTxnHash(txnHash string, baseAssetID *int) ([]GethSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
