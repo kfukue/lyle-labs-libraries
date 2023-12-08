@@ -32,6 +32,8 @@ CREATE TABLE geth_trades
   updated_by                    VARCHAR(255) NOT NULL,
   updated_at                    timestamp NOT NULL,
   base_asset_id                 INT NOT NULL,
+  oracle_price_usd              NUMERIC NULL,
+  oracle_price_asset_id         INT NULL,
   PRIMARY KEY(id),
   CONSTRAINT fk_address FOREIGN KEY(address_id) REFERENCES geth_addresses(id),
   CONSTRAINT fk_token0_asset FOREIGN KEY(token0_asset_id) REFERENCES assets(id),
@@ -39,8 +41,18 @@ CREATE TABLE geth_trades
   CONSTRAINT fk_geth_process_jobs FOREIGN KEY(geth_process_job_id) REFERENCES geth_process_jobs(id),
   CONSTRAINT fk_status FOREIGN KEY(status_id) REFERENCES structured_values(id),
   CONSTRAINT fk_trade_type FOREIGN KEY(trade_type_id) REFERENCES structured_values(id),
-  CONSTRAINT fk_base_asset FOREIGN KEY(base_asset_id) REFERENCES assets(id)
+  CONSTRAINT fk_base_asset FOREIGN KEY(base_asset_id) REFERENCES assets(id),
+  CONSTRAINT fk_oracle_price_asset FOREIGN KEY(oracle_price_asset_id) REFERENCES assets(id)
 );
+
+--create index
+CREATE INDEX geth_trades_address_str ON geth_trades(address_str);
+CREATE INDEX geth_trades_address_id ON geth_trades(address_id);
+CREATE INDEX geth_trades_txn_hash ON geth_trades(txn_hash);
+CREATE INDEX geth_trades_fk_geth_process_jobs ON geth_trades(geth_process_job_id);
+CREATE INDEX geth_trades_fk_statuses ON geth_trades(status_id);
+CREATE INDEX geth_trades_fk_base_asset ON geth_trades(base_asset_id);
+CREATE INDEX geth_trades_fk_oracle_price_asset ON geth_trades(oracle_price_asset_id);
 
 
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO "asset-tracker-user";
@@ -48,3 +60,15 @@ GRANT SELECT,INSERT,UPDATE,DELETE  ON ALL TABLES IN SCHEMA public TO "asset-trac
 
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO "asset-tracker-api";
 GRANT SELECT,INSERT,UPDATE,DELETE  ON ALL TABLES IN SCHEMA public TO "asset-tracker-api";
+
+
+
+-- new column 2023-12-08
+ROLLBACK
+START TRANSACTION;
+ALTER TABLE geth_trades
+  ADD  oracle_price_usd NUMERIC NULL,
+  ADD  oracle_price_asset_id INT NULL,
+  ADD CONSTRAINT fk_oracle_price_asset FOREIGN KEY(oracle_price_asset_id) REFERENCES assets(id)
+  COMMIT
+-- end

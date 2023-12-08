@@ -19,3 +19,6 @@ CREATE TABLE geth_addresses
   CONSTRAINT fk_address_type FOREIGN KEY(address_type_id) REFERENCES structured_values(id)
 );
 
+
+-- create index
+CREATE INDEX geth_addresses_address_str ON geth_addresses(address_str);

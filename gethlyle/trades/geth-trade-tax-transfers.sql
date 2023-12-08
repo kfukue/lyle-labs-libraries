@@ -27,3 +27,8 @@ GRANT SELECT,INSERT,UPDATE,DELETE  ON ALL TABLES IN SCHEMA public TO "asset-trac
 
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO "asset-tracker-api";
 GRANT SELECT,INSERT,UPDATE,DELETE  ON ALL TABLES IN SCHEMA public TO "asset-tracker-api";
+
+
+-- create index
+CREATE INDEX geth_trade_tax_transfers_transfer_id ON geth_trade_tax_transfers(geth_transfer_id);
+CREATE INDEX geth_trade_tax_transfers_trade_id ON geth_trade_tax_transfers(geth_trade_id);

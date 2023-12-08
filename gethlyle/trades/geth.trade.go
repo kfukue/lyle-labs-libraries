@@ -36,6 +36,8 @@ type GethTrade struct {
 	UpdatedBy              string           `json:"updatedBy"`
 	UpdatedAt              time.Time        `json:"updatedAt"`
 	BaseAssetID            *int             `json:"baseAssetId"`
+	OraclePriceUSD         *decimal.Decimal `json:"oraclePriceUsd"`
+	OraclePriceAssetID     *int             `json:"oraclePriceAssetId"`
 }
 
 type NetTransferByAddress struct {

@@ -37,3 +37,10 @@ ALTER TABLE geth_process_jobs
   ADD  asset_id INT NULL
   COMMIT
 -- end
+
+-- create index
+CREATE INDEX geth_process_jobs_asset_id ON geth_process_jobs(asset_id);
+CREATE INDEX geth_process_jobs_start_date ON geth_process_jobs(start_date);
+CREATE INDEX geth_process_jobs_end_date ON geth_process_jobs(end_date);
+CREATE INDEX geth_process_jobs_status_id ON geth_process_jobs(status_id);
+CREATE INDEX geth_process_jobs_import_type_id ON geth_process_jobs(import_type_id);

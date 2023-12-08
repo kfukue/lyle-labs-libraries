@@ -333,7 +333,9 @@ func GetMissingTradesFromSwapsByBaseAssetID(baseAssetID *int) ([]gethlyleswaps.G
 			gs.geth_process_job_id,
 			gs.topics_str,
 			gs.status_id,
-			gs.base_asset_id
+			gs.base_asset_id,
+			gs.oracle_price_usd,
+			gs.oracle_price_asset_id
 		FROM geth_swaps gs
 		LEFT JOIN geth_trade_swaps gts
 			ON gs.id = gts.geth_swap_id
@@ -385,6 +387,8 @@ func GetMissingTradesFromSwapsByBaseAssetID(baseAssetID *int) ([]gethlyleswaps.G
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
 			&gethSwap.BaseAssetID,
+			&gethSwap.OraclePriceUSD,
+			&gethSwap.OraclePriceAssetID,
 		)
 
 		gethSwaps = append(gethSwaps, gethSwap)

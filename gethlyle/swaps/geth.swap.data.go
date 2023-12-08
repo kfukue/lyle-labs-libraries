@@ -48,7 +48,9 @@ func GetGethSwapByBlockChain(txnHash string, blockNumber *uint64, indexNumber *u
 	geth_process_job_id,
 	topics_str,
 	status_id,
-	base_asset_id
+	base_asset_id,
+	oracle_price_usd,
+  	oracle_price_asset_id
 	FROM geth_swaps
 	WHERE txn_hash= $1
 	AND block_number = $2
@@ -90,6 +92,8 @@ func GetGethSwapByBlockChain(txnHash string, blockNumber *uint64, indexNumber *u
 		&gethSwap.TopicsStr,
 		&gethSwap.StatusID,
 		&gethSwap.BaseAssetID,
+		&gethSwap.OraclePriceUSD,
+		&gethSwap.OraclePriceAssetID,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -134,7 +138,9 @@ func GetGethSwap(gethSwapID int) (*GethSwap, error) {
 	geth_process_job_id,
 	topics_str,
 	status_id,
-	base_asset_id
+	base_asset_id,
+	oracle_price_usd,
+  	oracle_price_asset_id
 	FROM geth_swaps
 	WHERE id = $1
 	`, gethSwapID)
@@ -172,6 +178,8 @@ func GetGethSwap(gethSwapID int) (*GethSwap, error) {
 		&gethSwap.TopicsStr,
 		&gethSwap.StatusID,
 		&gethSwap.BaseAssetID,
+		&gethSwap.OraclePriceUSD,
+		&gethSwap.OraclePriceAssetID,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -243,7 +251,9 @@ func GetGethSwapByStartAndEndDates(startDate, endDate time.Time) ([]GethSwap, er
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		oracle_price_usd,
+  		oracle_price_asset_id
 		FROM geth_swaps
 		WHERE swap_date BETWEEN $1 AND $2
 		`,
@@ -288,6 +298,8 @@ func GetGethSwapByStartAndEndDates(startDate, endDate time.Time) ([]GethSwap, er
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
 			&gethSwap.BaseAssetID,
+			&gethSwap.OraclePriceUSD,
+			&gethSwap.OraclePriceAssetID,
 		)
 
 		gethSwaps = append(gethSwaps, gethSwap)
@@ -329,7 +341,9 @@ func GetGethSwapByFromMakerAddress(makerAddress string) ([]GethSwap, error) {
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		oracle_price_usd,
+  		oracle_price_asset_id
 		FROM geth_swaps
 		WHERE
 		maker_address = $1
@@ -376,6 +390,8 @@ func GetGethSwapByFromMakerAddress(makerAddress string) ([]GethSwap, error) {
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
 			&gethSwap.BaseAssetID,
+			&gethSwap.OraclePriceUSD,
+			&gethSwap.OraclePriceAssetID,
 		)
 		gethSwaps = append(gethSwaps, gethSwap)
 	}
@@ -416,7 +432,9 @@ func GetGethSwapByFromMakerAddressId(makerAddressID *int) ([]*GethSwap, error) {
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		oracle_price_usd,
+  		oracle_price_asset_id
 		FROM geth_swaps
 		WHERE
 		maker_address_id = $1
@@ -463,6 +481,8 @@ func GetGethSwapByFromMakerAddressId(makerAddressID *int) ([]*GethSwap, error) {
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
 			&gethSwap.BaseAssetID,
+			&gethSwap.OraclePriceUSD,
+			&gethSwap.OraclePriceAssetID,
 		)
 		gethSwaps = append(gethSwaps, &gethSwap)
 	}
@@ -503,7 +523,9 @@ func GetGethSwapByFromMakerAddressIdAndBeforeBlockNumber(baseAssetID, makerAddre
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		oracle_price_usd,
+		oracle_price_asset_id
 		FROM geth_swaps
 		WHERE
 		base_asset_id = $1
@@ -552,6 +574,8 @@ func GetGethSwapByFromMakerAddressIdAndBeforeBlockNumber(baseAssetID, makerAddre
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
 			&gethSwap.BaseAssetID,
+			&gethSwap.OraclePriceUSD,
+			&gethSwap.OraclePriceAssetID,
 		)
 		gethSwaps = append(gethSwaps, &gethSwap)
 	}
@@ -592,7 +616,9 @@ func GetGethSwapByFromBaseAssetAndBeforeBlockNumber(baseAssetID, blockNumber *in
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		oracle_price_usd,
+		oracle_price_asset_id
 		FROM geth_swaps
 		WHERE
 		base_asset_id = $1
@@ -640,6 +666,8 @@ func GetGethSwapByFromBaseAssetAndBeforeBlockNumber(baseAssetID, blockNumber *in
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
 			&gethSwap.BaseAssetID,
+			&gethSwap.OraclePriceUSD,
+			&gethSwap.OraclePriceAssetID,
 		)
 		gethSwaps = append(gethSwaps, &gethSwap)
 	}
@@ -680,7 +708,9 @@ func GetGethSwapByTxnHash(txnHash string, baseAssetID *int) ([]GethSwap, error) 
 		gs.geth_process_job_id,
 		gs.topics_str,
 		gs.status_id,
-		gs.base_asset_id
+		gs.base_asset_id,
+		gs.oracle_price_usd,
+		gs.oracle_price_asset_id
 		FROM geth_swaps gs
 		LEFT JOIN geth_addresses addresses ON gs.maker_address_id = addresses.id
 		WHERE
@@ -730,6 +760,8 @@ func GetGethSwapByTxnHash(txnHash string, baseAssetID *int) ([]GethSwap, error) 
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
 			&gethSwap.BaseAssetID,
+			&gethSwap.OraclePriceUSD,
+			&gethSwap.OraclePriceAssetID,
 		)
 		gethSwaps = append(gethSwaps, gethSwap)
 	}
@@ -771,7 +803,9 @@ func GetGethSwapsByTxnHashes(txnHashes []string, baseAssetID *int) ([]GethSwap, 
 		gs.geth_process_job_id,
 		gs.topics_str,
 		gs.status_id,
-		gs.base_asset_id
+		gs.base_asset_id,
+		gs.oracle_price_usd,
+		gs.oracle_price_asset_id
 		FROM geth_swaps gs
 		LEFT JOIN geth_addresses addresses ON gs.maker_address_id = addresses.id
 		WHERE
@@ -821,6 +855,8 @@ func GetGethSwapsByTxnHashes(txnHashes []string, baseAssetID *int) ([]GethSwap, 
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
 			&gethSwap.BaseAssetID,
+			&gethSwap.OraclePriceUSD,
+			&gethSwap.OraclePriceAssetID,
 		)
 		gethSwaps = append(gethSwaps, gethSwap)
 	}
@@ -976,7 +1012,9 @@ func getGethSwapList() ([]GethSwap, error) {
 	geth_process_job_id,
 	topics_str,
 	status_id,
-	base_asset_id
+	base_asset_id,
+	oracle_price_usd,
+  	oracle_price_asset_id
 	FROM geth_swaps `)
 	if err != nil {
 		log.Println(err.Error())
@@ -1017,6 +1055,8 @@ func getGethSwapList() ([]GethSwap, error) {
 			&gethSwap.TopicsStr,
 			&gethSwap.StatusID,
 			&gethSwap.BaseAssetID,
+			&gethSwap.OraclePriceUSD,
+			&gethSwap.OraclePriceAssetID,
 		)
 
 		gethSwaps = append(gethSwaps, gethSwap)
@@ -1058,8 +1098,10 @@ func UpdateGethSwap(gethSwap GethSwap) error {
 		geth_process_job_id=$23,
 		topics_str$=24,
 		status_id=$25,
-		base_asset_id=$26
-		WHERE id=$27`,
+		base_asset_id=$26,
+		oracle_price_usd$27,
+  		oracle_price_asset_id$28
+		WHERE id=$29`,
 		gethSwap.ChainID,             //1
 		gethSwap.ExchangeID,          //2
 		gethSwap.BlockNumber,         //3
@@ -1086,7 +1128,9 @@ func UpdateGethSwap(gethSwap GethSwap) error {
 		pq.Array(gethSwap.TopicsStr), //24
 		gethSwap.StatusID,            //25
 		gethSwap.BaseAssetID,         //26
-		gethSwap.ID,                  //27
+		gethSwap.OraclePriceUSD,      //27
+		gethSwap.OraclePriceAssetID,  //28
+		gethSwap.ID,                  //29
 	)
 	if err != nil {
 		log.Println(err.Error())
@@ -1131,7 +1175,9 @@ func InsertGethSwap(gethSwap *GethSwap) (int, string, error) {
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		oracle_price_usd,
+  		oracle_price_asset_id
 		) VALUES (
 		uuid_generate_v4(),
 		$1,
@@ -1162,7 +1208,9 @@ func InsertGethSwap(gethSwap *GethSwap) (int, string, error) {
 		$23,
 		$24,
 		$25,
-		$26
+		$26,
+		$27,
+		$28
 		)
 		RETURNING id, uuid`,
 		gethSwap.ChainID,             //1
@@ -1191,6 +1239,8 @@ func InsertGethSwap(gethSwap *GethSwap) (int, string, error) {
 		pq.Array(gethSwap.TopicsStr), //24
 		gethSwap.StatusID,            //25
 		gethSwap.BaseAssetID,         //26
+		gethSwap.OraclePriceUSD,      //27
+		gethSwap.OraclePriceAssetID,  //28
 	).Scan(&gethSwapID, &gethSwapUUID)
 	if err != nil {
 		log.Println(err)
@@ -1240,6 +1290,8 @@ func InsertGethSwaps(gethSwaps []*GethSwap) error {
 			pq.Array(gethSwap.TopicsStr), //28
 			gethSwap.StatusID,            //29
 			gethSwap.BaseAssetID,         //30
+			gethSwap.OraclePriceUSD,      //31
+			gethSwap.OraclePriceAssetID,  //32
 		}
 		rows = append(rows, row)
 	}
@@ -1247,36 +1299,38 @@ func InsertGethSwaps(gethSwaps []*GethSwap) error {
 		ctx,
 		pgx.Identifier{"geth_swaps"},
 		[]string{
-			"uuid",                //1
-			"chain_id",            //2
-			"exchange_id",         //3
-			"block_number",        //4
-			"index_number",        //5
-			"swap_date",           //6
-			"trade_type_id",       //7
-			"txn_hash",            //8
-			"maker_address",       //9
-			"maker_address_id",    //10
-			"is_buy",              //11
-			"price",               //12
-			"price_usd",           //13
-			"token1_price_usd",    //14
-			"total_amount_usd",    //15
-			"pair_address",        //16
-			"liquidity_pool_id",   //17
-			"token0_asset_id",     //18
-			"token1_asset_id",     //19
-			"token0_amount",       //20
-			"token1_amount",       //21
-			"description",         //22
-			"created_by",          //23
-			"created_at",          //24
-			"updated_by",          //25
-			"updated_at",          //26
-			"geth_process_job_id", //27
-			"topics_str",          //28
-			"status_id",           //29,
-			"base_asset_id",       //30
+			"uuid",                  //1
+			"chain_id",              //2
+			"exchange_id",           //3
+			"block_number",          //4
+			"index_number",          //5
+			"swap_date",             //6
+			"trade_type_id",         //7
+			"txn_hash",              //8
+			"maker_address",         //9
+			"maker_address_id",      //10
+			"is_buy",                //11
+			"price",                 //12
+			"price_usd",             //13
+			"token1_price_usd",      //14
+			"total_amount_usd",      //15
+			"pair_address",          //16
+			"liquidity_pool_id",     //17
+			"token0_asset_id",       //18
+			"token1_asset_id",       //19
+			"token0_amount",         //20
+			"token1_amount",         //21
+			"description",           //22
+			"created_by",            //23
+			"created_at",            //24
+			"updated_by",            //25
+			"updated_at",            //26
+			"geth_process_job_id",   //27
+			"topics_str",            //28
+			"status_id",             //29
+			"base_asset_id",         //30
+			"oracle_price_usd",      //31
+			"oracle_price_asset_id", //32
 		},
 		pgx.CopyFromRows(rows),
 	)
