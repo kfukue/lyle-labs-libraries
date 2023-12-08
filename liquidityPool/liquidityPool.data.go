@@ -293,7 +293,7 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 	FROM liquidity_pools lp
 	LEFT JOIN assets token0 ON lp.token0_id = token0.id
 	LEFT JOIN assets token1 ON lp.token1_id = token1.id
-	WHERE token0_id = $1
+	WHERE lp.base_asset_id = $1
 	`
 	results, err := database.DbConnPgx.Query(ctx, sql, asset0ID)
 	if err != nil {
