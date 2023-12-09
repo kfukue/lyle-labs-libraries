@@ -38,7 +38,10 @@ func GetLiquidityPool(liquidityPoolID int) (*LiquidityPool, error) {
 		created_at, 
 		updated_by, 
 		updated_at,
-		base_asset_id
+		base_asset_id,
+		quote_asset_id,
+		quote_asset_chainlink_address_usd
+
 	FROM liquidity_pools 
 	WHERE id = $1`, liquidityPoolID)
 
@@ -65,6 +68,8 @@ func GetLiquidityPool(liquidityPoolID int) (*LiquidityPool, error) {
 		&liquidityPool.UpdatedBy,
 		&liquidityPool.UpdatedAt,
 		&liquidityPool.BaseAssetID,
+		&liquidityPool.QuoteAssetID,
+		&liquidityPool.QuoteAssetChainlinkAddress,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -110,7 +115,9 @@ func GetLiquidityPools() ([]LiquidityPool, error) {
 		created_at, 
 		updated_by, 
 		updated_at,
-		base_asset_id
+		base_asset_id,
+		quote_asset_id,
+		quote_asset_chainlink_address_usd
 	FROM liquidity_pools`)
 	if err != nil {
 		log.Println(err.Error())
@@ -142,6 +149,8 @@ func GetLiquidityPools() ([]LiquidityPool, error) {
 			&liquidityPool.UpdatedBy,
 			&liquidityPool.UpdatedAt,
 			&liquidityPool.BaseAssetID,
+			&liquidityPool.QuoteAssetID,
+			&liquidityPool.QuoteAssetChainlinkAddress,
 		)
 
 		liquidityPools = append(liquidityPools, liquidityPool)
@@ -173,7 +182,9 @@ func GetLiquidityPoolList(ids []int) ([]LiquidityPool, error) {
 		created_at, 
 		updated_by, 
 		updated_at,
-		base_asset_id
+		base_asset_id,
+		quote_asset_id,
+		quote_asset_chainlink_address_usd
 	FROM liquidity_pools`
 	if len(ids) > 0 {
 		strIds := utils.SplitToString(ids, ",")
@@ -211,6 +222,8 @@ func GetLiquidityPoolList(ids []int) ([]LiquidityPool, error) {
 			&liquidityPool.UpdatedBy,
 			&liquidityPool.UpdatedAt,
 			&liquidityPool.BaseAssetID,
+			&liquidityPool.QuoteAssetID,
+			&liquidityPool.QuoteAssetChainlinkAddress,
 		)
 		liquidityPools = append(liquidityPools, liquidityPool)
 	}
@@ -242,6 +255,8 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 	lp.updated_by, 
 	lp.updated_at,
 	lp.base_asset_id,
+	lp.quote_asset_id,
+	lpquote_asset_chainlink_address_usd
 	-- asset0
 	token0.id as token0_id,
 	token0.uuid as token0_uuid, 
@@ -326,6 +341,8 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 			&liquidityPoolWithTokens.UpdatedBy,
 			&liquidityPoolWithTokens.UpdatedAt,
 			&liquidityPoolWithTokens.BaseAssetID,
+			&liquidityPoolWithTokens.QuoteAssetID,
+			&liquidityPoolWithTokens.QuoteAssetChainlinkAddress,
 			// token 0
 			&liquidityPoolWithTokens.Token0.ID,
 			&liquidityPoolWithTokens.Token0.UUID,
@@ -404,7 +421,9 @@ func GetLiquidityPoolsByUUIDs(UUIDList []string) ([]LiquidityPool, error) {
 		created_at, 
 		updated_by, 
 		updated_at,
-		base_asset_id
+		base_asset_id,
+		quote_asset_id,
+		quote_asset_chainlink_address_usd
 	FROM liquidity_pools
 	WHERE text(uuid) = ANY($1)
 	`, pq.Array(UUIDList))
@@ -438,6 +457,8 @@ func GetLiquidityPoolsByUUIDs(UUIDList []string) ([]LiquidityPool, error) {
 			&liquidityPool.UpdatedBy,
 			&liquidityPool.UpdatedAt,
 			&liquidityPool.BaseAssetID,
+			&liquidityPool.QuoteAssetID,
+			&liquidityPool.QuoteAssetChainlinkAddress,
 		)
 
 		liquidityPools = append(liquidityPools, liquidityPool)
@@ -469,7 +490,9 @@ func GetStartAndEndDateDiffLiquidityPools(diffInDate int) ([]LiquidityPool, erro
 		created_at, 
 		updated_by, 
 		updated_at,
-		base_asset_id
+		base_asset_id,
+		quote_asset_id,
+		quote_asset_chainlink_address_usd
 	FROM liquidity_pools
 	WHERE DATE_PART('day', AGE(start_date, end_date)) =$1
 	`, diffInDate)
@@ -503,6 +526,8 @@ func GetStartAndEndDateDiffLiquidityPools(diffInDate int) ([]LiquidityPool, erro
 			&liquidityPool.UpdatedBy,
 			&liquidityPool.UpdatedAt,
 			&liquidityPool.BaseAssetID,
+			&liquidityPool.QuoteAssetID,
+			&liquidityPool.QuoteAssetChainlinkAddress,
 		)
 
 		liquidityPools = append(liquidityPools, liquidityPool)
@@ -534,25 +559,29 @@ func UpdateLiquidityPool(liquidityPool LiquidityPool) error {
 		description=$14,
 		updated_by=$15, 
 		updated_at=current_timestamp at time zone 'UTC',
-		base_asset_id=$16
-		WHERE id=$17`,
-		liquidityPool.Name,                //1
-		liquidityPool.AlternateName,       //2
-		liquidityPool.PairAddress,         //3
-		liquidityPool.ChainID,             //4
-		liquidityPool.ExchangeID,          //5
-		liquidityPool.LiquidityPoolTypeID, //6
-		liquidityPool.Token0ID,            //7
-		liquidityPool.Token1ID,            //8
-		liquidityPool.Url,                 //9
-		liquidityPool.StartBlock,          //10
-		liquidityPool.LatestBlockSynced,   //11
-		liquidityPool.CreatedTxnHash,      //12
-		liquidityPool.IsActive,            //13
-		liquidityPool.Description,         //14
-		liquidityPool.UpdatedBy,           //15
-		liquidityPool.BaseAssetID,         //16
-		liquidityPool.ID)                  //17
+		base_asset_id=$16,
+		quote_asset_id=$17,
+		quote_asset_chainlink_address_usd=$18
+		WHERE id=$19`,
+		liquidityPool.Name,                       //1
+		liquidityPool.AlternateName,              //2
+		liquidityPool.PairAddress,                //3
+		liquidityPool.ChainID,                    //4
+		liquidityPool.ExchangeID,                 //5
+		liquidityPool.LiquidityPoolTypeID,        //6
+		liquidityPool.Token0ID,                   //7
+		liquidityPool.Token1ID,                   //8
+		liquidityPool.Url,                        //9
+		liquidityPool.StartBlock,                 //10
+		liquidityPool.LatestBlockSynced,          //11
+		liquidityPool.CreatedTxnHash,             //12
+		liquidityPool.IsActive,                   //13
+		liquidityPool.Description,                //14
+		liquidityPool.UpdatedBy,                  //15
+		liquidityPool.BaseAssetID,                //16
+		liquidityPool.QuoteAssetID,               //17
+		liquidityPool.QuoteAssetChainlinkAddress, //18
+		liquidityPool.ID)                         //19
 
 	if err != nil {
 		log.Println(err.Error())
@@ -587,7 +616,9 @@ func InsertLiquidityPool(liquidityPool LiquidityPool) (int, error) {
 		created_at, 
 		updated_by, 
 		updated_at,
-		base_asset_id
+		base_asset_id,
+		quote_asset_id,
+		quote_asset_chainlink_address_usd
 		) VALUES (
 			uuid_generate_v4(),
 			$1,
@@ -608,25 +639,29 @@ func InsertLiquidityPool(liquidityPool LiquidityPool) (int, error) {
 			current_timestamp at time zone 'UTC',
 			$15,
 			current_timestamp at time zone 'UTC',
-			$16
+			$16,
+			$17,
+			$18
 		)
 		RETURNING id`,
-		liquidityPool.Name,                 //1
-		liquidityPool.AlternateName,        //2
-		&liquidityPool.PairAddress,         //3
-		&liquidityPool.ChainID,             //4
-		&liquidityPool.ExchangeID,          //5
-		&liquidityPool.LiquidityPoolTypeID, //6
-		&liquidityPool.Token0ID,            //7
-		&liquidityPool.Token1ID,            //8
-		&liquidityPool.Url,                 //9
-		&liquidityPool.StartBlock,          //10
-		&liquidityPool.LatestBlockSynced,   //11
-		&liquidityPool.CreatedTxnHash,      //12
-		&liquidityPool.IsActive,            //13
-		liquidityPool.Description,          //14
-		liquidityPool.CreatedBy,            //15
-		liquidityPool.BaseAssetID,          //16
+		liquidityPool.Name,                       //1
+		liquidityPool.AlternateName,              //2
+		&liquidityPool.PairAddress,               //3
+		&liquidityPool.ChainID,                   //4
+		&liquidityPool.ExchangeID,                //5
+		&liquidityPool.LiquidityPoolTypeID,       //6
+		&liquidityPool.Token0ID,                  //7
+		&liquidityPool.Token1ID,                  //8
+		&liquidityPool.Url,                       //9
+		&liquidityPool.StartBlock,                //10
+		&liquidityPool.LatestBlockSynced,         //11
+		&liquidityPool.CreatedTxnHash,            //12
+		&liquidityPool.IsActive,                  //13
+		liquidityPool.Description,                //14
+		liquidityPool.CreatedBy,                  //15
+		liquidityPool.BaseAssetID,                //16
+		liquidityPool.QuoteAssetID,               //17
+		liquidityPool.QuoteAssetChainlinkAddress, //18
 	).Scan(&insertID)
 
 	if err != nil {
@@ -646,26 +681,28 @@ func InsertLiquidityPools(liquidityPools []LiquidityPool) error {
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(liquidityPool.UUID)
 		row := []interface{}{
-			uuidString,                         //1
-			liquidityPool.Name,                 //2
-			liquidityPool.AlternateName,        //3
-			liquidityPool.PairAddress,          //4
-			*liquidityPool.ChainID,             //5
-			*liquidityPool.ExchangeID,          //6
-			*liquidityPool.LiquidityPoolTypeID, //7
-			*liquidityPool.Token0ID,            //8
-			*liquidityPool.Token1ID,            //9
-			liquidityPool.Url,                  //10
-			*liquidityPool.StartBlock,          //11
-			*liquidityPool.LatestBlockSynced,   //12
-			liquidityPool.CreatedTxnHash,       //13
-			liquidityPool.IsActive,             //14
-			liquidityPool.Description,          //15
-			liquidityPool.CreatedBy,            //16
-			&now,                               //17
-			liquidityPool.CreatedBy,            //18
-			&now,                               //19
-			*liquidityPool.BaseAssetID,         //20
+			uuidString,                               //1
+			liquidityPool.Name,                       //2
+			liquidityPool.AlternateName,              //3
+			liquidityPool.PairAddress,                //4
+			*liquidityPool.ChainID,                   //5
+			*liquidityPool.ExchangeID,                //6
+			*liquidityPool.LiquidityPoolTypeID,       //7
+			*liquidityPool.Token0ID,                  //8
+			*liquidityPool.Token1ID,                  //9
+			liquidityPool.Url,                        //10
+			*liquidityPool.StartBlock,                //11
+			*liquidityPool.LatestBlockSynced,         //12
+			liquidityPool.CreatedTxnHash,             //13
+			liquidityPool.IsActive,                   //14
+			liquidityPool.Description,                //15
+			liquidityPool.CreatedBy,                  //16
+			&now,                                     //17
+			liquidityPool.CreatedBy,                  //18
+			&now,                                     //19
+			*liquidityPool.BaseAssetID,               //20
+			liquidityPool.QuoteAssetID,               //21
+			liquidityPool.QuoteAssetChainlinkAddress, //22
 		}
 		rows = append(rows, row)
 	}
@@ -673,26 +710,28 @@ func InsertLiquidityPools(liquidityPools []LiquidityPool) error {
 		ctx,
 		pgx.Identifier{"liquidity_pools"},
 		[]string{
-			"uuid",                   //1
-			"name",                   //2
-			"alternate_name",         //3
-			"pair_address",           //4
-			"chain_id",               //5
-			"exchange_id",            //6
-			"liquidity_pool_type_id", //7
-			"token0_id",              //8
-			"token1_id",              //9
-			"url",                    //10
-			"start_block",            //11
-			"latest_block_synced",    //12
-			"created_txn_hash",       //13
-			"IsActive",               //14
-			"description",            //15
-			"created_by",             //16
-			"created_at",             //17
-			"updated_by",             //18
-			"updated_at",             //19
-			"base_asset_id",          //20
+			"uuid",                              //1
+			"name",                              //2
+			"alternate_name",                    //3
+			"pair_address",                      //4
+			"chain_id",                          //5
+			"exchange_id",                       //6
+			"liquidity_pool_type_id",            //7
+			"token0_id",                         //8
+			"token1_id",                         //9
+			"url",                               //10
+			"start_block",                       //11
+			"latest_block_synced",               //12
+			"created_txn_hash",                  //13
+			"IsActive",                          //14
+			"description",                       //15
+			"created_by",                        //16
+			"created_at",                        //17
+			"updated_by",                        //18
+			"updated_at",                        //19
+			"base_asset_id",                     //20
+			"quote_asset_id",                    //21
+			"quote_asset_chainlink_address_usd", //22
 		},
 		pgx.CopyFromRows(rows),
 	)
