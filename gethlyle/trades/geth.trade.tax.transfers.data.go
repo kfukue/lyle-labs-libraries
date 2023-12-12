@@ -18,20 +18,20 @@ func GetAllGethTradeTaxTransfersByTradeID(gethTradeID int) ([]GethTradeTaxTransf
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
 	SELECT 
-		geth_trade_tax_transfers.geth_trade_id,
-		geth_trade_tax_transfers.geth_transfer_id,
-		geth_trade_tax_transfers.tax_id,
-		geth_trade_tax_transfers.uuid, 
-		geth_trade_tax_transfers.name, 
-		geth_trade_tax_transfers.alternate_name, 
-		geth_trade_tax_transfers.description,
-		geth_trade_tax_transfers.created_by, 
-		geth_trade_tax_transfers.created_at, 
-		geth_trade_tax_transfers.updated_by, 
-		geth_trade_tax_transfers.updated_at 
+		geth_trade_transfers.geth_trade_id,
+		geth_trade_transfers.geth_transfer_id,
+		geth_trade_transfers.tax_id,
+		geth_trade_transfers.uuid, 
+		geth_trade_transfers.name, 
+		geth_trade_transfers.alternate_name, 
+		geth_trade_transfers.description,
+		geth_trade_transfers.created_by, 
+		geth_trade_transfers.created_at, 
+		geth_trade_transfers.updated_by, 
+		geth_trade_transfers.updated_at 
 	FROM geth_trades 
-	LEFT JOIN geth_trade_tax_transfers
-	ON geth_trade_tax_transfers.geth_trade_id = geth_trades.id 
+	LEFT JOIN geth_trade_transfers
+	ON geth_trade_transfers.geth_trade_id = geth_trades.id 
 	WHERE 
 	geth_trades.id = $1
 	`, gethTradeID)
@@ -77,7 +77,7 @@ func GetGethTradeTaxTransfer(gethTradeID int, gethGethTransferID int) (*GethTrad
 		created_at, 
 		updated_by, 
 		updated_at 
-	FROM geth_trade_tax_transfers 
+	FROM geth_trade_transfers 
 	WHERE 
 	geth_trade_id = $1
 	AND geth_transfer_id = $2
@@ -109,7 +109,7 @@ func GetGethTradeTaxTransfer(gethTradeID int, gethGethTransferID int) (*GethTrad
 func RemoveGethTradeTaxTransfer(gethTradeID int, gethGethTransferID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM geth_trade_tax_transfers WHERE 
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM geth_trade_transfers WHERE 
 	geth_trade_id =$1 AND geth_transfer_id = $2`, gethTradeID, gethGethTransferID)
 	if err != nil {
 		log.Println(err.Error())
@@ -134,7 +134,7 @@ func GetGethTradeTaxTransferList(gethTradeIds []int, swapIds []int) ([]GethTrade
 		created_at, 
 		updated_by, 
 		updated_at 
-	FROM geth_trade_tax_transfers`
+	FROM geth_trade_transfers`
 	if len(gethTradeIds) > 0 || len(swapIds) > 0 {
 		additionalQuery := ` WHERE`
 		if len(gethTradeIds) > 0 {
@@ -185,7 +185,7 @@ func UpdateGethTradeTaxTransfer(gethTradeTaxTransfer GethTradeTaxTransfer) error
 	if (gethTradeTaxTransfer.GethTransferID == nil || *gethTradeTaxTransfer.GethTransferID == 0) || (gethTradeTaxTransfer.GethTradeID == nil || *gethTradeTaxTransfer.GethTradeID == 0) {
 		return errors.New("gethTradeTaxTransfer has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE geth_trade_tax_transfers SET 
+	_, err := database.DbConnPgx.Query(ctx, `UPDATE geth_trade_transfers SET 
 		tax_id 				=$1,	
 		name				=$2,  
 		alternate_name		=$3, 
@@ -216,7 +216,7 @@ func InsertGethTradeTaxTransfer(gethTradeTaxTransfer GethTradeTaxTransfer) (int,
 	defer cancel()
 	var GethTransferID int
 	var GethTradeID int
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO geth_trade_tax_transfers  
+	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO geth_trade_transfers  
 	(
 		geth_trade_id,
 		geth_transfer_id,
@@ -285,7 +285,7 @@ func InsertGethTradeTaxTransfers(gethTradeTaxTransfers []*GethTradeTaxTransfer) 
 	}
 	copyCount, err := database.DbConnPgx.CopyFrom(
 		ctx,
-		pgx.Identifier{"geth_trade_tax_transfers"},
+		pgx.Identifier{"geth_trade_transfers"},
 		[]string{
 			"geth_trade_id",    //1
 			"geth_transfer_id", //2

@@ -1118,7 +1118,7 @@ func UpdateGethTransferAddresses(baseAssetID *int) error {
 	return nil
 }
 
-func GetNullAddressStrsFromTransfers() ([]string, error) {
+func GetNullAddressStrsFromTransfers(baseAssetID *int) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
@@ -1128,6 +1128,7 @@ func GetNullAddressStrsFromTransfers() ([]string, error) {
 				LEFT JOIN geth_addresses as ga
 				ON LOWER(gt.sender_address) = LOWER(ga.address_str)
 			WHERE gt.sender_address_id IS NULL
+			AND gt.base_asset_id = $1
 			AND ga.id IS NULL
 		),
 		to_table as(
@@ -1136,12 +1137,13 @@ func GetNullAddressStrsFromTransfers() ([]string, error) {
 				LEFT JOIN geth_addresses as ga
 				ON LOWER(gt.to_address) = LOWER(ga.address_str)
 			WHERE gt.to_address_id IS NULL
+			AND gt.base_asset_id = $1
 			AND ga.id IS NULL
 		)
 		SELECT * FROM sender_table
 		UNION
 		SELECT * FROM to_table
-		`,
+		`, *baseAssetID,
 	)
 	if err != nil {
 		log.Println(err.Error())

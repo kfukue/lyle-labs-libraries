@@ -1,9 +1,9 @@
 ROLLBACK
 BEGIN TRANSACTION;
-DROP TABLE IF EXISTS geth_trade_tax_transfers CASCADE;
+DROP TABLE IF EXISTS geth_trade_transfers CASCADE;
 
 
-CREATE TABLE geth_trade_tax_transfers
+CREATE TABLE geth_trade_transfers
 (
   geth_trade_id                 INT NOT NULL,
   geth_transfer_id              INT NOT NULL,
@@ -30,5 +30,5 @@ GRANT SELECT,INSERT,UPDATE,DELETE  ON ALL TABLES IN SCHEMA public TO "asset-trac
 
 
 -- create index
-CREATE INDEX geth_trade_tax_transfers_transfer_id ON geth_trade_tax_transfers(geth_transfer_id);
-CREATE INDEX geth_trade_tax_transfers_trade_id ON geth_trade_tax_transfers(geth_trade_id);
+CREATE INDEX geth_trade_transfers_transfer_id ON geth_trade_transfers(geth_transfer_id);
+CREATE INDEX geth_trade_transfers_trade_id ON geth_trade_transfers(geth_trade_id);

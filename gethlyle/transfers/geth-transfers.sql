@@ -39,8 +39,8 @@ CREATE TABLE geth_transfers
   CONSTRAINT fk_to_address FOREIGN KEY(to_address_id) REFERENCES geth_addresses(id),
   CONSTRAINT fk_geth_process_jobs FOREIGN KEY(geth_process_job_id) REFERENCES geth_process_jobs(id),
   CONSTRAINT fk_statuses FOREIGN KEY(status_id) REFERENCES structured_values(id),
-  CONSTRAINT fk_base_asset FOREIGN KEY(base_asset_id) REFERENCES assets(id)
-  CONSTRAINT fk_transfer_types FOREIGN KEY(transfer_type_id) REFERENCES structured_values(id),
+  CONSTRAINT fk_base_asset FOREIGN KEY(base_asset_id) REFERENCES assets(id),
+  CONSTRAINT fk_transfer_types FOREIGN KEY(transfer_type_id) REFERENCES structured_values(id)
 );
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO "asset-tracker-user";
 GRANT SELECT,INSERT,UPDATE,DELETE  ON ALL TABLES IN SCHEMA public TO "asset-tracker-user";

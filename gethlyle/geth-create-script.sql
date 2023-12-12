@@ -3,7 +3,7 @@ COMMIT;
 BEGIN TRANSACTION;
 
 DROP TABLE IF EXISTS geth_trade_swaps CASCADE;
-DROP TABLE IF EXISTS geth_trade_tax_transfers CASCADE;
+DROP TABLE IF EXISTS geth_trade_transfers CASCADE;
 DROP TABLE IF EXISTS geth_trades CASCADE;
 DROP TABLE IF EXISTS geth_addresses CASCADE;
 DROP TABLE IF EXISTS geth_process_jobs CASCADE;
@@ -229,7 +229,7 @@ CREATE TABLE geth_trade_swaps
 
 
 
-CREATE TABLE geth_trade_tax_transfers
+CREATE TABLE geth_trade_transfers
 (
   geth_trade_id                 INT NOT NULL,
   geth_transfer_id              INT NOT NULL,

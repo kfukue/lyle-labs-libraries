@@ -1342,7 +1342,7 @@ func InsertGethSwaps(gethSwaps []*GethSwap) error {
 	return nil
 }
 
-func GetNullAddressStrsFromSwaps() ([]string, error) {
+func GetNullAddressStrsFromSwaps(assetID *int) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
@@ -1351,8 +1351,9 @@ func GetNullAddressStrsFromSwaps() ([]string, error) {
 		LEFT JOIN geth_addresses as ga
 			ON LOWER(gs.maker_address) = LOWER(ga.address_str)
 		WHERE gs.maker_address_id IS NULL
+		AND gs.base_asset_id = $1
 		AND ga.id IS NULL
-		`,
+		`, *assetID,
 	)
 	if err != nil {
 		log.Println(err.Error())
