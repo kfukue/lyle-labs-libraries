@@ -256,7 +256,7 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 	lp.updated_at,
 	lp.base_asset_id,
 	lp.quote_asset_id,
-	lpquote_asset_chainlink_address_usd
+	lp.quote_asset_chainlink_address_usd,
 	-- asset0
 	token0.id as token0_id,
 	token0.uuid as token0_uuid, 

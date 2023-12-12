@@ -34,6 +34,7 @@ type GethTransfer struct {
 	TopicsStr        []string         `json:"topicsStr"`
 	StatusID         *int             `json:"statusId"`
 	BaseAssetID      *int             `json:"baseAssetId"`
+	TransferTypeID   *int             `json:"transferTypeId"`
 }
 
 type GethTransferAudit struct {

@@ -30,6 +30,7 @@ CREATE TABLE geth_transfers
   topics_str TEXT[] NULL,
   status_id INT NOT NULL,
   base_asset_id INT NOT NULL,
+  transfer_type_id INT NULL,
   PRIMARY KEY(id),
   CONSTRAINT fk_chains FOREIGN KEY(chain_id) REFERENCES chains(id),
   CONSTRAINT fk_assets FOREIGN KEY(asset_id) REFERENCES assets(id),
@@ -39,6 +40,7 @@ CREATE TABLE geth_transfers
   CONSTRAINT fk_geth_process_jobs FOREIGN KEY(geth_process_job_id) REFERENCES geth_process_jobs(id),
   CONSTRAINT fk_statuses FOREIGN KEY(status_id) REFERENCES structured_values(id),
   CONSTRAINT fk_base_asset FOREIGN KEY(base_asset_id) REFERENCES assets(id)
+  CONSTRAINT fk_transfer_types FOREIGN KEY(transfer_type_id) REFERENCES structured_values(id),
 );
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO "asset-tracker-user";
 GRANT SELECT,INSERT,UPDATE,DELETE  ON ALL TABLES IN SCHEMA public TO "asset-tracker-user";
@@ -56,4 +58,14 @@ CREATE INDEX geth_transfers_base_asset_id ON geth_transfers(base_asset_id);
 
 CREATE INDEX  geth_transfers_txn_hash ON geth_transfers(txn_hash);
 CREATE INDEX  geth_transfers_fk_geth_process_jobs ON geth_transfers(geth_process_job_id);
+CREATE INDEX  geth_transfers_fk_transfer_types ON geth_transfers(transfer_type_id);
 
+
+-- new column 2023-12-11
+ROLLBACK
+START TRANSACTION;
+ALTER TABLE geth_transfers
+  ADD  transfer_type_id INT NULL,
+  ADD CONSTRAINT fk_transfer_types FOREIGN KEY(transfer_type_id) REFERENCES structured_values(id)
+  COMMIT
+-- end

@@ -41,7 +41,8 @@ func GetGethTransfer(gethTransferID int) (*GethTransfer, error) {
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		transfer_type_id
 	FROM geth_transfers
 	WHERE id = $1
 	`, gethTransferID)
@@ -72,6 +73,7 @@ func GetGethTransfer(gethTransferID int) (*GethTransfer, error) {
 		&gethTransfer.TopicsStr,
 		&gethTransfer.StatusID,
 		&gethTransfer.BaseAssetID,
+		&gethTransfer.TransferTypeID,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -109,7 +111,8 @@ func GetGethTransferByBlockChain(txnHash string, blockNumber *uint64, indexNumbe
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		transfer_type_id
 	FROM geth_transfers
 	WHERE txn_hash = $1
 	AND block_number = $2
@@ -324,7 +327,8 @@ func GetGethTransferByFromTokenAddress(tokenAddressID *int) ([]GethTransfer, err
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		transfer_type_id
 		FROM geth_transfers
 		WHERE
 		token_address_id = $1
@@ -396,7 +400,8 @@ func GetGethTransferByFromMakerAddressAndTokenAddressID(makerAddressID *int, tok
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		transfer_type_id
 		FROM geth_transfers
 		WHERE
 		asset_id = $1
@@ -438,6 +443,7 @@ func GetGethTransferByFromMakerAddressAndTokenAddressID(makerAddressID *int, tok
 			&gethTransfer.TopicsStr,
 			&gethTransfer.StatusID,
 			&gethTransfer.BaseAssetID,
+			&gethTransfer.TransferTypeID,
 		)
 		gethTransfers = append(gethTransfers, gethTransfer)
 	}
@@ -471,7 +477,8 @@ func GetGethTransferByFromMakerAddressAndTokenAddressIDAndBeforeBlockNumber(make
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		transfer_type_id
 		FROM geth_transfers
 		WHERE
 		asset_id = $1
@@ -516,6 +523,7 @@ func GetGethTransferByFromMakerAddressAndTokenAddressIDAndBeforeBlockNumber(make
 			&gethTransfer.TopicsStr,
 			&gethTransfer.StatusID,
 			&gethTransfer.BaseAssetID,
+			&gethTransfer.TransferTypeID,
 		)
 		gethTransfers = append(gethTransfers, gethTransfer)
 	}
@@ -549,7 +557,8 @@ func GetGethTransferByFromBaseAssetIDAndBeforeBlockNumber(baseAssetID, blockNumb
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		transfer_type_id
 		FROM geth_transfers
 		WHERE
 		asset_id = $1
@@ -592,6 +601,7 @@ func GetGethTransferByFromBaseAssetIDAndBeforeBlockNumber(baseAssetID, blockNumb
 			&gethTransfer.TopicsStr,
 			&gethTransfer.StatusID,
 			&gethTransfer.BaseAssetID,
+			&gethTransfer.TransferTypeID,
 		)
 		gethTransfers = append(gethTransfers, gethTransfer)
 	}
@@ -625,7 +635,8 @@ func GetGethTransfersByTxnHash(txnHash string, baseAssetID *int) ([]GethTransfer
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		transfer_type_id
 		FROM geth_transfers
 		WHERE
 		txn_hash = $1
@@ -666,6 +677,7 @@ func GetGethTransfersByTxnHash(txnHash string, baseAssetID *int) ([]GethTransfer
 			&gethTransfer.TopicsStr,
 			&gethTransfer.StatusID,
 			&gethTransfer.BaseAssetID,
+			&gethTransfer.TransferTypeID,
 		)
 		gethTransfers = append(gethTransfers, gethTransfer)
 	}
@@ -699,7 +711,8 @@ func GetGethTransfersByTxnHashes(txnHashes []string, baseAssetID *int) ([]GethTr
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		transfer_type_id
 		FROM geth_transfers
 		WHERE
 		txn_hash = ANY($1)
@@ -740,6 +753,7 @@ func GetGethTransfersByTxnHashes(txnHashes []string, baseAssetID *int) ([]GethTr
 			&gethTransfer.TopicsStr,
 			&gethTransfer.StatusID,
 			&gethTransfer.BaseAssetID,
+			&gethTransfer.TransferTypeID,
 		)
 		gethTransfers = append(gethTransfers, gethTransfer)
 	}
@@ -795,7 +809,8 @@ func GetGethTransferList() ([]GethTransfer, error) {
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		transfer_type_id
 	FROM geth_transfers `)
 	if err != nil {
 		log.Println(err.Error())
@@ -829,6 +844,7 @@ func GetGethTransferList() ([]GethTransfer, error) {
 			&gethTransfer.TopicsStr,
 			&gethTransfer.StatusID,
 			&gethTransfer.BaseAssetID,
+			&gethTransfer.TransferTypeID,
 		)
 
 		gethTransfers = append(gethTransfers, gethTransfer)
@@ -864,7 +880,8 @@ func UpdateGethTransfer(gethTransfer GethTransfer) error {
 		topics_str=$17,
 		status_id=$18,
 		base_asset_id=$19,
-		WHERE id=$20`,
+		transfer_type_id=$20
+		WHERE id=$21`,
 		gethTransfer.ChainID,             //1
 		gethTransfer.TokenAddress,        //2
 		gethTransfer.TokenAddressID,      //3
@@ -884,7 +901,8 @@ func UpdateGethTransfer(gethTransfer GethTransfer) error {
 		pq.Array(gethTransfer.TopicsStr), //17
 		gethTransfer.StatusID,            //18
 		gethTransfer.BaseAssetID,         //19
-		gethTransfer.ID,                  //20
+		gethTransfer.TransferTypeID,      //20
+		gethTransfer.ID,                  //21
 	)
 	if err != nil {
 		log.Println(err.Error())
@@ -922,7 +940,8 @@ func InsertGethTransfer(gethTransfer GethTransfer) (int, string, error) {
 		geth_process_job_id,
 		topics_str,
 		status_id,
-		base_asset_id
+		base_asset_id,
+		transfer_type_id
 		) VALUES (
 		uuid_generate_v4(),
 		$1,
@@ -946,7 +965,8 @@ func InsertGethTransfer(gethTransfer GethTransfer) (int, string, error) {
 		$16,
 		$17,
 		$18,
-		$19
+		$19,
+		$20
 		)
 		RETURNING id, uuid`,
 		gethTransfer.ChainID,             //1
@@ -968,6 +988,7 @@ func InsertGethTransfer(gethTransfer GethTransfer) (int, string, error) {
 		pq.Array(gethTransfer.TopicsStr), //17
 		gethTransfer.StatusID,            //18
 		gethTransfer.BaseAssetID,         //19
+		gethTransfer.TransferTypeID,      //20
 	).Scan(&gethTransferID, &gethTransferUUID)
 	if err != nil {
 		log.Println(err.Error())
@@ -1010,6 +1031,7 @@ func InsertGethTransfers(gethTransfers []*GethTransfer) error {
 			pq.Array(gethTransfer.TopicsStr), //21
 			gethTransfer.StatusID,            //22
 			gethTransfer.BaseAssetID,         //23
+			gethTransfer.TransferTypeID,      //24
 
 		}
 		rows = append(rows, row)
@@ -1041,6 +1063,7 @@ func InsertGethTransfers(gethTransfers []*GethTransfer) error {
 			"topics_str",          //21
 			"status_id",           //22
 			"base_asset_id",       //23
+			"transfer_type_id",    //24
 		},
 		pgx.CopyFromRows(rows),
 	)
