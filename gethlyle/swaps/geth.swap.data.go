@@ -926,6 +926,7 @@ func GetDistinctMakerAddressesFromBaseTokenAssetID(baseAssetID *int) ([]*int, er
 		FROM geth_swaps
 		WHERE
 		base_asset_id = $1
+		AND maker_address_id IS NOT NULL
 		`,
 		baseAssetID,
 	)
