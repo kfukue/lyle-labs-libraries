@@ -623,6 +623,7 @@ func GetGethSwapByFromBaseAssetAndBeforeBlockNumber(baseAssetID, blockNumber *in
 		WHERE
 		base_asset_id = $1
 		AND block_number <= $2
+		AND maker_address_id IS NOT NULL
 		ORDER BY swap_date asc`,
 		*baseAssetID, *blockNumber,
 	)
