@@ -565,6 +565,8 @@ func GetGethTransferByFromBaseAssetIDAndBeforeBlockNumber(baseAssetID, blockNumb
 		AND
 		base_asset_id =$1
 		AND block_number <= $2
+		AND sender_address_id IS NOT NULL
+		AND to_address_id IS NOT NULL
 		`,
 		*baseAssetID, *blockNumber,
 	)
