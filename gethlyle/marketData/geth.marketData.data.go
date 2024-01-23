@@ -48,6 +48,7 @@ func GetMarketData(marketDataID int) (*MarketData, error) {
 	created_at, 
 	updated_by, 
 	updated_at,
+	geth_process_job_id
 	FROM geth_market_data 
 	WHERE id = $1`, marketDataID)
 
@@ -80,6 +81,7 @@ func GetMarketData(marketDataID int) (*MarketData, error) {
 		&marketData.CreatedAt,
 		&marketData.UpdatedBy,
 		&marketData.UpdatedAt,
+		&marketData.GethProcessJobID,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -88,82 +90,6 @@ func GetMarketData(marketDataID int) (*MarketData, error) {
 		return nil, err
 	}
 	return marketData, nil
-}
-
-func GetTopTenMarketDatas() ([]MarketData, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	start_date,
-	end_date,
-	asset_id,
-	open_usd,
-	close_usd,
-	high_usd,
-	low_usd,
-	price_usd,
-	volume_usd,
-	market_cap_usd,
-	ticker,
-	description,
-	interval_id,
-	market_data_type_id,
-	source_id,
-	total_supply,
-	max_supply,
-	circulating_supply,
-	sparkline_7d,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
-	FROM geth_market_data 
-	`)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	marketDataList := make([]MarketData, 0)
-	for results.Next() {
-		var marketData MarketData
-		results.Scan(
-			&marketData.ID,
-			&marketData.UUID,
-			&marketData.Name,
-			&marketData.AlternateName,
-			&marketData.StartDate,
-			&marketData.EndDate,
-			&marketData.AssetID,
-			&marketData.OpenUSD,
-			&marketData.CloseUSD,
-			&marketData.HighUSD,
-			&marketData.LowUSD,
-			&marketData.PriceUSD,
-			&marketData.VolumeUSD,
-			&marketData.MarketCapUSD,
-			&marketData.Ticker,
-			&marketData.Description,
-			&marketData.IntervalID,
-			&marketData.MarketDataTypeID,
-			&marketData.SourceID,
-			&marketData.TotalSupply,
-			&marketData.MaxSupply,
-			&marketData.CirculatingSupply,
-			&marketData.Sparkline7d,
-			&marketData.CreatedBy,
-			&marketData.CreatedAt,
-			&marketData.UpdatedBy,
-			&marketData.UpdatedAt,
-		)
-
-		marketDataList = append(marketDataList, marketData)
-	}
-	return marketDataList, nil
 }
 
 func RemoveMarketData(marketDataID int) error {
@@ -238,7 +164,8 @@ func GetMarketDataList(ids []int) ([]MarketData, error) {
 	created_by, 
 	created_at, 
 	updated_by, 
-	updated_at 
+	updated_at,
+	geth_process_job_id
 	FROM geth_market_data`
 	if len(ids) > 0 {
 		strIds := utils.SplitToString(ids, ",")
@@ -282,6 +209,7 @@ func GetMarketDataList(ids []int) ([]MarketData, error) {
 			&marketData.CreatedAt,
 			&marketData.UpdatedBy,
 			&marketData.UpdatedAt,
+			&marketData.GethProcessJobID,
 		)
 
 		marketDataList = append(marketDataList, marketData)
@@ -318,8 +246,9 @@ func GetMarketDataListByUUIDs(UUIDList []string) ([]MarketData, error) {
 	sparkline_7d,
 	created_by, 
 	created_at, 
-	updated_by, 
-	updated_at 
+	updated_by,
+	updated_at,
+	geth_process_job_id
 	FROM geth_market_data
 	WHERE text(uuid) = ANY($1)
 	`, pq.Array(UUIDList))
@@ -359,6 +288,7 @@ func GetMarketDataListByUUIDs(UUIDList []string) ([]MarketData, error) {
 			&marketData.CreatedAt,
 			&marketData.UpdatedBy,
 			&marketData.UpdatedAt,
+			&marketData.GethProcessJobID,
 		)
 
 		marketDataList = append(marketDataList, marketData)
@@ -396,7 +326,8 @@ func GetStartAndEndDateDiffMarketDataList(diffInDate int) ([]MarketData, error) 
 	created_by, 
 	created_at, 
 	updated_by, 
-	updated_at 
+	updated_at,
+	geth_process_job_id
 	FROM geth_market_data
 	WHERE DATE_PART('day', AGE(start_date, end_date)) =$1
 	`, diffInDate)
@@ -436,6 +367,7 @@ func GetStartAndEndDateDiffMarketDataList(diffInDate int) ([]MarketData, error) 
 			&marketData.CreatedAt,
 			&marketData.UpdatedBy,
 			&marketData.UpdatedAt,
+			&marketData.GethProcessJobID,
 		)
 
 		marketDataList = append(marketDataList, marketData)
@@ -478,8 +410,9 @@ func UpdateMarketData(marketData MarketData) error {
 		sparkline_7d=$21,
 
 		updated_by=$22, 
-		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$23`,
+		updated_at=current_timestamp at time zone 'UTC',
+		geth_process_job_id = $23
+		WHERE id=$24`,
 		marketData.Name,                             //1
 		marketData.AlternateName,                    //2
 		marketData.StartDate.Format(layoutPostgres), //3
@@ -502,7 +435,8 @@ func UpdateMarketData(marketData MarketData) error {
 		marketData.CirculatingSupply,                //20
 		pq.Array(marketData.Sparkline7d),            //21
 		marketData.UpdatedBy,                        //22
-		marketData.ID)                               //23
+		marketData.GethProcessJobID,                 //23
+		marketData.ID)                               //24
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -542,7 +476,8 @@ func InsertMarketData(marketData MarketData) (int, error) {
 		created_by, 
 		created_at, 
 		updated_by, 
-		updated_at 
+		updated_at,
+		geth_process_job_id 
 		) VALUES (
 			$1,
 			uuid_generate_v4(), 
@@ -569,7 +504,8 @@ func InsertMarketData(marketData MarketData) (int, error) {
 			$22,
 			current_timestamp at time zone 'UTC',
 			$22,
-			current_timestamp at time zone 'UTC'
+			current_timestamp at time zone 'UTC',
+			$23
 		)
 		RETURNING id`,
 		marketData.Name,                             //1
@@ -594,6 +530,7 @@ func InsertMarketData(marketData MarketData) (int, error) {
 		marketData.CirculatingSupply,                //20
 		pq.Array(marketData.Sparkline7d),            //21
 		marketData.CreatedBy,                        //22
+		marketData.GethProcessJobID,                 //23
 	).Scan(&insertID)
 
 	if err != nil {
@@ -653,6 +590,7 @@ func InsertMarketDataListManual(marketDataList []MarketData) error {
 			&now,                         //24
 			marketData.CreatedBy,         //25
 			&now,                         //26
+			marketData.GethProcessJobID,  //27
 		}
 		rows = append(rows, row)
 	}
@@ -687,6 +625,7 @@ func InsertMarketDataListManual(marketDataList []MarketData) error {
 			"created_at",          //24
 			"updated_by",          //25
 			"updated_at",          //26
+			"geth_process_job_id", //27
 		},
 		pgx.CopyFromRows(rows),
 	)
@@ -737,6 +676,7 @@ func InsertMarketDataList(marketDataList []MarketData) error {
 		"created_at",          //24
 		"updated_by",          //25
 		"updated_at",          //26
+		"geth_process_job_id", //27
 	))
 	if err != nil {
 		log.Fatal(err)
@@ -772,6 +712,7 @@ func InsertMarketDataList(marketDataList []MarketData) error {
 			now.Format(layoutPostgres),                  //24
 			marketData.CreatedBy,                        //25
 			now.Format(layoutPostgres),                  //26
+			marketData.GethProcessJobID,                 //27
 		)
 		if err != nil {
 			log.Fatal(err)

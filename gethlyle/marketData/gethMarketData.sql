@@ -1,3 +1,7 @@
+COMMIT
+BEGIN TRANSACTION;
+DROP TABLE IF EXISTS geth_market_data CASCADE;
+
 CREATE TABLE geth_market_data
 (
   id SERIAL,
@@ -27,11 +31,13 @@ CREATE TABLE geth_market_data
   created_at timestamp NOT NULL,
   updated_by VARCHAR(255) NOT NULL,
   updated_at timestamp NOT NULL,
+  geth_process_job_id INT NULL,
   PRIMARY KEY(id),
   CONSTRAINT fk_asset FOREIGN KEY(asset_id) REFERENCES assets(id),
   CONSTRAINT fk_structured_value_interval FOREIGN KEY(interval_id) REFERENCES structured_values(id),
   CONSTRAINT fk_source FOREIGN KEY(source_id) REFERENCES sources(id),
-  CONSTRAINT fk_structured_value_market_data_type FOREIGN KEY(market_data_type_id) REFERENCES structured_values(id)
+  CONSTRAINT fk_structured_value_market_data_type FOREIGN KEY(market_data_type_id) REFERENCES structured_values(id),
+  CONSTRAINT fk_geth_process_jobs FOREIGN KEY(geth_process_job_id) REFERENCES geth_process_jobs(id)
 );
 
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO "asset-tracker-user";

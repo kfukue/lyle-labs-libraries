@@ -35,4 +35,5 @@ type MarketData struct {
 	CreatedAt         time.Time         `json:"createdAt"`
 	UpdatedBy         string            `json:"updatedBy"`
 	UpdatedAt         time.Time         `json:"updatedAt"`
+	GethProcessJobID  *int              `json:"gethProcessJobId"`
 }
