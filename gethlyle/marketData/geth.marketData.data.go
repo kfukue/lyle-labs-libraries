@@ -616,22 +616,12 @@ func InsertMarketDataListManual(marketDataList []MarketData) error {
 		startDate.Time = marketData.StartDate
 		endDate := &pgtype.Date{}
 		endDate.Time = marketData.EndDate
-		openUSD := utils.ConvertFloatToDecimal(marketData.OpenUSD)
-		closeUSD := utils.ConvertFloatToDecimal(marketData.CloseUSD)
-		highUSD := utils.ConvertFloatToDecimal(marketData.HighUSD)
-		lowUSD := utils.ConvertFloatToDecimal(marketData.LowUSD)
-		priceUSD := utils.ConvertFloatToDecimal(marketData.PriceUSD)
-		volumeUSD := utils.ConvertFloatToDecimal(marketData.VolumeUSD)
-		marketCapUSD := utils.ConvertFloatToDecimal(marketData.MarketCapUSD)
-		totalSupply := utils.ConvertFloatToDecimal(marketData.TotalSupply)
-		maxSupply := utils.ConvertFloatToDecimal(marketData.MaxSupply)
-		circulatingSupply := utils.ConvertFloatToDecimal(marketData.CirculatingSupply)
 		sparkline := marketData.Sparkline7d
 		sparklineArray := make([]*decimal.Decimal, len(sparkline))
 		if len(sparkline) > 0 {
 			for i, value := range sparkline {
 				x := &value
-				sparklineArray[i] = utils.ConvertFloatToDecimal(x)
+				sparklineArray[i] = x
 			}
 		}
 		nowDate := &pgtype.Date{}
@@ -643,21 +633,21 @@ func InsertMarketDataListManual(marketDataList []MarketData) error {
 			&marketData.StartDate,        //4
 			&marketData.EndDate,          //5
 			*marketData.AssetID,          //6
-			openUSD,                      //7
-			closeUSD,                     //8
-			highUSD,                      //9
-			lowUSD,                       //10
-			priceUSD,                     //11
-			volumeUSD,                    //12
-			marketCapUSD,                 //13
+			marketData.OpenUSD,           //7
+			marketData.CloseUSD,          //8
+			marketData.HighUSD,           //9
+			marketData.LowUSD,            //10
+			marketData.PriceUSD,          //11
+			marketData.VolumeUSD,         //12
+			marketData.MarketCapUSD,      //13
 			marketData.Ticker,            //14
 			marketData.Description,       //15
 			*marketData.IntervalID,       //16
 			*marketData.MarketDataTypeID, //17
 			*marketData.SourceID,         //18
-			totalSupply,                  //19
-			maxSupply,                    //20
-			circulatingSupply,            //21
+			marketData.TotalSupply,       //19
+			marketData.MaxSupply,         //20
+			marketData.CirculatingSupply, //21
 			pq.Array(sparklineArray),     //22
 			marketData.CreatedBy,         //23
 			&now,                         //24
