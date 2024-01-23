@@ -177,7 +177,7 @@ func RemoveMarketData(marketDataID int) error {
 	return nil
 }
 
-func RemoveMarketDataFromBaseAssetBetweenDates(assetID int, startDate, endDate time.Time) error {
+func RemoveMarketDataFromBaseAssetBetweenDates(assetID *int, startDate, endDate *time.Time) error {
 	log.Println(fmt.Sprintf("start : %s end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -185,6 +185,22 @@ func RemoveMarketDataFromBaseAssetBetweenDates(assetID int, startDate, endDate t
 		WHERE asset_id = $1
 			AND start_date BETWEEN $2 and $3
 	`, assetID, startDate, endDate)
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+	return nil
+}
+
+func RemoveMarketDataByMarketDataTypeIDFromBaseAssetBetweenDates(assetID, marketDataTypeID *int, startDate, endDate time.Time) error {
+	log.Println(fmt.Sprintf("start : %s end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM geth_market_data 
+		WHERE asset_id = $1
+			AND market_data_type_id=$2
+			AND start_date BETWEEN $3 and $5
+	`, assetID, marketDataTypeID, startDate, endDate)
 	if err != nil {
 		log.Println(err.Error())
 		return err
