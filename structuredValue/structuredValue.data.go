@@ -238,3 +238,83 @@ func InsertStructuredValue(structuredValue StructuredValue) (int, error) {
 	}
 	return int(insertID), nil
 }
+
+func GetStructuredValueListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]StructuredValue, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	sql := `SELECT 
+	id,
+	uuid, 
+	name, 
+	alternate_name, 
+	structured_value_type_id,
+	created_by, 
+	created_at, 
+	updated_by, 
+	updated_at 
+	FROM structured_values
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " AND "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := database.DbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	structuredValues := make([]StructuredValue, 0)
+	for results.Next() {
+		var structuredValue StructuredValue
+		results.Scan(
+			&structuredValue.ID,
+			&structuredValue.UUID,
+			&structuredValue.Name,
+			&structuredValue.AlternateName,
+			&structuredValue.StructuredValueTypeID,
+			&structuredValue.CreatedBy,
+			&structuredValue.CreatedAt,
+			&structuredValue.UpdatedBy,
+			&structuredValue.UpdatedAt,
+		)
+
+		structuredValues = append(structuredValues, structuredValue)
+	}
+	return structuredValues, nil
+}
+
+func GetTotalStructuredValueCount() (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM structured_values
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
+}

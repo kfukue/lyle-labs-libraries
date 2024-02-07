@@ -188,3 +188,81 @@ func InsertStructuredValueType(structuredValueType StructuredValueType) (int, er
 	}
 	return int(insertID), nil
 }
+
+func GetStructuredValueListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]StructuStructuredValueTyperedValue, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	sql := `SELECT 
+	iid,
+	uuid, 
+	name, 
+	alternate_name, 
+	created_by, 
+	created_at, 
+	updated_by, 
+	updated_at 
+	FROM structured_value_types
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " AND "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := database.DbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	structuredValueTypes := make([]StructuredValueType, 0)
+	for results.Next() {
+		var structuredValueType StructuredValueType
+		results.Scan(
+			&structuredValueType.ID,
+			&structuredValueType.UUID,
+			&structuredValueType.Name,
+			&structuredValueType.AlternateName,
+			&structuredValueType.CreatedBy,
+			&structuredValueType.CreatedAt,
+			&structuredValueType.UpdatedBy,
+			&structuredValueType.UpdatedAt,
+		)
+
+		structuredValueTypes = append(structuredValueTypes, structuredValueType)
+	}
+	return structuredValueTypes, nil
+}
+
+func GetTotalStructuredValueCount() (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM structured_value_types
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
+}
