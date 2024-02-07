@@ -189,7 +189,7 @@ func InsertStructuredValueType(structuredValueType StructuredValueType) (int, er
 	return int(insertID), nil
 }
 
-func GetStructuredValueListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]StructuStructuredValueTyperedValue, error) {
+func GetStructuredValueTypeListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]StructuredValueType, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
@@ -246,7 +246,7 @@ func GetStructuredValueListByPagination(_start, _end *int, _order, _sort string,
 	return structuredValueTypes, nil
 }
 
-func GetTotalStructuredValueCount() (*int, error) {
+func GetTotalStructuredValueTypeCount() (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
