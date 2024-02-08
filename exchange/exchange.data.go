@@ -517,3 +517,91 @@ func InsertExchangeChains(exchangeChains []ExchangeChain) error {
 	}
 	return nil
 }
+
+// for refinedev
+func GetExchangeListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]Exchange, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `SELECT 
+		id,
+		uuid,
+		name,
+		alternate_name,
+		exchange_type_id,
+		url,
+		start_date,
+		end_date,
+		description,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at
+	FROM exchanges
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := database.DbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	exchanges := make([]Exchange, 0)
+	for results.Next() {
+		var exchange Exchange
+		results.Scan(
+			&exchange.ID,
+			&exchange.UUID,
+			&exchange.Name,
+			&exchange.AlternateName,
+			&exchange.ExchangeTypeID,
+			&exchange.Url,
+			&exchange.StartDate,
+			&exchange.EndDate,
+			&exchange.Description,
+			&exchange.CreatedBy,
+			&exchange.CreatedAt,
+			&exchange.UpdatedBy,
+			&exchange.UpdatedAt,
+		)
+
+		exchanges = append(exchanges, exchange)
+	}
+	return exchanges, nil
+}
+
+func GetTotalExchangeCount() (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM exchanges
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
+}

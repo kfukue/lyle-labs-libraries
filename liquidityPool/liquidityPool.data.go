@@ -967,7 +967,7 @@ func GetLiquidityPoolListByPagination(_start, _end *int, _order, _sort string, _
 	return liquidityPools, nil
 }
 
-func GetTotalAssetCount() (*int, error) {
+func GetTotalLiquidityPoolCount() (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
