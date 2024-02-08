@@ -60,3 +60,11 @@ ALTER TABLE assets
   
   COMMIT
 -- end
+
+-- Add Import Geth Initial As New Column
+ROLLBACK
+START TRANSACTION;
+ALTER TABLE assets
+  ADD  import_geth_initial BOOLEAN NOT NULL DEFAULT FALSE;
+  COMMIT
+-- end

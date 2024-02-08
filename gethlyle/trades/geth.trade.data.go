@@ -501,6 +501,7 @@ func GetNetTransfersByTxnHashAndAddressStrs(txnHash, addressStr string, baseAsse
 			&netTransferByAddress.Asset.ContractAddress,
 			&netTransferByAddress.StartingBlockNumber,
 			&netTransferByAddress.ImportGeth,
+			&netTransferByAddress.ImportGethInitial,
 		)
 		netTransfersByAddress = append(netTransfersByAddress, &netTransferByAddress)
 	}
@@ -591,6 +592,7 @@ func GetFromNetTransfersByTxnHashesAndAddressStrs(txnHashes []string, baseAssetI
 			&netTransferByAddress.Asset.ContractAddress,
 			&netTransferByAddress.StartingBlockNumber,
 			&netTransferByAddress.ImportGeth,
+			&netTransferByAddress.ImportGethInitial,
 		)
 		netTransfersByAddress = append(netTransfersByAddress, &netTransferByAddress)
 	}

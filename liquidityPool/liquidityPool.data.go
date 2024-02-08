@@ -281,6 +281,7 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 	token0.contract_address as token0_contract_address,
 	token0.starting_block_number as token0_block_number,
 	token0.import_geth as token0_import_geth,
+	token0.import_geth_initial as token0_import_geth_initial,
 	--asset 1
 	token1.id as token1_id,
 	token1.uuid as token1_uuid, 
@@ -304,7 +305,8 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 	token1.decimals as token1_decimals,
 	token1.contract_address as token1_contract_address,
 	token1.starting_block_number as token1_block_number,
-	token1.import_geth as token1_import_geth
+	token1.import_geth as token1_import_geth,
+	token1.import_geth_initial as token1_import_geth_initial
 	FROM liquidity_pools lp
 	LEFT JOIN assets token0 ON lp.token0_id = token0.id
 	LEFT JOIN assets token1 ON lp.token1_id = token1.id
@@ -367,6 +369,7 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 			&liquidityPoolWithTokens.Token0.ContractAddress,
 			&liquidityPoolWithTokens.Token0.StartingBlockNumber,
 			&liquidityPoolWithTokens.Token0.ImportGeth,
+			&liquidityPoolWithTokens.Token0.ImportGethInitial,
 			//token 1
 			&liquidityPoolWithTokens.Token1.ID,
 			&liquidityPoolWithTokens.Token1.UUID,
@@ -391,6 +394,7 @@ func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, err
 			&liquidityPoolWithTokens.Token1.ContractAddress,
 			&liquidityPoolWithTokens.Token1.StartingBlockNumber,
 			&liquidityPoolWithTokens.Token1.ImportGeth,
+			&liquidityPoolWithTokens.Token1.ImportGethInitial,
 		)
 		liquidityPoolsWithTokens = append(liquidityPoolsWithTokens, liquidityPoolWithTokens)
 	}

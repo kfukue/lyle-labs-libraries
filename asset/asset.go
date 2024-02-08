@@ -30,6 +30,7 @@ type Asset struct {
 	ContractAddress     string    `json:"contractAddress"`
 	StartingBlockNumber *uint64   `json:"startingBlockNumber"`
 	ImportGeth          *bool     `json:"importGeth"`
+	ImportGethInitial   *bool     `json:"importGethInitial"`
 }
 
 // Asset
