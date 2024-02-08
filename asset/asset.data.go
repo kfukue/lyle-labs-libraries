@@ -1152,7 +1152,7 @@ func GetAssetListByPagination(_start, _end *int, _order, _sort string, _filters 
 		for i, filter := range _filters {
 			sql += filter
 			if i < len(_filters)-1 {
-				sql += " AND "
+				sql += " OR "
 			}
 		}
 	}
