@@ -230,7 +230,7 @@ func GetLiquidityPoolList(ids []int) ([]LiquidityPool, error) {
 	return liquidityPools, nil
 }
 
-func GetLiquidityPoolListByToken0(asset0ID *int) ([]LiquidityPoolWithTokens, error) {
+func GetLiquidityPoolListByBaseAssetID(asset0ID *int) ([]LiquidityPoolWithTokens, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 

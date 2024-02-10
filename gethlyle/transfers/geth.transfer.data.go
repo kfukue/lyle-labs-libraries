@@ -784,6 +784,17 @@ func RemoveGethTransfersFromBaseAssetIDAndStartBlockNumber(baseAssetID *int, sta
 	return nil
 }
 
+func RemoveGethTransfersFromBaseAssetID(baseAssetID *int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_transfers WHERE base_asset_id = $1`, *baseAssetID)
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+	return nil
+}
+
 func GetGethTransferList() ([]GethTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
