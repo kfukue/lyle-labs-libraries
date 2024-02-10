@@ -1116,6 +1116,7 @@ func GetAssetsByChainId(chainID *int) ([]Asset, error) {
 	return assets, nil
 }
 
+// for refinedev
 func GetAssetListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]Asset, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -1396,7 +1397,7 @@ func UpdateAsset(asset Asset) error {
 		decimals = $15,
 		contract_address=$16,
 		starting_block_number=$17,
-		import_geth = $18
+		import_geth = $18,
 		import_geth_initial = $19
 		WHERE id=$20`,
 		asset.Name,                // 1
