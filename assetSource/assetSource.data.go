@@ -351,3 +351,90 @@ func InsertAssetSource(assetSource AssetSource) (int, int, error) {
 	}
 	return int(SourceID), int(AssetID), nil
 }
+
+// for refinedev
+func GetAssetSourceListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]AssetSource, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	sql := `SELECT 
+	source_id,
+	asset_id,
+	uuid, 
+	name, 
+	alternate_name, 
+	source_identifier,
+	description,
+	source_data,
+	created_by, 
+	created_at, 
+	updated_by, 
+	updated_at 
+	FROM asset_sources 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := database.DbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	assetSources := make([]AssetSource, 0)
+	for results.Next() {
+		var assetSource AssetSource
+		results.Scan(
+			&assetSource.SourceID,
+			&assetSource.AssetID,
+			&assetSource.UUID,
+			&assetSource.Name,
+			&assetSource.AlternateName,
+			&assetSource.SourceIdentifier,
+			&assetSource.Description,
+			&assetSource.SourceData,
+			&assetSource.CreatedBy,
+			&assetSource.CreatedAt,
+			&assetSource.UpdatedBy,
+			&assetSource.UpdatedAt,
+		)
+
+		assetSources = append(assetSources, assetSource)
+	}
+	return assetSources, nil
+}
+
+func GetTotalAssetSourceCount() (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM asset_sources
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
+}
