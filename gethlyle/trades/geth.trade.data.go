@@ -990,3 +990,91 @@ func InsertGethTrades(gethTrades []*GethTrade) error {
 	}
 	return nil
 }
+
+func GetLatestGethTradeFromAssetIDAnDate(assetID *int, asOfDate *time.Time, isBefore *bool) (*GethTrade, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	selectSQL := `SELECT
+		id,
+		uuid,
+		name,
+		alternate_name,
+		address_str,
+		address_id,
+		trade_date,
+		txn_hash,
+		token0_amount,
+		token0_amount_decimal_adj,
+		token1_amount,
+		token1_amount_decimal_adj,
+		is_buy,
+		price,
+		price_usd,
+		lp_token1_price_usd,
+		total_amount_usd,
+		token0_asset_id,
+		token1_asset_id,
+		geth_process_job_id,
+		status_id,
+		trade_type_id,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at,
+		base_asset_id,
+		oracle_price_usd,
+		oracle_price_asset_id
+	FROM geth_trades
+	WHERE base_asset_id = $1 `
+	tradeDateSQL := ``
+	if *isBefore {
+		tradeDateSQL = ` AND trade_date <= $2 `
+	} else {
+		tradeDateSQL = ` AND trade_date >= $2 `
+	}
+	sql := selectSQL + tradeDateSQL + ` ORDER BY trade_date desc LIMIT 1`
+	row := database.DbConnPgx.QueryRow(ctx, sql, assetID, asOfDate.Format(utils.LayoutPostgres))
+
+	gethTrade := &GethTrade{}
+	err := row.Scan(
+		&gethTrade.ID,
+		&gethTrade.UUID,
+		&gethTrade.Name,
+		&gethTrade.AlternateName,
+		&gethTrade.AddressStr,
+		&gethTrade.AddressID,
+		&gethTrade.TradeDate,
+		&gethTrade.TxnHash,
+		&gethTrade.Token0Amount,
+		&gethTrade.Token0AmountDecimalAdj,
+		&gethTrade.Token1Amount,
+		&gethTrade.Token1AmountDecimalAdj,
+		&gethTrade.IsBuy,
+		&gethTrade.Price,
+		&gethTrade.PriceUSD,
+		&gethTrade.LPToken1PriceUSD,
+		&gethTrade.TotalAmountUSD,
+		&gethTrade.Token0AssetId,
+		&gethTrade.Token1AssetId,
+		&gethTrade.GethProcessJobID,
+		&gethTrade.StatusID,
+		&gethTrade.TradeTypeID,
+		&gethTrade.Description,
+		&gethTrade.CreatedBy,
+		&gethTrade.CreatedAt,
+		&gethTrade.UpdatedBy,
+		&gethTrade.UpdatedAt,
+		&gethTrade.BaseAssetID,
+		&gethTrade.OraclePriceUSD,
+		&gethTrade.OraclePriceAssetID,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return gethTrade, nil
+}
