@@ -1030,11 +1030,11 @@ func GetLatestGethTradeFromAssetIDAnDate(assetID *int, asOfDate *time.Time, isBe
 	WHERE base_asset_id = $1 `
 	tradeDateSQL := ``
 	if *isBefore {
-		tradeDateSQL = ` AND trade_date <= $2 `
+		tradeDateSQL = ` AND trade_date <= $2 ORDER BY trade_date desc`
 	} else {
-		tradeDateSQL = ` AND trade_date >= $2 `
+		tradeDateSQL = ` AND trade_date >= $2 ORDER BY trade_date asc`
 	}
-	sql := selectSQL + tradeDateSQL + ` ORDER BY trade_date desc LIMIT 1`
+	sql := selectSQL + tradeDateSQL + ` LIMIT 1`
 	row := database.DbConnPgx.QueryRow(ctx, sql, assetID, asOfDate.Format(utils.LayoutPostgres))
 
 	gethTrade := &GethTrade{}
