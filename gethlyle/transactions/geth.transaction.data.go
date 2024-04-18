@@ -78,7 +78,7 @@ func GetGethTransaction(gethTransactionID int) (*GethTransaction, error) {
 		log.Println(err)
 		return nil, err
 	}
-	return gethTransaction, nil
+	return &gethTransaction, nil
 }
 
 func GetGethTransactionByFromToAddress(fromToAddressID *int) ([]GethTransaction, error) {
@@ -771,4 +771,121 @@ func GetNullAddressStrsFromTransactions() ([]string, error) {
 		gethNullAddressStrs = append(gethNullAddressStrs, gethNullAddressStr)
 	}
 	return gethNullAddressStrs, nil
+}
+
+// for refinedev
+func GetTransactionListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]GethTransaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `
+	SELECT
+		id,
+		uuid,
+		chain_id,
+		exchange_id,
+		block_number,
+		index_number,
+		txn_date,
+		txn_hash,
+		from_address,
+		from_address_id,
+		to_address,
+		to_address_id,
+		interacted_contract_address,
+		interacted_contract_address_id,
+		native_asset_id,
+		geth_process_job_id,
+		value,
+		geth_transction_input_id,
+		status_id,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at
+	FROM geth_transactions 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := database.DbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTransactions := make([]GethTransaction, 0)
+	for results.Next() {
+		var gethTransaction GethTransaction
+		results.Scan(
+			&gethTransaction.ID,
+			&gethTransaction.UUID,
+			&gethTransaction.ChainID,
+			&gethTransaction.ExchangeID,
+			&gethTransaction.BlockNumber,
+			&gethTransaction.IndexNumber,
+			&gethTransaction.TxnDate,
+			&gethTransaction.TxnHash,
+			&gethTransaction.FromAddress,
+			&gethTransaction.FromAddressID,
+			&gethTransaction.ToAddress,
+			&gethTransaction.ToAddressID,
+			&gethTransaction.InteractedContractAddress,
+			&gethTransaction.InteractedContractAddressID,
+			&gethTransaction.NativeAssetID,
+			&gethTransaction.GethProcessJobID,
+			&gethTransaction.Value,
+			&gethTransaction.GethTransctionInputId,
+			&gethTransaction.StatusID,
+			&gethTransaction.Description,
+			&gethTransaction.CreatedBy,
+			&gethTransaction.CreatedAt,
+			&gethTransaction.UpdatedBy,
+			&gethTransaction.UpdatedAt,
+		)
+
+		gethTransactions = append(gethTransactions, gethTransaction)
+	}
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+
+	return gethTransactions, nil
+}
+
+func GetTotalTransactionsCount() (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM geth_transactions
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }

@@ -548,3 +548,96 @@ func GetNullAddressStrsFromTransactionInputs() ([]string, error) {
 	}
 	return gethNullAddressStrs, nil
 }
+
+// for refinedev
+func GetTransactionInputListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]GethTransactionInput, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `
+	SELECT
+		id,
+		uuid,
+		name,
+		alternate_name,
+		function_name,
+		method_id_str,
+		num_of_parameters,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at
+	FROM geth_transaction_inputs 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := database.DbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTransactionInputs := make([]GethTransactionInput, 0)
+	for results.Next() {
+		var gethTransactionInput GethTransactionInput
+		results.Scan(
+			&gethTransactionInput.ID,
+			&gethTransactionInput.UUID,
+			&gethTransactionInput.Name,
+			&gethTransactionInput.AlternateName,
+			&gethTransactionInput.FunctionName,
+			&gethTransactionInput.MethodIDStr,
+			&gethTransactionInput.NumOfParameters,
+			&gethTransactionInput.Description,
+			&gethTransactionInput.CreatedBy,
+			&gethTransactionInput.CreatedAt,
+			&gethTransactionInput.UpdatedBy,
+			&gethTransactionInput.UpdatedAt,
+		)
+
+		gethTransactionInputs = append(gethTransactionInputs, gethTransactionInput)
+	}
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+
+	return gethTransactionInputs, nil
+}
+
+func GetTotalTransactionInputsCount() (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM geth_transaction_inputs
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
+}
