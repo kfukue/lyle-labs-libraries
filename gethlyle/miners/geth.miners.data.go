@@ -248,7 +248,7 @@ func InsertGethMiner(gethMiner GethMiner) (int, string, error) {
 		gethMiner.MiningAssetID,       //12
 		gethMiner.Description,         //13
 		gethMiner.CreatedBy,           //14
-	).Scan(gethMinerID, gethMinerUUID)
+	).Scan(&gethMinerID, &gethMinerUUID)
 	if err != nil {
 		log.Println(err.Error())
 		return 0, "", err

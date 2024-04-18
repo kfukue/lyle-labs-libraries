@@ -413,7 +413,7 @@ func InsertGethTransactionInput(gethTransactionInput GethTransactionInput) (int,
 		gethTransactionInput.NumOfParameters, //5
 		gethTransactionInput.Description,     //6
 		gethTransactionInput.CreatedBy,       //7
-	).Scan(gethTransactionInputID, gethTransactionInputUUID)
+	).Scan(&gethTransactionInputID, &gethTransactionInputUUID)
 	if err != nil {
 		log.Println(err.Error())
 		return 0, "", err
@@ -542,7 +542,7 @@ func GetNullAddressStrsFromTransactionInputs() ([]string, error) {
 	for results.Next() {
 		var gethNullAddressStr string
 		results.Scan(
-			gethNullAddressStr,
+			&gethNullAddressStr,
 		)
 		gethNullAddressStrs = append(gethNullAddressStrs, gethNullAddressStr)
 	}

@@ -125,7 +125,7 @@ func GetGethTransactionByFromToAddress(fromToAddressID *int) ([]GethTransaction,
 	gethTransactions := make([]GethTransaction, 0)
 	for results.Next() {
 		var gethTransaction GethTransaction
-		resu & lts.Scan(
+		results.Scan(
 			&gethTransaction.ID,
 			&gethTransaction.UUID,
 			&gethTransaction.ChainID,
@@ -615,7 +615,7 @@ func InsertGethTransaction(gethTransaction GethTransaction) (int, string, error)
 		gethTransaction.StatusID,                    //17
 		gethTransaction.Description,                 //18
 		gethTransaction.CreatedBy,                   //19
-	).Scan(gethTransactionID, gethTransactionUUID)
+	).Scan(&gethTransactionID, &gethTransactionUUID)
 	if err != nil {
 		log.Println(err.Error())
 		return 0, "", err
@@ -766,7 +766,7 @@ func GetNullAddressStrsFromTransactions() ([]string, error) {
 	for results.Next() {
 		var gethNullAddressStr string
 		results.Scan(
-			gethNullAddressStr,
+			&gethNullAddressStr,
 		)
 		gethNullAddressStrs = append(gethNullAddressStrs, gethNullAddressStr)
 	}
