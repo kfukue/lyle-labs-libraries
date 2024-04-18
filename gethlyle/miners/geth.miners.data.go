@@ -356,3 +356,110 @@ func UpdateGethMinerAddresses(gethMinerID *int) error {
 	}
 	return nil
 }
+
+// for refinedev
+func GetMinerListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]GethMiner, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `
+	SELECT
+		id,
+		uuid,
+		name,
+		alternate_name,
+		chain_id,
+		exchange_id,
+		starting_block_number,
+		created_txn_hash,
+		last_block_number,
+		contract_address,
+		contract_address_id,
+		developer_address,
+		developer_address_id,
+		mining_asset_id,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at
+	FROM geth_miners 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := database.DbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethMiners := make([]GethMiner, 0)
+	for results.Next() {
+		var gethMiner GethMiner
+		results.Scan(
+			&gethMiner.ID,
+			&gethMiner.UUID,
+			&gethMiner.Name,
+			&gethMiner.AlternateName,
+			&gethMiner.ChainID,
+			&gethMiner.ExchangeID,
+			&gethMiner.StartingBlockNumber,
+			&gethMiner.CreatedTxnHash,
+			&gethMiner.LastBlockNumber,
+			&gethMiner.ContractAddress,
+			&gethMiner.ContractAddressID,
+			&gethMiner.DeveloperAddress,
+			&gethMiner.DeveloperAddressID,
+			&gethMiner.MiningAssetID,
+			&gethMiner.Description,
+			&gethMiner.CreatedBy,
+			&gethMiner.CreatedAt,
+			&gethMiner.UpdatedBy,
+			&gethMiner.UpdatedAt,
+		)
+
+		gethMiners = append(gethMiners, gethMiner)
+	}
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+
+	return gethMiners, nil
+}
+
+func GetTotalMinersCount() (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM geth_miners
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
+}
