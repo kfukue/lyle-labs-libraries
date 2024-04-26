@@ -79,7 +79,7 @@ CREATE TABLE geth_miners_transactions
   updated_at timestamp NOT NULL,
   PRIMARY KEY(miner_id, transaction_id),
   CONSTRAINT fk_miner_id FOREIGN KEY(miner_id) REFERENCES geth_miners(id),
-  CONSTRAINT fk_transaction_id FOREIGN KEY(transaction_id) REFERENCES geth_transaction_inputs(id)
+  CONSTRAINT fk_transaction_id FOREIGN KEY(transaction_id) REFERENCES geth_transactions(id)
 );
 
 CREATE INDEX geth_miners_transactions_miner_id ON geth_miners_transactions(miner_id);

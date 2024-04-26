@@ -81,7 +81,7 @@ func RemoveGethMiner(gethMinerID int) error {
 	return nil
 }
 
-func GetGethMinerList() ([]GethMiner, error) {
+func GetGethMinerList() ([]*GethMiner, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
@@ -111,7 +111,7 @@ func GetGethMinerList() ([]GethMiner, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethMiners := make([]GethMiner, 0)
+	gethMiners := make([]*GethMiner, 0)
 	for results.Next() {
 		var gethMiner GethMiner
 		results.Scan(
@@ -136,7 +136,7 @@ func GetGethMinerList() ([]GethMiner, error) {
 			&gethMiner.UpdatedAt,
 		)
 
-		gethMiners = append(gethMiners, gethMiner)
+		gethMiners = append(gethMiners, &gethMiner)
 	}
 	return gethMiners, nil
 }
@@ -358,7 +358,7 @@ func UpdateGethMinerAddresses(gethMinerID *int) error {
 }
 
 // for refinedev
-func GetMinerListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]GethMiner, error) {
+func GetMinerListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]*GethMiner, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `
@@ -407,7 +407,7 @@ func GetMinerListByPagination(_start, _end *int, _order, _sort string, _filters 
 		return nil, err
 	}
 	defer results.Close()
-	gethMiners := make([]GethMiner, 0)
+	gethMiners := make([]*GethMiner, 0)
 	for results.Next() {
 		var gethMiner GethMiner
 		results.Scan(
@@ -432,7 +432,7 @@ func GetMinerListByPagination(_start, _end *int, _order, _sort string, _filters 
 			&gethMiner.UpdatedAt,
 		)
 
-		gethMiners = append(gethMiners, gethMiner)
+		gethMiners = append(gethMiners, &gethMiner)
 	}
 	if err != nil {
 		log.Println(err.Error())

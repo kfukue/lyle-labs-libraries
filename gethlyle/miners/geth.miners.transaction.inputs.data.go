@@ -13,7 +13,7 @@ import (
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
-func GetAllGethMinerTransactionInputsByMinerID(minerID *int) ([]GethMinerTransactionInput, error) {
+func GetAllGethMinerTransactionInputsByMinerID(minerID *int) ([]*GethMinerTransactionInput, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
@@ -37,7 +37,7 @@ func GetAllGethMinerTransactionInputsByMinerID(minerID *int) ([]GethMinerTransac
 		return nil, err
 	}
 	defer results.Close()
-	gethMinerTransactionInputs := make([]GethMinerTransactionInput, 0)
+	gethMinerTransactionInputs := make([]*GethMinerTransactionInput, 0)
 	for results.Next() {
 		var gethMinerTransactionInput GethMinerTransactionInput
 		results.Scan(
@@ -53,12 +53,12 @@ func GetAllGethMinerTransactionInputsByMinerID(minerID *int) ([]GethMinerTransac
 			&gethMinerTransactionInput.UpdatedAt,
 		)
 
-		gethMinerTransactionInputs = append(gethMinerTransactionInputs, gethMinerTransactionInput)
+		gethMinerTransactionInputs = append(gethMinerTransactionInputs, &gethMinerTransactionInput)
 	}
 	return gethMinerTransactionInputs, nil
 }
 
-func GetAllGethMinerTransactionInputsByTransactionInputID(transactionInputID *int) ([]GethMinerTransactionInput, error) {
+func GetAllGethMinerTransactionInputsByTransactionInputID(transactionInputID *int) ([]*GethMinerTransactionInput, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
@@ -82,7 +82,7 @@ func GetAllGethMinerTransactionInputsByTransactionInputID(transactionInputID *in
 		return nil, err
 	}
 	defer results.Close()
-	gethMinerTransactionInputs := make([]GethMinerTransactionInput, 0)
+	gethMinerTransactionInputs := make([]*GethMinerTransactionInput, 0)
 	for results.Next() {
 		var gethMinerTransactionInput GethMinerTransactionInput
 		results.Scan(
@@ -98,7 +98,7 @@ func GetAllGethMinerTransactionInputsByTransactionInputID(transactionInputID *in
 			&gethMinerTransactionInput.UpdatedAt,
 		)
 
-		gethMinerTransactionInputs = append(gethMinerTransactionInputs, gethMinerTransactionInput)
+		gethMinerTransactionInputs = append(gethMinerTransactionInputs, &gethMinerTransactionInput)
 	}
 	return gethMinerTransactionInputs, nil
 }
@@ -157,7 +157,7 @@ func RemoveMinerTransactionInput(minerID, transactionInputID *int) error {
 	return nil
 }
 
-func GetMinerTransactionInputList(minerIDs, transactionInputIDs []int) ([]GethMinerTransactionInput, error) {
+func GetMinerTransactionInputList(minerIDs, transactionInputIDs []int) ([]*GethMinerTransactionInput, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `
@@ -194,7 +194,7 @@ func GetMinerTransactionInputList(minerIDs, transactionInputIDs []int) ([]GethMi
 		return nil, err
 	}
 	defer results.Close()
-	minerTransactionInputs := make([]GethMinerTransactionInput, 0)
+	minerTransactionInputs := make([]*GethMinerTransactionInput, 0)
 	for results.Next() {
 		var minerTransactionInput GethMinerTransactionInput
 		results.Scan(
@@ -210,7 +210,7 @@ func GetMinerTransactionInputList(minerIDs, transactionInputIDs []int) ([]GethMi
 			&minerTransactionInput.UpdatedAt,
 		)
 
-		minerTransactionInputs = append(minerTransactionInputs, minerTransactionInput)
+		minerTransactionInputs = append(minerTransactionInputs, &minerTransactionInput)
 	}
 	return minerTransactionInputs, nil
 }
@@ -339,7 +339,7 @@ func InsertGethMinersTransactionInputs(gethMinersTransactionInputs []*GethMinerT
 }
 
 // for refinedev
-func GetMinerTransactionInputListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]GethMinerTransactionInput, error) {
+func GetMinerTransactionInputListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]*GethMinerTransactionInput, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
@@ -379,7 +379,7 @@ func GetMinerTransactionInputListByPagination(_start, _end *int, _order, _sort s
 		return nil, err
 	}
 	defer results.Close()
-	minerTransactionInputs := make([]GethMinerTransactionInput, 0)
+	minerTransactionInputs := make([]*GethMinerTransactionInput, 0)
 	for results.Next() {
 		var minerTransactionInput GethMinerTransactionInput
 		results.Scan(
@@ -395,7 +395,7 @@ func GetMinerTransactionInputListByPagination(_start, _end *int, _order, _sort s
 			&minerTransactionInput.UpdatedAt,
 		)
 
-		minerTransactionInputs = append(minerTransactionInputs, minerTransactionInput)
+		minerTransactionInputs = append(minerTransactionInputs, &minerTransactionInput)
 	}
 	return minerTransactionInputs, nil
 }

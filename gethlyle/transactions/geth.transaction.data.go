@@ -81,7 +81,7 @@ func GetGethTransaction(gethTransactionID int) (*GethTransaction, error) {
 	return &gethTransaction, nil
 }
 
-func GetGethTransactionByFromToAddress(fromToAddressID *int) ([]GethTransaction, error) {
+func GetGethTransactionByFromToAddress(fromToAddressID *int) ([]*GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
@@ -122,7 +122,7 @@ func GetGethTransactionByFromToAddress(fromToAddressID *int) ([]GethTransaction,
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions := make([]GethTransaction, 0)
+	gethTransactions := make([]*GethTransaction, 0)
 	for results.Next() {
 		var gethTransaction GethTransaction
 		results.Scan(
@@ -151,12 +151,12 @@ func GetGethTransactionByFromToAddress(fromToAddressID *int) ([]GethTransaction,
 			&gethTransaction.UpdatedBy,
 			&gethTransaction.UpdatedAt,
 		)
-		gethTransactions = append(gethTransactions, gethTransaction)
+		gethTransactions = append(gethTransactions, &gethTransaction)
 	}
 	return gethTransactions, nil
 }
 
-func GetGethTransactionByFromAddressAndBeforeBlockNumber(fromAddressID, blockNumber *int) ([]GethTransaction, error) {
+func GetGethTransactionByFromAddressAndBeforeBlockNumber(fromAddressID, blockNumber *int) ([]*GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
@@ -198,7 +198,7 @@ func GetGethTransactionByFromAddressAndBeforeBlockNumber(fromAddressID, blockNum
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions := make([]GethTransaction, 0)
+	gethTransactions := make([]*GethTransaction, 0)
 	for results.Next() {
 		var gethTransaction GethTransaction
 		results.Scan(
@@ -227,12 +227,12 @@ func GetGethTransactionByFromAddressAndBeforeBlockNumber(fromAddressID, blockNum
 			&gethTransaction.UpdatedBy,
 			&gethTransaction.UpdatedAt,
 		)
-		gethTransactions = append(gethTransactions, gethTransaction)
+		gethTransactions = append(gethTransactions, &gethTransaction)
 	}
 	return gethTransactions, nil
 }
 
-func GetGethTransactionsByTxnHash(txnHash string) ([]GethTransaction, error) {
+func GetGethTransactionsByTxnHash(txnHash string) ([]*GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
@@ -272,7 +272,7 @@ func GetGethTransactionsByTxnHash(txnHash string) ([]GethTransaction, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions := make([]GethTransaction, 0)
+	gethTransactions := make([]*GethTransaction, 0)
 	for results.Next() {
 		var gethTransaction GethTransaction
 		results.Scan(
@@ -301,12 +301,12 @@ func GetGethTransactionsByTxnHash(txnHash string) ([]GethTransaction, error) {
 			&gethTransaction.UpdatedBy,
 			&gethTransaction.UpdatedAt,
 		)
-		gethTransactions = append(gethTransactions, gethTransaction)
+		gethTransactions = append(gethTransactions, &gethTransaction)
 	}
 	return gethTransactions, nil
 }
 
-func GetGethTransactionsByTxnHashes(txnHashes []string) ([]GethTransaction, error) {
+func GetGethTransactionsByTxnHashes(txnHashes []string) ([]*GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
@@ -346,7 +346,7 @@ func GetGethTransactionsByTxnHashes(txnHashes []string) ([]GethTransaction, erro
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions := make([]GethTransaction, 0)
+	gethTransactions := make([]*GethTransaction, 0)
 	for results.Next() {
 		var gethTransaction GethTransaction
 		results.Scan(
@@ -375,7 +375,80 @@ func GetGethTransactionsByTxnHashes(txnHashes []string) ([]GethTransaction, erro
 			&gethTransaction.UpdatedBy,
 			&gethTransaction.UpdatedAt,
 		)
-		gethTransactions = append(gethTransactions, gethTransaction)
+		gethTransactions = append(gethTransactions, &gethTransaction)
+	}
+	return gethTransactions, nil
+}
+
+func GetGethTransactionsByUUIDs(UUIDList []string) ([]*GethTransaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `
+	SELECT
+		id,
+		uuid,
+		chain_id,
+		exchange_id,
+		block_number,
+		index_number,
+		txn_date,
+		txn_hash,
+		from_address,
+		from_address_id,
+		to_address,
+		to_address_id,
+		interacted_contract_address,
+		interacted_contract_address_id,
+		native_asset_id,
+		geth_process_job_id,
+		value,
+		geth_transction_input_id,
+		status_id,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at
+		FROM geth_transactions
+		WHERE text(uuid) = ANY($1)
+		`,
+		pq.Array(UUIDList),
+	)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTransactions := make([]*GethTransaction, 0)
+	for results.Next() {
+		var gethTransaction GethTransaction
+		results.Scan(
+			&gethTransaction.ID,
+			&gethTransaction.UUID,
+			&gethTransaction.ChainID,
+			&gethTransaction.ExchangeID,
+			&gethTransaction.BlockNumber,
+			&gethTransaction.IndexNumber,
+			&gethTransaction.TxnDate,
+			&gethTransaction.TxnHash,
+			&gethTransaction.FromAddress,
+			&gethTransaction.FromAddressID,
+			&gethTransaction.ToAddress,
+			&gethTransaction.ToAddressID,
+			&gethTransaction.InteractedContractAddress,
+			&gethTransaction.InteractedContractAddressID,
+			&gethTransaction.NativeAssetID,
+			&gethTransaction.GethProcessJobID,
+			&gethTransaction.Value,
+			&gethTransaction.GethTransctionInputId,
+			&gethTransaction.StatusID,
+			&gethTransaction.Description,
+			&gethTransaction.CreatedBy,
+			&gethTransaction.CreatedAt,
+			&gethTransaction.UpdatedBy,
+			&gethTransaction.UpdatedAt,
+		)
+		gethTransactions = append(gethTransactions, &gethTransaction)
 	}
 	return gethTransactions, nil
 }
@@ -413,7 +486,7 @@ func RemoveGethTransactionsFromChainID(chainID *int) error {
 	return nil
 }
 
-func GetGethTransactionList() ([]GethTransaction, error) {
+func GetGethTransactionList() ([]*GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := database.DbConnPgx.Query(ctx, `
@@ -448,7 +521,7 @@ func GetGethTransactionList() ([]GethTransaction, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions := make([]GethTransaction, 0)
+	gethTransactions := make([]*GethTransaction, 0)
 	for results.Next() {
 		var gethTransaction GethTransaction
 		results.Scan(
@@ -478,7 +551,7 @@ func GetGethTransactionList() ([]GethTransaction, error) {
 			&gethTransaction.UpdatedAt,
 		)
 
-		gethTransactions = append(gethTransactions, gethTransaction)
+		gethTransactions = append(gethTransactions, &gethTransaction)
 	}
 	return gethTransactions, nil
 }
@@ -774,7 +847,7 @@ func GetNullAddressStrsFromTransactions() ([]string, error) {
 }
 
 // for refinedev
-func GetTransactionListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]GethTransaction, error) {
+func GetTransactionListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]*GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `
@@ -828,7 +901,7 @@ func GetTransactionListByPagination(_start, _end *int, _order, _sort string, _fi
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions := make([]GethTransaction, 0)
+	gethTransactions := make([]*GethTransaction, 0)
 	for results.Next() {
 		var gethTransaction GethTransaction
 		results.Scan(
@@ -858,7 +931,7 @@ func GetTransactionListByPagination(_start, _end *int, _order, _sort string, _fi
 			&gethTransaction.UpdatedAt,
 		)
 
-		gethTransactions = append(gethTransactions, gethTransaction)
+		gethTransactions = append(gethTransactions, &gethTransaction)
 	}
 	if err != nil {
 		log.Println(err.Error())

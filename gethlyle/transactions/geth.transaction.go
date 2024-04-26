@@ -20,7 +20,7 @@ type GethTransaction struct {
 	ToAddress                   string           `json:"toAddress"`
 	ToAddressID                 *int             `json:"toAddressID"`
 	InteractedContractAddress   string           `json:"interactedContractAddress"`
-	InteractedContractAddressID *int             `json:"interactedContractAddressID"`
+	InteractedContractAddressID *int             `json:"interactedContractAddressId"`
 	NativeAssetID               *int             `json:"nativeAssetId"`
 	GethProcessJobID            *int             `json:"gethProcessJobId"`
 	Value                       *decimal.Decimal `json:"value"`
