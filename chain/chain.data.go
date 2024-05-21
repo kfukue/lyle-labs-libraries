@@ -32,7 +32,8 @@ func GetChain(chainID int) (*Chain, error) {
 	chain_id,
 	COALESCE(block_explorer_url, ''),
 	COALESCE(rpc_url_dev, ''),
-	COALESCE(rpc_url_prod, '') 
+	COALESCE(rpc_url_prod, ''),
+	COALESCE(rpc_url_archive, '')
 	FROM chains 
 	WHERE id = $1
 	`, chainID)
@@ -56,6 +57,7 @@ func GetChain(chainID int) (*Chain, error) {
 		&chain.BlockExplorerURL,
 		&chain.RpcURLDev,
 		&chain.RpcURLProd,
+		&chain.RpcURLArchive,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -86,7 +88,8 @@ func GetChainByAddress(address string) (*Chain, error) {
 	chain_id,
 	COALESCE(block_explorer_url, ''),
 	COALESCE(rpc_url_dev, ''),
-	COALESCE(rpc_url_prod, '') 
+	COALESCE(rpc_url_prod, ''),
+	COALESCE(rpc_url_archive, '')
 	FROM chains 
 	WHERE address = $1
 	`, address)
@@ -110,6 +113,7 @@ func GetChainByAddress(address string) (*Chain, error) {
 		&chain.BlockExplorerURL,
 		&chain.RpcURLDev,
 		&chain.RpcURLProd,
+		&chain.RpcURLArchive,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -140,7 +144,8 @@ func GetChainByAlternateName(altenateName string) (*Chain, error) {
 	chain_id,
 	COALESCE(block_explorer_url, ''),
 	COALESCE(rpc_url_dev, ''),
-	COALESCE(rpc_url_prod, '') 
+	COALESCE(rpc_url_prod, ''),
+	COALESCE(rpc_url_archive, '')
 	FROM chains 
 	WHERE alternate_name = $1
 	`, altenateName)
@@ -164,6 +169,7 @@ func GetChainByAlternateName(altenateName string) (*Chain, error) {
 		&chain.BlockExplorerURL,
 		&chain.RpcURLDev,
 		&chain.RpcURLProd,
+		&chain.RpcURLArchive,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -205,7 +211,8 @@ func GetChainList(ids []int) ([]Chain, error) {
 	chain_id,
 	COALESCE(block_explorer_url, ''),
 	COALESCE(rpc_url_dev, ''),
-	COALESCE(rpc_url_prod, '') 
+	COALESCE(rpc_url_prod, ''),
+	COALESCE(rpc_url_archive, '')
 	FROM chains`
 	if len(ids) > 0 {
 		strIds := utils.SplitToString(ids, ",")
@@ -239,6 +246,7 @@ func GetChainList(ids []int) ([]Chain, error) {
 			&chain.BlockExplorerURL,
 			&chain.RpcURLDev,
 			&chain.RpcURLProd,
+			&chain.RpcURLArchive,
 		)
 
 		chains = append(chains, chain)
@@ -267,7 +275,8 @@ func GetChainListByPagination(_start, _end *int, _order, _sort string, _filters 
 	chain_id,
 	COALESCE(block_explorer_url, ''),
 	COALESCE(rpc_url_dev, ''),
-	COALESCE(rpc_url_prod, '') 
+	COALESCE(rpc_url_prod, ''),
+	COALESCE(rpc_url_archive, '')
 	FROM chains
 	`
 	if len(_filters) > 0 {
@@ -314,6 +323,7 @@ func GetChainListByPagination(_start, _end *int, _order, _sort string, _filters 
 			&chain.BlockExplorerURL,
 			&chain.RpcURLDev,
 			&chain.RpcURLProd,
+			&chain.RpcURLArchive,
 		)
 
 		chains = append(chains, chain)
@@ -362,8 +372,9 @@ func UpdateChain(chain Chain) error {
 		chain_id = $9,
 		block_explorer_url = $10,
 		rpc_url_dev=$11,
-		rpc_url_prod=$12
-		WHERE id=$13`,
+		rpc_url_prod=$12,
+		rpc_url_archive=$13
+		WHERE id=$14`,
 		chain.Name,             //1
 		chain.AlternateName,    //2
 		chain.Address,          //3
@@ -376,7 +387,8 @@ func UpdateChain(chain Chain) error {
 		chain.BlockExplorerURL, //10
 		chain.RpcURLDev,        //11
 		chain.RpcURLProd,       //12
-		chain.ID,               //13
+		chain.RpcURLArchive,    //13
+		chain.ID,               //14
 	)
 	if err != nil {
 		log.Println(err.Error())
@@ -406,7 +418,8 @@ func InsertChain(chain Chain) (int, error) {
 		chain_id,
 		block_explorer_url,
 		rpc_url_dev,
-		rpc_url_prod
+		rpc_url_prod,
+		rpc_url_archive
 		) VALUES (
 			uuid_generate_v4(),
 			$1,
@@ -423,7 +436,8 @@ func InsertChain(chain Chain) (int, error) {
 			$9,
 			$10,
 			$11,
-			$12
+			$12,
+			$13
 		)
 		RETURNING id`,
 		chain.Name,             //1
@@ -438,6 +452,7 @@ func InsertChain(chain Chain) (int, error) {
 		chain.BlockExplorerURL, //10
 		chain.RpcURLDev,        //11
 		chain.RpcURLProd,       //12
+		chain.RpcURLArchive,    //13
 	).Scan(&ID)
 	if err != nil {
 		log.Println(err.Error())

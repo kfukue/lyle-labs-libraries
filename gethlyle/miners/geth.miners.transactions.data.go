@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
 	"github.com/kfukue/lyle-labs-libraries/database"
+	gethlyletransactions "github.com/kfukue/lyle-labs-libraries/gethlyle/transactions"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
@@ -56,6 +57,218 @@ func GetAllGethMinerTransactionsByMinerID(minerID *int) ([]*GethMinerTransaction
 		gethMinerTransactions = append(gethMinerTransactions, &gethMinerTransaction)
 	}
 	return gethMinerTransactions, nil
+}
+
+func GetMinAndMaxDatesFromTransactionsByMinerID(minerID *int) (*time.Time, *time.Time, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	row := database.DbConnPgx.QueryRow(ctx, `
+	SELECT 
+		MIN(gt.txn_date) as min_date,
+		MAX(gt.txn_date) as max_date
+	FROM geth_miners_transactions gmt
+	LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id
+	WHERE 
+	gmt.miner_id = $1
+	`, minerID)
+	var minDate, maxDate *time.Time
+	err := row.Scan(
+		&minDate,
+		&maxDate,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+	return minDate, maxDate, nil
+}
+func GetDistinctAddressesFromGethTransactionsByMinerIDAndBeforeDate(minerID *int, beforeDate *time.Time) ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `
+	SELECT 
+		DISTINCT
+		gt.from_address
+	FROM geth_miners_transactions gmt
+	LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id
+	WHERE 
+	gmt.miner_id = $1
+	AND 
+	gt.txn_date <= $2
+	`, minerID, beforeDate.Format(utils.LayoutPostgres))
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	addressesStr := make([]string, 0)
+	for results.Next() {
+		var addressStr string
+		results.Scan(
+			&addressStr,
+		)
+
+		addressesStr = append(addressesStr, addressStr)
+	}
+	return addressesStr, nil
+}
+
+func GetAllGethTransactionsByMinerIDAndFromAddress(minerID *int, fromAddress string) ([]*gethlyletransactions.GethTransaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `
+	SELECT 
+		gt.id,
+		gt.uuid,
+		gt.chain_id,
+		gt.exchange_id,
+		gt.block_number,
+		gt.index_number,
+		gt.txn_date,
+		gt.txn_hash,
+		gt.from_address,
+		gt.from_address_id,
+		gt.to_address,
+		gt.to_address_id,
+		gt.interacted_contract_address,
+		gt.interacted_contract_address_id,
+		gt.native_asset_id,
+		gt.geth_process_job_id,
+		gt.value,
+		gt.geth_transction_input_id,
+		gt.status_id,
+		gt.description,
+		gt.created_by,
+		gt.created_at,
+		gt.updated_by,
+		gt.updated_at
+	FROM geth_miners_transactions gmt
+	LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id
+	WHERE 
+	gmt.miner_id = $1
+	AND 
+	gt.from_address = $2
+	ORDER BY gt.txn_date asc
+	`, minerID, fromAddress)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTransactions := make([]*gethlyletransactions.GethTransaction, 0)
+	for results.Next() {
+		var gethTransaction gethlyletransactions.GethTransaction
+		results.Scan(
+			&gethTransaction.ID,
+			&gethTransaction.UUID,
+			&gethTransaction.ChainID,
+			&gethTransaction.ExchangeID,
+			&gethTransaction.BlockNumber,
+			&gethTransaction.IndexNumber,
+			&gethTransaction.TxnDate,
+			&gethTransaction.TxnHash,
+			&gethTransaction.FromAddress,
+			&gethTransaction.FromAddressID,
+			&gethTransaction.ToAddress,
+			&gethTransaction.ToAddressID,
+			&gethTransaction.InteractedContractAddress,
+			&gethTransaction.InteractedContractAddressID,
+			&gethTransaction.NativeAssetID,
+			&gethTransaction.GethProcessJobID,
+			&gethTransaction.Value,
+			&gethTransaction.GethTransctionInputId,
+			&gethTransaction.StatusID,
+			&gethTransaction.Description,
+			&gethTransaction.CreatedBy,
+			&gethTransaction.CreatedAt,
+			&gethTransaction.UpdatedBy,
+			&gethTransaction.UpdatedAt,
+		)
+
+		gethTransactions = append(gethTransactions, &gethTransaction)
+	}
+	return gethTransactions, nil
+}
+
+func GetAllGethTransactionsByMinerIDAndFromAddressToDate(minerID *int, fromAddress string, toDate *time.Time) ([]*gethlyletransactions.GethTransaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `
+	SELECT 
+		gt.id,
+		gt.uuid,
+		gt.chain_id,
+		gt.exchange_id,
+		gt.block_number,
+		gt.index_number,
+		gt.txn_date,
+		gt.txn_hash,
+		gt.from_address,
+		gt.from_address_id,
+		gt.to_address,
+		gt.to_address_id,
+		gt.interacted_contract_address,
+		gt.interacted_contract_address_id,
+		gt.native_asset_id,
+		gt.geth_process_job_id,
+		gt.value,
+		gt.geth_transction_input_id,
+		gt.status_id,
+		gt.description,
+		gt.created_by,
+		gt.created_at,
+		gt.updated_by,
+		gt.updated_at
+	FROM geth_miners_transactions gmt
+	LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id
+	WHERE 
+		gmt.miner_id = $1
+			AND 
+		gt.from_address = $2
+			AND 
+		gt.txn_date <= $3
+	ORDER BY gt.txn_date asc
+	`, minerID, fromAddress, toDate.Format(utils.LayoutPostgres))
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTransactions := make([]*gethlyletransactions.GethTransaction, 0)
+	for results.Next() {
+		var gethTransaction gethlyletransactions.GethTransaction
+		results.Scan(
+			&gethTransaction.ID,
+			&gethTransaction.UUID,
+			&gethTransaction.ChainID,
+			&gethTransaction.ExchangeID,
+			&gethTransaction.BlockNumber,
+			&gethTransaction.IndexNumber,
+			&gethTransaction.TxnDate,
+			&gethTransaction.TxnHash,
+			&gethTransaction.FromAddress,
+			&gethTransaction.FromAddressID,
+			&gethTransaction.ToAddress,
+			&gethTransaction.ToAddressID,
+			&gethTransaction.InteractedContractAddress,
+			&gethTransaction.InteractedContractAddressID,
+			&gethTransaction.NativeAssetID,
+			&gethTransaction.GethProcessJobID,
+			&gethTransaction.Value,
+			&gethTransaction.GethTransctionInputId,
+			&gethTransaction.StatusID,
+			&gethTransaction.Description,
+			&gethTransaction.CreatedBy,
+			&gethTransaction.CreatedAt,
+			&gethTransaction.UpdatedBy,
+			&gethTransaction.UpdatedAt,
+		)
+
+		gethTransactions = append(gethTransactions, &gethTransaction)
+	}
+	return gethTransactions, nil
 }
 
 func GetAllGethMinerTransactionsByTransactionID(transactionID *int) ([]*GethMinerTransaction, error) {
@@ -334,6 +547,21 @@ func InsertGethMinersTransactions(gethMinersTransaction []*GethMinerTransaction)
 	if err != nil {
 		log.Fatal(err)
 		// handle error that occurred while using *pgx.Conn
+	}
+	return nil
+}
+
+func RemoveAllTransactionsAndTransactionInputs() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	_, err := database.DbConnPgx.Exec(ctx, `
+	DELETE FROM geth_miners_transactions;
+	DELETE FROM geth_transactions;
+			`,
+	)
+	if err != nil {
+		log.Println(err.Error())
+		return err
 	}
 	return nil
 }

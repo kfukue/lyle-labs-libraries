@@ -68,3 +68,11 @@ ALTER TABLE assets
   ADD  import_geth_initial BOOLEAN NOT NULL DEFAULT FALSE;
   COMMIT
 -- end
+-- add indexes
+
+CREATE INDEX assets_id ON assets(id);
+CREATE INDEX assets_address ON assets(contract_address);
+CREATE INDEX assets_base_asset ON assets(base_asset_id);
+CREATE INDEX assets_quote_asset ON assets(quote_asset_id);
+CREATE INDEX assets_chains ON assets(chain_id);
+CREATE INDEX assets_asset_type ON assets(asset_type_id);

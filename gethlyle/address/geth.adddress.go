@@ -137,14 +137,14 @@ func CreateOrGetContractAddress(addressStr string) (*GethAddress, error) {
 	return contractAddress, nil
 }
 
-func CreateGethAddress(addressStr string, isEOA bool) *GethAddress {
+func CreateGethAddress(addressStr string, isEOA bool) (*GethAddress, error) {
 	var addressName string
 	var contractTypeID int
 	gethAddressUUID, err := uuid.NewV4()
 	if err != nil {
 		msg := fmt.Sprintf("error: uuid.NewV4(), during CreateContractAddress : %s", err.Error())
 		log.Fatal(msg)
-		return nil
+		return nil, err
 	}
 	if isEOA {
 		addressName = fmt.Sprintf("EOA: %s", addressStr)
@@ -162,26 +162,49 @@ func CreateGethAddress(addressStr string, isEOA bool) *GethAddress {
 		AddressTypeID: &contractTypeID,
 		CreatedBy:     utils.SYSTEM_NAME,
 	}
-	return &gethAddress
+	newGethAddressID, err := InsertGethAddress(gethAddress)
+	if err != nil {
+		msg := fmt.Sprintf("error: uuid.NewV4(), during CreateContractAddress : %s", err.Error())
+		log.Fatal(msg)
+		return nil, err
+	}
+	gethAddress.ID = &newGethAddressID
+	return &gethAddress, nil
 }
 
 func CreateEOAOrContractAddress(addressStr string, cl *ethclient.Client) (*GethAddress, error) {
-	address := common.HexToAddress(addressStr)
-	codeAtResult, err := cl.CodeAt(context.Background(), address, nil)
+	address, err := GetGethAddressByAddressStr(addressStr)
 	if err != nil {
-		log.Printf("Failed CreateEOAOrContractAddress:  CodeAt: %v\n", err.Error())
+		log.Printf("Failed GetGethAddressByAddressStr: %v\n", err.Error())
 		log.Fatal(err)
 		return nil, err
 	}
-	//if result len is 0 EOA otherwise contract
-	var gethAddress *GethAddress
-	var isEOA bool
-	// EOA
-	if len(codeAtResult) == 0 {
-		isEOA = true
+	// add as new address (contract) if doesn't exists
+	if address == nil {
+		address := common.HexToAddress(addressStr)
+		codeAtResult, err := cl.CodeAt(context.Background(), address, nil)
+		if err != nil {
+			log.Printf("Failed CreateEOAOrContractAddress:  CodeAt: %v\n", err.Error())
+			log.Fatal(err)
+			return nil, err
+		}
+		//if result len is 0 EOA otherwise contract
+		var gethAddress *GethAddress
+		var isEOA bool
+		// EOA
+		if len(codeAtResult) == 0 {
+			isEOA = true
+		} else {
+			isEOA = false
+		}
+		gethAddress, err = CreateGethAddress(addressStr, isEOA)
+		if err != nil {
+			log.Printf("Failed CreateEOAOrContractAddress->CreateGethAddress: %v\n", err.Error())
+			log.Fatal(err)
+			return nil, err
+		}
+		return gethAddress, nil
 	} else {
-		isEOA = false
+		return address, nil
 	}
-	gethAddress = CreateGethAddress(addressStr, isEOA)
-	return gethAddress, nil
 }

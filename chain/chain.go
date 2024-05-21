@@ -23,4 +23,5 @@ type Chain struct {
 	BlockExplorerURL string    `json:"blockExplorerUrl"`
 	RpcURLDev        string    `json:"rpcUrlDev"`
 	RpcURLProd       string    `json:"rpcUrlProd"`
+	RpcURLArchive    string    `json:"rpcUrlArchive"`
 }

@@ -40,6 +40,10 @@ CREATE TABLE geth_market_data
   CONSTRAINT fk_geth_process_jobs FOREIGN KEY(geth_process_job_id) REFERENCES geth_process_jobs(id)
 );
 
+CREATE INDEX geth_market_data_asset_id ON geth_market_data(id);
+CREATE INDEX geth_market_data_market_data_type_id ON geth_market_data(market_data_type_id);
+CREATE INDEX geth_market_data_start_date ON geth_market_data(start_date);
+
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO "asset-tracker-user";
 GRANT SELECT,INSERT,UPDATE,DELETE  ON ALL TABLES IN SCHEMA public TO "asset-tracker-user";
 

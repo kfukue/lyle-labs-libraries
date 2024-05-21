@@ -108,58 +108,6 @@ func GetGethTransactionInputByFromToAddress(fromToAddressID *int) ([]*GethTransa
 	return gethTransactionInputs, nil
 }
 
-func GetGethTransactionInputByFromMinerID(minerID *int) ([]*GethTransactionInput, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-	SELECT
-		gti.id,
-		gti.uuid,
-		gti.name ,
-		gti.alternate_name,
-		gti.function_name,
-		gti.method_id_str,
-		gti.num_of_parameters,
-		gti.description,
-		gti.created_by,
-		gti.created_at,
-		gti.updated_by,
-		gti.updated_at
-	FROM geth_transaction_inputs gti 
-	JOIN geth_miners_transaction_inputs gmti
-		ON gti.id = gmti.transaction_input_id
-	WHERE
-		gmti.miner_id = $1
-		`,
-		minerID,
-	)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	gethTransactionInputs := make([]*GethTransactionInput, 0)
-	for results.Next() {
-		var gethTransactionInput GethTransactionInput
-		results.Scan(
-			&gethTransactionInput.ID,
-			&gethTransactionInput.UUID,
-			&gethTransactionInput.Name,
-			&gethTransactionInput.AlternateName,
-			&gethTransactionInput.FunctionName,
-			&gethTransactionInput.MethodIDStr,
-			&gethTransactionInput.NumOfParameters,
-			&gethTransactionInput.Description,
-			&gethTransactionInput.CreatedBy,
-			&gethTransactionInput.CreatedAt,
-			&gethTransactionInput.UpdatedBy,
-			&gethTransactionInput.UpdatedAt,
-		)
-		gethTransactionInputs = append(gethTransactionInputs, &gethTransactionInput)
-	}
-	return gethTransactionInputs, nil
-}
-
 func GetGethTransactionInputByFromAddressAndBeforeBlockNumber(fromAddressID, blockNumber *int) ([]*GethTransactionInput, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()

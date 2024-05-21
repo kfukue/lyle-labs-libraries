@@ -104,7 +104,7 @@ func RemoveMarketData(marketDataID int) error {
 }
 
 func RemoveMarketDataFromBaseAssetBetweenDates(assetID *int, startDate, endDate *time.Time) error {
-	log.Println(fmt.Sprintf("start : %s end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
+	log.Printf(fmt.Sprintf("start : %s end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM geth_market_data 
@@ -119,14 +119,32 @@ func RemoveMarketDataFromBaseAssetBetweenDates(assetID *int, startDate, endDate 
 }
 
 func RemoveMarketDataByMarketDataTypeIDFromBaseAssetBetweenDates(assetID, marketDataTypeID *int, startDate, endDate *time.Time) error {
-	log.Println(fmt.Sprintf("start : %s end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
+	log.Printf(fmt.Sprintf("RemoveMarketDataByMarketDataTypeIDFromBaseAssetBetweenDates: start : %s end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM geth_market_data 
-		WHERE asset_id = $1
+		WHERE 
+			start_date BETWEEN $1 and $2
+			AND market_data_type_id=$3
+			AND asset_id = $4
+	`, startDate, endDate, marketDataTypeID, assetID)
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+	return nil
+}
+
+func RemoveMarketDataByMarketDataTypeIDFromBaseAssetAfOfDate(assetID, marketDataTypeID *int, asOfDate *time.Time) error {
+	log.Printf(fmt.Sprintf("RemoveMarketDataByMarketDataTypeIDFromBaseAssetAfOfDate: asOfDate : %s ", asOfDate.Format(utils.LayoutPostgres)))
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM geth_market_data 
+		WHERE 
+			start_date = $1
 			AND market_data_type_id=$2
-			AND start_date BETWEEN $3 and $4
-	`, assetID, marketDataTypeID, startDate, endDate)
+			ABD asset_id = $3
+	`, asOfDate, marketDataTypeID, assetID)
 	if err != nil {
 		log.Println(err.Error())
 		return err

@@ -13,7 +13,7 @@ type GethMiner struct {
 	ExchangeID          *int      `json:"exchangeId"`
 	StartingBlockNumber *int      `json:"startingBlockNumber"`
 	CreatedTxnHash      string    `json:"createdTxnHash"`
-	LastBlockNumber     *int      `json:"lastBlockNumber"`
+	LastBlockNumber     *uint64   `json:"lastBlockNumber"`
 	ContractAddress     string    `json:"contractAddress"`
 	ContractAddressID   *int      `json:"contractAddressId"`
 	DeveloperAddress    string    `json:"developerAddress"`

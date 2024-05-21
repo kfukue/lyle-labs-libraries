@@ -35,4 +35,13 @@ ALTER TABLE chains
   ADD COLUMN rpc_url_dev VARCHAR(255) NULL,
   ADD COLUMN rpc_url_prod VARCHAR(255) NULL
   COMMIT
--- end 2022-09-11
+-- end 2023-09-11
+
+
+-- new columns 2024-05-14
+ROLLBACK
+START TRANSACTION;
+ALTER TABLE chains
+  ADD COLUMN rpc_url_archive VARCHAR(255) NULL
+  COMMIT
+-- end 2024-05-14

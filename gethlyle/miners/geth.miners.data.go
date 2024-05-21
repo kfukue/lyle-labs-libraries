@@ -141,6 +141,68 @@ func GetGethMinerList() ([]*GethMiner, error) {
 	return gethMiners, nil
 }
 
+func GetGethMinerListByMiningAssetId(miningAssetID *int) ([]*GethMiner, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `
+	SELECT
+		id,
+		uuid,
+		name,
+		alternate_name,
+		chain_id,
+		exchange_id,
+		starting_block_number,
+		created_txn_hash,
+		last_block_number,
+		contract_address,
+		contract_address_id,
+		developer_address,
+		developer_address_id,
+		mining_asset_id,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at
+	FROM geth_miners
+	WHERE
+		mining_asset_id = $1  `, miningAssetID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethMiners := make([]*GethMiner, 0)
+	for results.Next() {
+		var gethMiner GethMiner
+		results.Scan(
+			&gethMiner.ID,
+			&gethMiner.UUID,
+			&gethMiner.Name,
+			&gethMiner.AlternateName,
+			&gethMiner.ChainID,
+			&gethMiner.ExchangeID,
+			&gethMiner.StartingBlockNumber,
+			&gethMiner.CreatedTxnHash,
+			&gethMiner.LastBlockNumber,
+			&gethMiner.ContractAddress,
+			&gethMiner.ContractAddressID,
+			&gethMiner.DeveloperAddress,
+			&gethMiner.DeveloperAddressID,
+			&gethMiner.MiningAssetID,
+			&gethMiner.Description,
+			&gethMiner.CreatedBy,
+			&gethMiner.CreatedAt,
+			&gethMiner.UpdatedBy,
+			&gethMiner.UpdatedAt,
+		)
+
+		gethMiners = append(gethMiners, &gethMiner)
+	}
+	return gethMiners, nil
+}
+
 func UpdateGethMiner(gethMiner GethMiner) error {
 	// if the gethMiner id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
@@ -163,7 +225,7 @@ func UpdateGethMiner(gethMiner GethMiner) error {
 		mining_asset_id=$12,
 		description=$13,
 		updated_by=$14,
-		updated_at=current_timestamp at time zone 'UTC',
+		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$15`,
 		gethMiner.Name,                //1
 		gethMiner.AlternateName,       //2
