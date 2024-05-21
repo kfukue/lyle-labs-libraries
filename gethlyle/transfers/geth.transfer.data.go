@@ -11,7 +11,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/kfukue/lyle-labs-libraries/database"
 	gethlyleaddresses "github.com/kfukue/lyle-labs-libraries/gethlyle/address"
-	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
@@ -1191,62 +1190,4 @@ func UpdateGethTransfersAssetIDs() error {
 		return err
 	}
 	return nil
-}
-
-func GetDatesFromBlockNumbersFromETH(fromDate, toDate *time.Time) ([]*GethTransfer, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-	SELECT
-		DISTINCT
-		gt.chain_id,
-		gt.block_number,
-		gt.index_number,
-		gt.transfer_date,
-	FROM
-		geth_transfers gt
-	LEFT JOIN
-		chains c on gt.chain_id = c.id
-	WHERE c.alternate_name = 'ETH'
-	gt.transfer_date BETWEEN $1 AND $2
-	`, fromDate.Format(utils.LayoutPostgres), toDate.Format(utils.LayoutPostgres))
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	gethTransfers := make([]GethTransfer, 0)
-	for results.Next() {
-		var gethTransfer GethTransfer
-		results.Scan(
-			&gethTransfer.ID,
-			&gethTransfer.UUID,
-			&gethTransfer.ChainID,
-			&gethTransfer.TokenAddress,
-			&gethTransfer.TokenAddressID,
-			&gethTransfer.AssetID,
-			&gethTransfer.BlockNumber,
-			&gethTransfer.IndexNumber,
-			&gethTransfer.TransferDate,
-			&gethTransfer.TxnHash,
-			&gethTransfer.SenderAddress,
-			&gethTransfer.SenderAddressID,
-			&gethTransfer.ToAddress,
-			&gethTransfer.ToAddressID,
-			&gethTransfer.Amount,
-			&gethTransfer.Description,
-			&gethTransfer.CreatedBy,
-			&gethTransfer.CreatedAt,
-			&gethTransfer.UpdatedBy,
-			&gethTransfer.GethProcessJobID,
-			&gethTransfer.TopicsStr,
-			&gethTransfer.StatusID,
-			&gethTransfer.BaseAssetID,
-			&gethTransfer.TransferTypeID,
-		)
-
-		gethTransfers = append(gethTransfers, gethTransfer)
-	}
-	return gethTransfers, nil
-
 }
