@@ -271,6 +271,88 @@ func GetAllGethTransactionsByMinerIDAndFromAddressToDate(minerID *int, fromAddre
 	return gethTransactions, nil
 }
 
+// fromDate inclusive and toDate exclusive
+func GetAllGethTransactionsByMinerIDAndFromAddressFromToDate(minerID *int, fromAddress string, fromDate, toDate *time.Time) ([]*gethlyletransactions.GethTransaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := database.DbConnPgx.Query(ctx, `
+	SELECT 
+		gt.id,
+		gt.uuid,
+		gt.chain_id,
+		gt.exchange_id,
+		gt.block_number,
+		gt.index_number,
+		gt.txn_date,
+		gt.txn_hash,
+		gt.from_address,
+		gt.from_address_id,
+		gt.to_address,
+		gt.to_address_id,
+		gt.interacted_contract_address,
+		gt.interacted_contract_address_id,
+		gt.native_asset_id,
+		gt.geth_process_job_id,
+		gt.value,
+		gt.geth_transction_input_id,
+		gt.status_id,
+		gt.description,
+		gt.created_by,
+		gt.created_at,
+		gt.updated_by,
+		gt.updated_at
+	FROM geth_miners_transactions gmt
+	LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id
+	WHERE 
+		gmt.miner_id = $1
+			AND 
+		gt.from_address = $2
+			AND 
+		gt.txn_date >= $3
+			AND 
+		gt.txn_date < $4
+	ORDER BY gt.txn_date asc
+	`, minerID, fromAddress, fromDate.Format(utils.LayoutPostgres), toDate.Format(utils.LayoutPostgres))
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTransactions := make([]*gethlyletransactions.GethTransaction, 0)
+	for results.Next() {
+		var gethTransaction gethlyletransactions.GethTransaction
+		results.Scan(
+			&gethTransaction.ID,
+			&gethTransaction.UUID,
+			&gethTransaction.ChainID,
+			&gethTransaction.ExchangeID,
+			&gethTransaction.BlockNumber,
+			&gethTransaction.IndexNumber,
+			&gethTransaction.TxnDate,
+			&gethTransaction.TxnHash,
+			&gethTransaction.FromAddress,
+			&gethTransaction.FromAddressID,
+			&gethTransaction.ToAddress,
+			&gethTransaction.ToAddressID,
+			&gethTransaction.InteractedContractAddress,
+			&gethTransaction.InteractedContractAddressID,
+			&gethTransaction.NativeAssetID,
+			&gethTransaction.GethProcessJobID,
+			&gethTransaction.Value,
+			&gethTransaction.GethTransctionInputId,
+			&gethTransaction.StatusID,
+			&gethTransaction.Description,
+			&gethTransaction.CreatedBy,
+			&gethTransaction.CreatedAt,
+			&gethTransaction.UpdatedBy,
+			&gethTransaction.UpdatedAt,
+		)
+
+		gethTransactions = append(gethTransactions, &gethTransaction)
+	}
+	return gethTransactions, nil
+}
+
 func GetAllGethMinerTransactionsByTransactionID(transactionID *int) ([]*GethMinerTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
