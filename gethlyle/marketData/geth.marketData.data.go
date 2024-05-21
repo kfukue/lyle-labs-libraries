@@ -143,7 +143,7 @@ func RemoveMarketDataByMarketDataTypeIDFromBaseAssetAfOfDate(assetID, marketData
 		WHERE 
 			start_date = $1
 			AND market_data_type_id=$2
-			ABD asset_id = $3
+			AND asset_id = $3
 	`, asOfDate, marketDataTypeID, assetID)
 	if err != nil {
 		log.Println(err.Error())

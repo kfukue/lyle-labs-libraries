@@ -162,13 +162,6 @@ func CreateGethAddress(addressStr string, isEOA bool) (*GethAddress, error) {
 		AddressTypeID: &contractTypeID,
 		CreatedBy:     utils.SYSTEM_NAME,
 	}
-	newGethAddressID, err := InsertGethAddress(gethAddress)
-	if err != nil {
-		msg := fmt.Sprintf("error: uuid.NewV4(), during CreateContractAddress : %s", err.Error())
-		log.Fatal(msg)
-		return nil, err
-	}
-	gethAddress.ID = &newGethAddressID
 	return &gethAddress, nil
 }
 
