@@ -15,6 +15,32 @@ import (
 	decimal "github.com/shopspring/decimal"
 )
 
+func GetMinAndMaxDatesFromGethMarketByAssetID(assetID, marketDataTypeID *int) (*time.Time, *time.Time, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	row := database.DbConnPgx.QueryRow(ctx, `
+			SELECT 
+				MIN(start_date) as min_date,
+				MAX(start_date) as max_date
+			FROM geth_market_data 
+			WHERE 
+			asset_id = $1
+			AND market_data_type_id = $2
+			`, assetID, marketDataTypeID)
+	var minDate, maxDate *time.Time
+	err := row.Scan(
+		&minDate,
+		&maxDate,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+	return minDate, maxDate, nil
+}
+
 func GetMarketData(marketDataID int) (*MarketData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
