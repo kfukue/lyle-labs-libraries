@@ -44,6 +44,10 @@ CREATE INDEX geth_market_data_asset_id ON geth_market_data(id);
 CREATE INDEX geth_market_data_market_data_type_id ON geth_market_data(market_data_type_id);
 CREATE INDEX geth_market_data_start_date ON geth_market_data(start_date);
 
+CREATE INDEX geth_market_data_interval ON geth_market_data(interval_id);
+CREATE INDEX geth_market_data_source ON geth_market_data(source_id);
+CREATE INDEX geth_market_data_geth_process_job ON geth_market_data(geth_process_job_id);
+
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO "asset-tracker-user";
 GRANT SELECT,INSERT,UPDATE,DELETE  ON ALL TABLES IN SCHEMA public TO "asset-tracker-user";
 

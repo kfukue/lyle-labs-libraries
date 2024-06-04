@@ -145,37 +145,61 @@ func RemoveMarketDataFromBaseAssetBetweenDates(assetID *int, startDate, endDate 
 }
 
 func RemoveMarketDataByMarketDataTypeIDFromBaseAssetBetweenDates(assetID, marketDataTypeID *int, startDate, endDate *time.Time) error {
-	log.Printf(fmt.Sprintf("RemoveMarketDataByMarketDataTypeIDFromBaseAssetBetweenDates: start : %s end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 6000*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM geth_market_data 
+	// from https://stackoverflow.com/questions/40076596/raw-sql-transactions-with-golang-prepared-statements
+	tx, err := database.DbConn.Begin()
+	if err != nil {
+		log.Printf("Error in RemoveMarketDataByMarketDataTypeIDFromBaseAssetBetweenDates database.DbConn.Begin   %s", err.Error())
+		return err
+	}
+
+	sql, err := tx.Prepare(`
+		DELETE FROM geth_market_data 
 		WHERE 
 			start_date BETWEEN $1 and $2
 			AND market_data_type_id=$3
 			AND asset_id = $4
-	`, startDate, endDate, marketDataTypeID, assetID)
+			`)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveMarketDataByMarketDataTypeIDFromBaseAssetBetweenDates delete geth_market_data %s", err.Error())
 		return err
 	}
-	return nil
+	defer sql.Close()
+	if _, err := sql.ExecContext(ctx, startDate, endDate, marketDataTypeID, assetID); err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }
 
 func RemoveMarketDataByMarketDataTypeIDFromBaseAssetAfOfDate(assetID, marketDataTypeID *int, asOfDate *time.Time) error {
-	log.Printf(fmt.Sprintf("RemoveMarketDataByMarketDataTypeIDFromBaseAssetAfOfDate: asOfDate : %s ", asOfDate.Format(utils.LayoutPostgres)))
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 6000*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM geth_market_data 
+	// from https://stackoverflow.com/questions/40076596/raw-sql-transactions-with-golang-prepared-statements
+	tx, err := database.DbConn.Begin()
+	if err != nil {
+		log.Printf("Error in RemoveMarketDataByMarketDataTypeIDFromBaseAssetAfOfDate database.DbConn.Begin   %s", err.Error())
+		return err
+	}
+
+	sql, err := tx.Prepare(`
+		DELETE FROM geth_market_data 
 		WHERE 
 			start_date = $1
 			AND market_data_type_id=$2
 			AND asset_id = $3
-	`, asOfDate, marketDataTypeID, assetID)
+		`)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveMarketDataByMarketDataTypeIDFromBaseAssetAfOfDate delete geth_market_data %s", err.Error())
 		return err
 	}
-	return nil
+	defer sql.Close()
+	if _, err := sql.ExecContext(ctx, asOfDate, marketDataTypeID, assetID); err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }
 
 func GetMarketDataList(ids []int) ([]MarketData, error) {
