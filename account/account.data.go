@@ -27,10 +27,10 @@ type TestAccount struct {
 	Name string `db:"name"`
 }
 
-func GetAccount(dbConnPgx utils.PgxIface, accountID int) (*Account, error) {
+func GetAccount(dbConnPgx utils.PgxIface, accountID *int) (*Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -48,39 +48,26 @@ func GetAccount(dbConnPgx utils.PgxIface, accountID int) (*Account, error) {
 	chain_id
 	FROM accounts 
 	WHERE id = $1
-	`, accountID)
-
-	account := &Account{}
-	err := row.Scan(
-		&account.ID,
-		&account.UUID,
-		&account.Name,
-		&account.AlternateName,
-		&account.Address,
-		&account.NameFromSource,
-		&account.PortfolioID,
-		&account.SourceID,
-		&account.AccountTypeID,
-		&account.Description,
-		&account.CreatedBy,
-		&account.CreatedAt,
-		&account.UpdatedBy,
-		&account.UpdatedAt,
-		&account.ChainID,
-	)
+	`, *accountID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
+	account, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Account])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return account, nil
+	return &account, nil
 }
 
 func GetAccountByAddress(dbConnPgx utils.PgxIface, address string) (*Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -99,38 +86,24 @@ func GetAccountByAddress(dbConnPgx utils.PgxIface, address string) (*Account, er
 	FROM accounts 
 	WHERE address = $1
 	`, address)
-
-	account := &Account{}
-	err := row.Scan(
-		&account.ID,
-		&account.UUID,
-		&account.Name,
-		&account.AlternateName,
-		&account.Address,
-		&account.NameFromSource,
-		&account.PortfolioID,
-		&account.SourceID,
-		&account.AccountTypeID,
-		&account.Description,
-		&account.CreatedBy,
-		&account.CreatedAt,
-		&account.UpdatedBy,
-		&account.UpdatedAt,
-		&account.ChainID,
-	)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	account, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Account])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return account, nil
+	return &account, nil
 }
 
 func GetAccountByAlternateName(dbConnPgx utils.PgxIface, altenateName string) (*Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -149,35 +122,21 @@ func GetAccountByAlternateName(dbConnPgx utils.PgxIface, altenateName string) (*
 	FROM accounts 
 	WHERE alternate_name = $1
 	`, altenateName)
-
-	account := &Account{}
-	err := row.Scan(
-		&account.ID,
-		&account.UUID,
-		&account.Name,
-		&account.AlternateName,
-		&account.Address,
-		&account.NameFromSource,
-		&account.PortfolioID,
-		&account.SourceID,
-		&account.AccountTypeID,
-		&account.Description,
-		&account.CreatedBy,
-		&account.CreatedAt,
-		&account.UpdatedBy,
-		&account.UpdatedAt,
-		&account.ChainID,
-	)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	account, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Account])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return account, nil
+	return &account, nil
 }
 
-func RemoveAccount(dbConnPgx utils.PgxIface, accountID int) error {
+func RemoveAccount(dbConnPgx utils.PgxIface, accountID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
@@ -187,7 +146,7 @@ func RemoveAccount(dbConnPgx utils.PgxIface, accountID int) error {
 	}
 	sql := `DELETE FROM accounts WHERE id = $1`
 	defer dbConnPgx.Close()
-	if _, err := dbConnPgx.Exec(ctx, sql, accountID); err != nil {
+	if _, err := dbConnPgx.Exec(ctx, sql, *accountID); err != nil {
 		tx.Rollback(ctx)
 		return err
 	}
@@ -225,36 +184,15 @@ func GetAccountList(dbConnPgx utils.PgxIface, ids []int) ([]Account, error) {
 		return nil, err
 	}
 	defer results.Close()
-	accounts := make([]Account, 0)
-	for results.Next() {
-		var account Account
-		results.Scan(
-			&account.ID,
-			&account.UUID,
-			&account.Name,
-			&account.AlternateName,
-			&account.Address,
-			&account.NameFromSource,
-			&account.PortfolioID,
-			&account.SourceID,
-			&account.AccountTypeID,
-			&account.Description,
-			&account.CreatedBy,
-			&account.CreatedAt,
-			&account.UpdatedBy,
-			&account.UpdatedAt,
-			&account.ChainID,
-		)
-
-		accounts = append(accounts, account)
-	}
+	accounts, err := pgx.CollectRows(results, pgx.RowToStructByName[Account])
 	return accounts, nil
 }
 
-func UpdateAccount(dbConnPgx utils.PgxIface, account Account) error {
+func UpdateAccount(dbConnPgx utils.PgxIface, account *Account) error {
 	// if the account id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+
 	if account.ID == nil || *account.ID == 0 {
 		return errors.New("account has invalid ID")
 	}
@@ -292,60 +230,36 @@ func UpdateAccount(dbConnPgx utils.PgxIface, account Account) error {
 		tx.Rollback(ctx)
 		return err
 	}
-
-	// )
-	// _, err := dbConnPgx.Query(ctx, `UPDATE accounts SET
-	// name=$1,
-	// alternate_name=$2,
-	// address=$3,
-	// name_from_source=$4,
-	// portfolio_id=$5,
-	// source_id=$6,
-	// account_type_id=$7,
-	// description=$8,
-	// 	updated_by=$9,
-	// 	updated_at=current_timestamp at time zone 'UTC',
-	// 	chain_id = $10
-	// 	WHERE id=$11`,
-	// 	account.Name,
-	// 	account.AlternateName,
-	// 	account.Address,
-	// 	account.NameFromSource,
-	// 	account.PortfolioID,
-	// 	account.SourceID,
-	// 	account.AccountTypeID,
-	// 	account.Description,
-	// 	account.UpdatedBy,
-	// 	account.ChainID,
-	// 	account.ID,
-	// )
-	// if err != nil {
-	// 	log.Println(err.Error())
-	// 	return err
-	// }
 	return tx.Commit(ctx)
 }
 
-func InsertAccount(dbConnPgx utils.PgxIface, account Account) (int, error) {
+func InsertAccount(dbConnPgx utils.PgxIface, account *Account) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertAccount DbConn.Begin   %s", err.Error())
+		return -1, err
+	}
 	var ID int
-	err := dbConnPgx.QueryRow(ctx, `INSERT INTO accounts  
+	defer dbConnPgx.Close()
+
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO accounts
 	(
-		uuid, 
-		name, 
-		alternate_name, 
+		uuid,
+		name,
+		alternate_name,
 		address,
 		name_from_source,
 		portfolio_id,
 		source_id,
 		account_type_id,
 		description,
-		created_by, 
-		created_at, 
-		updated_by, 
+		created_by,
+		created_at,
+		updated_by,
 		updated_at,
-		chain_id 
+		chain_id
 		) VALUES (
 			uuid_generate_v4(),
 			$1,
@@ -375,8 +289,15 @@ func InsertAccount(dbConnPgx utils.PgxIface, account Account) (int, error) {
 		account.ChainID,        //10
 	).Scan(&ID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, err
 	}
 	return int(ID), nil
 }

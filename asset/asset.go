@@ -7,37 +7,37 @@ import (
 
 // Asset
 type Asset struct {
-	ID                  *int      `json:"id"`
-	UUID                string    `json:"uuid"`
-	Name                string    `json:"name"`
-	AlternateName       string    `json:"alternateName"`
-	Cusip               string    `json:"cusip"`
-	Ticker              string    `json:"ticker"`
-	BaseAssetID         *int      `json:"baseAssetId"`
-	QuoteAssetID        *int      `json:"quoteAssetId"`
-	Description         string    `json:"description"`
-	AssetTypeID         *int      `json:"assetTypeId"`
-	CreatedBy           string    `json:"createdBy"`
-	CreatedAt           time.Time `json:"createdAt"`
-	UpdatedBy           string    `json:"updatedBy"`
-	UpdatedAt           time.Time `json:"updatedAt"`
-	ChainID             *int      `json:"chainId"`
-	CategoryID          *int      `json:"categoryId"`
-	SubCategoryID       *int      `json:"subCategoryId"`
-	IsDefaultQuote      *bool     `json:"isDefaultQuote"`
-	IgnoreMarketData    *bool     `json:"ignoreMarketData"`
-	Decimals            *int      `json:"decimals"`
-	ContractAddress     string    `json:"contractAddress"`
-	StartingBlockNumber *uint64   `json:"startingBlockNumber"`
-	ImportGeth          *bool     `json:"importGeth"`
-	ImportGethInitial   *bool     `json:"importGethInitial"`
+	ID                  *int      `json:"id" db:"id"`
+	UUID                string    `json:"uuid" db:"uuid"`
+	Name                string    `json:"name" db:"name"`
+	AlternateName       string    `json:"alternateName" db:"alternate_name"`
+	Cusip               string    `json:"cusip" db:"cusip"`
+	Ticker              string    `json:"ticker" db:"ticker"`
+	BaseAssetID         *int      `json:"baseAssetId" db:"base_asset_id"`
+	QuoteAssetID        *int      `json:"quoteAssetId" db:"quote_asset_id"`
+	Description         string    `json:"description" db:"description"`
+	AssetTypeID         *int      `json:"assetTypeId" db:"asset_type_id"`
+	CreatedBy           string    `json:"createdBy" db:"created_by"`
+	CreatedAt           time.Time `json:"createdAt" db:"created_at"`
+	UpdatedBy           string    `json:"updatedBy" db:"updated_by"`
+	UpdatedAt           time.Time `json:"updatedAt" db:"updated_at"`
+	ChainID             *int      `json:"chainId" db:"chain_id"`
+	CategoryID          *int      `json:"categoryId" db:"category_id"`
+	SubCategoryID       *int      `json:"subCategoryId" db:"sub_category_id"`
+	IsDefaultQuote      *bool     `json:"isDefaultQuote" db:"is_default_quote"`
+	IgnoreMarketData    *bool     `json:"ignoreMarketData" db:"ignore_market_data"`
+	Decimals            *int      `json:"decimals" db:"decimals"`
+	ContractAddress     string    `json:"contractAddress" db:"contract_address"`
+	StartingBlockNumber *uint64   `json:"startingBlockNumber" db:"starting_block_number"`
+	ImportGeth          *bool     `json:"importGeth" db:"import_geth"`
+	ImportGethInitial   *bool     `json:"importGethInitial" db:"import_geth_initial"`
 }
 
 // Asset
 type AssetWithSources struct {
 	Asset
-	SourceID         *int   `json:"sourceId"`
-	SourceIdentifier string `json:"sourceIdentifier"`
+	SourceID         *int   `json:"sourceId" db:"assetSources.source_id"`
+	SourceIdentifier string `json:"sourceIdentifier" db:"assetSources.source_identifier"`
 }
 
 // lowercase for the contract address
