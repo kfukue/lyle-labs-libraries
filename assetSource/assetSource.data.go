@@ -8,14 +8,13 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
-func GetAllAssetSourceBySourceAndAssetType(sourceID int, assetTypeID int) ([]AssetSource, error) {
+func GetAllAssetSourceBySourceAndAssetType(dbConnPgx utils.PgxIface, sourceID, assetTypeID *int) ([]AssetSource, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	asset_sources.source_id,
 	asset_sources.asset_id,
 	asset_sources.uuid, 
@@ -34,38 +33,20 @@ func GetAllAssetSourceBySourceAndAssetType(sourceID int, assetTypeID int) ([]Ass
 	WHERE 
 	asset_sources.source_id = $1
 	AND assets.asset_type_id = $2
-	`, sourceID, assetTypeID)
+	`, *sourceID, *assetTypeID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	assetSources := make([]AssetSource, 0)
-	for results.Next() {
-		var assetSource AssetSource
-		results.Scan(
-			&assetSource.SourceID,
-			&assetSource.AssetID,
-			&assetSource.UUID,
-			&assetSource.Name,
-			&assetSource.AlternateName,
-			&assetSource.SourceIdentifier,
-			&assetSource.Description,
-			&assetSource.SourceData,
-			&assetSource.CreatedBy,
-			&assetSource.CreatedAt,
-			&assetSource.UpdatedBy,
-			&assetSource.UpdatedAt,
-		)
-
-		assetSources = append(assetSources, assetSource)
-	}
+	assetSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetSource])
 	return assetSources, nil
 }
-func GetAssetSource(sourceID int, assetID int) (*AssetSource, error) {
+
+func GetAssetSource(dbConnPgx utils.PgxIface, sourceID, assetID *int) (*AssetSource, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 	source_id,
 	asset_id,
 	uuid, 
@@ -81,36 +62,26 @@ func GetAssetSource(sourceID int, assetID int) (*AssetSource, error) {
 	FROM asset_sources 
 	WHERE source_id = $1
 	AND asset_id = $2
-	`, sourceID, assetID)
-
-	assetSource := &AssetSource{}
-	err := row.Scan(
-		&assetSource.SourceID,
-		&assetSource.AssetID,
-		&assetSource.UUID,
-		&assetSource.Name,
-		&assetSource.AlternateName,
-		&assetSource.SourceIdentifier,
-		&assetSource.Description,
-		&assetSource.SourceData,
-		&assetSource.CreatedBy,
-		&assetSource.CreatedAt,
-		&assetSource.UpdatedBy,
-		&assetSource.UpdatedAt,
-	)
+	`, *sourceID, *assetID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer row.Close()
+	assetSource, err := pgx.CollectOneRow(row, pgx.RowToStructByName[AssetSource])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return assetSource, nil
+	return &assetSource, nil
 }
 
-func GetAssetSourceByTicker(sourceID int, sourceIdentifier string) (*AssetSource, error) {
+func GetAssetSourceByTicker(dbConnPgx utils.PgxIface, sourceID *int, sourceIdentifier string) (*AssetSource, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 	source_id,
 	asset_id,
 	uuid, 
@@ -126,91 +97,40 @@ func GetAssetSourceByTicker(sourceID int, sourceIdentifier string) (*AssetSource
 	FROM asset_sources 
 	WHERE source_id = $1
 	AND source_identifier = $2
-	`, sourceID, sourceIdentifier)
-
-	assetSource := &AssetSource{}
-	err := row.Scan(
-		&assetSource.SourceID,
-		&assetSource.AssetID,
-		&assetSource.UUID,
-		&assetSource.Name,
-		&assetSource.AlternateName,
-		&assetSource.SourceIdentifier,
-		&assetSource.Description,
-		&assetSource.SourceData,
-		&assetSource.CreatedBy,
-		&assetSource.CreatedAt,
-		&assetSource.UpdatedBy,
-		&assetSource.UpdatedAt,
-	)
+	`, *sourceID, sourceIdentifier)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer row.Close()
+	assetSource, err := pgx.CollectOneRow(row, pgx.RowToStructByName[AssetSource])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return assetSource, nil
+	return &assetSource, nil
 }
 
-func GetTopTenAssetSources() ([]AssetSource, error) {
+func RemoveAssetSource(dbConnPgx utils.PgxIface, sourceID, assetID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	source_id,
-	asset_id,
-	uuid, 
-	name, 
-	alternate_name, 
-	source_identifier,
-	description,
-	source_data,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
-	FROM asset_sources 
-	`)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	assetSources := make([]AssetSource, 0)
-	for results.Next() {
-		var assetSource AssetSource
-		results.Scan(
-			&assetSource.SourceID,
-			&assetSource.AssetID,
-			&assetSource.UUID,
-			&assetSource.Name,
-			&assetSource.AlternateName,
-			&assetSource.SourceIdentifier,
-			&assetSource.Description,
-			&assetSource.SourceData,
-			&assetSource.CreatedBy,
-			&assetSource.CreatedAt,
-			&assetSource.UpdatedBy,
-			&assetSource.UpdatedAt,
-		)
-
-		assetSources = append(assetSources, assetSource)
-	}
-	return assetSources, nil
-}
-
-func RemoveAssetSource(sourceID int, assetID int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM asset_sources WHERE 
-	source_id = $1 AND asset_id =$2`, sourceID, assetID)
-	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveAssetSource DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM asset_sources WHERE source_id = $1 AND asset_id =$2`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *sourceID, *assetID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetAssetSourceList(assetIds []int, sourceIds []int) ([]AssetSource, error) {
+func GetAssetSourceList(dbConnPgx utils.PgxIface, assetIds []int, sourceIds []int) ([]AssetSource, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
@@ -242,43 +162,30 @@ func GetAssetSourceList(assetIds []int, sourceIds []int) ([]AssetSource, error) 
 		}
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	assetSources := make([]AssetSource, 0)
-	for results.Next() {
-		var assetSource AssetSource
-		results.Scan(
-			&assetSource.SourceID,
-			&assetSource.AssetID,
-			&assetSource.UUID,
-			&assetSource.Name,
-			&assetSource.AlternateName,
-			&assetSource.SourceIdentifier,
-			&assetSource.Description,
-			&assetSource.SourceData,
-			&assetSource.CreatedBy,
-			&assetSource.CreatedAt,
-			&assetSource.UpdatedBy,
-			&assetSource.UpdatedAt,
-		)
-
-		assetSources = append(assetSources, assetSource)
-	}
+	defer results.Close()
+	assetSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetSource])
 	return assetSources, nil
 }
 
-func UpdateAssetSource(assetSource AssetSource) error {
+func UpdateAssetSource(dbConnPgx utils.PgxIface, assetSource AssetSource) error {
 	// if the assetSource id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if (assetSource.SourceID == nil || *assetSource.SourceID == 0) || (assetSource.AssetID == nil || *assetSource.AssetID == 0) {
 		return errors.New("assetSource has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE asset_sources SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateAsset DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE asset_sources SET 
 		name=$1,  
 		alternate_name=$2, 
 		source_identifier=$3,
@@ -286,29 +193,36 @@ func UpdateAssetSource(assetSource AssetSource) error {
 		source_data= $5,
 		updated_by=$6, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE source_id=$7 AND asset_id=$8`,
-		assetSource.Name,
-		assetSource.AlternateName,
-		assetSource.SourceIdentifier,
-		assetSource.Description,
-		assetSource.SourceData,
-		assetSource.UpdatedBy,
-		assetSource.SourceID,
-		assetSource.AssetID,
-	)
-	if err != nil {
-		log.Println(err.Error())
+		WHERE source_id=$7 AND asset_id=$8`
+
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
+		assetSource.Name,             //1
+		assetSource.AlternateName,    //2
+		assetSource.SourceIdentifier, //3
+		assetSource.Description,      //4
+		assetSource.SourceData,       //5
+		assetSource.UpdatedBy,        //6
+		assetSource.SourceID,         //7
+		assetSource.AssetID,          //8
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertAssetSource(assetSource AssetSource) (int, int, error) {
+func InsertAssetSource(dbConnPgx utils.PgxIface, assetSource AssetSource) (int, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertAsset DbConn.Begin   %s", err.Error())
+		return -1, -1, err
+	}
 	var SourceID int
 	var AssetID int
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO asset_sources  
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO asset_sources  
 	(
 		source_id,
 		asset_id,
@@ -336,15 +250,27 @@ func InsertAssetSource(assetSource AssetSource) (int, int, error) {
 			current_timestamp at time zone 'UTC'
 		)
 		RETURNING source_id, asset_id`,
-		assetSource.SourceID,         // 1
-		assetSource.AssetID,          // 2
-		assetSource.Name,             // 3
+		assetSource.SourceID,         //1
+		assetSource.AssetID,          //2
+		assetSource.Name,             //3
 		assetSource.AlternateName,    //4
 		assetSource.SourceIdentifier, //5
 		assetSource.Description,      //6
 		assetSource.SourceData,       //7
 		assetSource.CreatedBy,        //8
 	).Scan(&SourceID, &AssetID)
+
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, -1, err
+	}
 	if err != nil {
 		log.Println(err.Error())
 		return 0, 0, err
@@ -353,7 +279,7 @@ func InsertAssetSource(assetSource AssetSource) (int, int, error) {
 }
 
 // for refinedev
-func GetAssetSourceListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]AssetSource, error) {
+func GetAssetSourceListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]AssetSource, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
@@ -389,50 +315,25 @@ func GetAssetSourceListByPagination(_start, _end *int, _order, _sort string, _fi
 		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
 	}
 
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	assetSources := make([]AssetSource, 0)
-	for results.Next() {
-		var assetSource AssetSource
-		results.Scan(
-			&assetSource.SourceID,
-			&assetSource.AssetID,
-			&assetSource.UUID,
-			&assetSource.Name,
-			&assetSource.AlternateName,
-			&assetSource.SourceIdentifier,
-			&assetSource.Description,
-			&assetSource.SourceData,
-			&assetSource.CreatedBy,
-			&assetSource.CreatedAt,
-			&assetSource.UpdatedBy,
-			&assetSource.UpdatedAt,
-		)
-
-		assetSources = append(assetSources, assetSource)
-	}
+	assetSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetSource])
 	return assetSources, nil
 }
 
-func GetTotalAssetSourceCount() (*int, error) {
+func GetTotalAssetSourceCount(dbConnPgx utils.PgxIface) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
-	COUNT(*)
-	FROM asset_sources
-	`)
+	row := dbConnPgx.QueryRow(ctx, `SELECT COUNT(*) FROM asset_sources`)
 	totalCount := 0
 	err := row.Scan(
 		&totalCount,
 	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
