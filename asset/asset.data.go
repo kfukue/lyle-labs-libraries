@@ -47,6 +47,7 @@ func GetAsset(dbConnPgx utils.PgxIface, assetID *int) (*Asset, error) {
 		return nil, err
 	}
 	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
+	defer row.Close()
 	asset, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Asset])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -92,6 +93,7 @@ func GetAssetByTicker(dbConnPgx utils.PgxIface, ticker string) (*Asset, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
+	defer row.Close()
 	asset, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Asset])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -137,6 +139,7 @@ func GetAssetByContractAddress(dbConnPgx utils.PgxIface, contractAddress string)
 		log.Println(err.Error())
 		return nil, err
 	}
+	defer row.Close()
 	asset, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Asset])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -182,6 +185,7 @@ func GetAssetByCusip(dbConnPgx utils.PgxIface, cusip string) (*Asset, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
+	defer row.Close()
 	asset, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Asset])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -229,6 +233,7 @@ func GetAssetByBaseAndQuoteID(dbConnPgx utils.PgxIface, baseAssetID *int, quoteA
 		log.Println(err.Error())
 		return nil, err
 	}
+	defer row.Close()
 	asset, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Asset])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -839,8 +844,6 @@ func UpdateAsset(dbConnPgx utils.PgxIface, asset Asset) error {
 		log.Printf("Error in UpdateAsset DbConn.Begin   %s", err.Error())
 		return err
 	}
-	// _, err := dbConnPgx.Exec(ctx, `UPDATE assets SET
-
 	sql := `UPDATE assets SET 
 		name=$1,  
 		alternate_name=$2, 
@@ -865,7 +868,6 @@ func UpdateAsset(dbConnPgx utils.PgxIface, asset Asset) error {
 		WHERE id=$20`
 	defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
-
 		asset.Name,                //1
 		asset.AlternateName,       //2
 		asset.Cusip,               //3
