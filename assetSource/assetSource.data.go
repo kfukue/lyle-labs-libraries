@@ -173,7 +173,7 @@ func GetAssetSourceList(dbConnPgx utils.PgxIface, assetIds []int, sourceIds []in
 	return assetSources, nil
 }
 
-func UpdateAssetSource(dbConnPgx utils.PgxIface, assetSource AssetSource) error {
+func UpdateAssetSource(dbConnPgx utils.PgxIface, assetSource *AssetSource) error {
 	// if the assetSource id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -212,7 +212,7 @@ func UpdateAssetSource(dbConnPgx utils.PgxIface, assetSource AssetSource) error 
 	return tx.Commit(ctx)
 }
 
-func InsertAssetSource(dbConnPgx utils.PgxIface, assetSource AssetSource) (int, int, error) {
+func InsertAssetSource(dbConnPgx utils.PgxIface, assetSource *AssetSource) (int, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)

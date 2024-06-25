@@ -367,7 +367,7 @@ func TestUpdateAssetSource(t *testing.T) {
 		targetData.AssetID,          //8
 	).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	mock.ExpectCommit()
-	err = UpdateAssetSource(mock, targetData)
+	err = UpdateAssetSource(mock, &targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in UpdateAssetSource", err)
 	}
@@ -399,7 +399,7 @@ func TestUpdateAssetSourceOnFailure(t *testing.T) {
 	).WillReturnError(fmt.Errorf("Cannot have -1 as ID"))
 
 	mock.ExpectRollback()
-	err = UpdateAssetSource(mock, targetData)
+	err = UpdateAssetSource(mock, &targetData)
 	if err == nil {
 		t.Fatalf("was expecting an error, but there was none")
 	}
@@ -428,7 +428,7 @@ func TestInsertAssetSource(t *testing.T) {
 		targetData.CreatedBy,        //8
 	).WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit()
-	assetID, sourceID, err := InsertAssetSource(mock, targetData)
+	assetID, sourceID, err := InsertAssetSource(mock, &targetData)
 	if assetID < 0 {
 		t.Fatalf("assetID should not be negative ID: %d", assetID)
 	}
@@ -464,7 +464,7 @@ func TestInsertAssetSourceOnFailure(t *testing.T) {
 		targetData.CreatedBy,        //8
 	).WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
-	assetID, sourceID, err := InsertAssetSource(mock, targetData)
+	assetID, sourceID, err := InsertAssetSource(mock, &targetData)
 	if assetID >= 0 {
 		t.Fatalf("Expecting -1 for ID because of error ID: %d", assetID)
 	}
@@ -501,7 +501,7 @@ func TestInsertAssetSourceOnFailureOnCommit(t *testing.T) {
 	).WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
-	assetID, sourceID, err := InsertAssetSource(mock, targetData)
+	assetID, sourceID, err := InsertAssetSource(mock, &targetData)
 	if assetID >= 0 {
 		t.Fatalf("Expecting -1 for assetID because of error assetID: %d", assetID)
 	}
@@ -598,10 +598,10 @@ func TestGetTotalAssetSourceCountForErr(t *testing.T) {
 	mock.ExpectQuery("^SELECT COUNT(.*) FROM asset_sources").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
 	numOfAssetSources, err := GetTotalAssetSourceCount(mock)
 	if err == nil {
-		t.Fatalf("expected an error '%s' in GetAllAssetSourceBySourceAndAssetType", err)
+		t.Fatalf("expected an error '%s' in GetTotalAssetSourceCount", err)
 	}
 	if numOfAssetSources != nil {
-		t.Errorf("Expected numOfAssetSources From Method GetAllAssetSourceBySourceAndAssetType to be empty but got this: %v", numOfAssetSources)
+		t.Errorf("Expected numOfAssetSources From Method GetTotalAssetSourceCount to be empty but got this: %v", numOfAssetSources)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
