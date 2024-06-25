@@ -8,14 +8,13 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
-func GetAllAssetTaxesByTaxType(taxTypeID int) ([]AssetTax, error) {
+func GetAllAssetTaxesByTaxType(dbConnPgx utils.PgxIface, taxTypeID *int) ([]AssetTax, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	asset_taxes.tax_id,
 	asset_taxes.asset_id,
 	asset_taxes.uuid, 
@@ -33,38 +32,20 @@ func GetAllAssetTaxesByTaxType(taxTypeID int) ([]AssetTax, error) {
 	ON taxes.tax_id = taxes.id 
 	WHERE 
 	taxes.tax_type_id = $1
-	`, taxTypeID)
+	`, *taxTypeID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	assetTaxes := make([]AssetTax, 0)
-	for results.Next() {
-		var assetTax AssetTax
-		results.Scan(
-			&assetTax.TaxID,
-			&assetTax.AssetID,
-			&assetTax.UUID,
-			&assetTax.Name,
-			&assetTax.AlternateName,
-			&assetTax.TaxRateOverride,
-			&assetTax.TaxRateTypeID,
-			&assetTax.Description,
-			&assetTax.CreatedBy,
-			&assetTax.CreatedAt,
-			&assetTax.UpdatedBy,
-			&assetTax.UpdatedAt,
-		)
-
-		assetTaxes = append(assetTaxes, assetTax)
-	}
+	assetTaxes, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetTax])
 	return assetTaxes, nil
 }
-func GetAssetTax(taxID int, assetID int) (*AssetTax, error) {
+
+func GetAssetTax(dbConnPgx utils.PgxIface, taxID, assetID *int) (*AssetTax, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	tax_id,
 	asset_id,
 	uuid, 
@@ -80,90 +61,40 @@ func GetAssetTax(taxID int, assetID int) (*AssetTax, error) {
 	FROM asset_taxes 
 	WHERE tax_id = $1
 	AND asset_id = $2
-	`, taxID, assetID)
-
-	assetTax := &AssetTax{}
-	err := row.Scan(
-		&assetTax.TaxID,
-		&assetTax.AssetID,
-		&assetTax.UUID,
-		&assetTax.Name,
-		&assetTax.AlternateName,
-		&assetTax.TaxRateOverride,
-		&assetTax.TaxRateTypeID,
-		&assetTax.Description,
-		&assetTax.CreatedBy,
-		&assetTax.CreatedAt,
-		&assetTax.UpdatedBy,
-		&assetTax.UpdatedAt,
-	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	return assetTax, nil
-}
-
-func GetAssetTaxByTicker(taxID int, taxIdentifier string) (*AssetTax, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
-	tax_id,
-	asset_id,
-	uuid, 
-	name, 
-	alternate_name, 
-	tax_rate_override,
-	tax_rate_type_id,
-	description,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
-	FROM asset_taxes 
-	WHERE tax_id = $1
-	AND tax_identifier = $2
-	`, taxID, taxIdentifier)
-
-	assetTax := &AssetTax{}
-	err := row.Scan(
-		&assetTax.TaxID,
-		&assetTax.AssetID,
-		&assetTax.UUID,
-		&assetTax.Name,
-		&assetTax.AlternateName,
-		&assetTax.TaxRateOverride,
-		&assetTax.TaxRateTypeID,
-		&assetTax.Description,
-		&assetTax.CreatedBy,
-		&assetTax.CreatedAt,
-		&assetTax.UpdatedBy,
-		&assetTax.UpdatedAt,
-	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	return assetTax, nil
-}
-
-func RemoveAssetTax(taxID int, assetID int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM asset_taxes WHERE 
-	tax_id = $1 AND asset_id =$2`, taxID, assetID)
+	`, *taxID, *assetID)
 	if err != nil {
 		log.Println(err.Error())
-		return err
+		return nil, err
 	}
-	return nil
+	defer results.Close()
+	assetTax, err := pgx.CollectOneRow(results, pgx.RowToStructByName[AssetTax])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &assetTax, nil
 }
 
-func GetAssetTaxList(assetIds []int, taxIds []int) ([]AssetTax, error) {
+func RemoveAssetTax(dbConnPgx utils.PgxIface, taxID, assetID *int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in RemoveAssetTax DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `DELETE FROM asset_taxes WHERE tax_id = $1 AND asset_id =$2`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *taxID, *assetID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func GetAssetTaxList(dbConnPgx utils.PgxIface, assetIds []int, taxIds []int) ([]AssetTax, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
@@ -195,43 +126,29 @@ func GetAssetTaxList(assetIds []int, taxIds []int) ([]AssetTax, error) {
 		}
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	assetTaxes := make([]AssetTax, 0)
-	for results.Next() {
-		var assetTax AssetTax
-		results.Scan(
-			&assetTax.TaxID,
-			&assetTax.AssetID,
-			&assetTax.UUID,
-			&assetTax.Name,
-			&assetTax.AlternateName,
-			&assetTax.TaxRateOverride,
-			&assetTax.TaxRateTypeID,
-			&assetTax.Description,
-			&assetTax.CreatedBy,
-			&assetTax.CreatedAt,
-			&assetTax.UpdatedBy,
-			&assetTax.UpdatedAt,
-		)
-
-		assetTaxes = append(assetTaxes, assetTax)
-	}
+	assetTaxes, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetTax])
 	return assetTaxes, nil
 }
 
-func UpdateAssetTax(assetTax AssetTax) error {
+func UpdateAssetTax(dbConnPgx utils.PgxIface, assetTax *AssetTax) error {
 	// if the assetTax id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if (assetTax.TaxID == nil || *assetTax.TaxID == 0) || (assetTax.AssetID == nil || *assetTax.AssetID == 0) {
 		return errors.New("assetTax has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE asset_taxes SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateAsset DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE asset_taxes SET 
 		name=$1,  
 		alternate_name=$2, 
 		tax_rate_override=$3,
@@ -239,7 +156,9 @@ func UpdateAssetTax(assetTax AssetTax) error {
 		description=$5,
 		updated_by=$6, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE tax_id=$7 AND asset_id=$8`,
+		WHERE tax_id=$7 AND asset_id=$8`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		assetTax.Name,            //1
 		assetTax.AlternateName,   //2
 		assetTax.TaxRateOverride, //3
@@ -248,20 +167,24 @@ func UpdateAssetTax(assetTax AssetTax) error {
 		assetTax.UpdatedBy,       //6
 		assetTax.TaxID,           //7
 		assetTax.AssetID,         //8
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertAssetTax(assetTax AssetTax) (int, int, error) {
+func InsertAssetTax(dbConnPgx utils.PgxIface, assetTax *AssetTax) (int, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertAsset DbConn.Begin   %s", err.Error())
+		return -1, -1, err
+	}
 	var TaxID int
 	var AssetID int
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO asset_taxes  
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO asset_taxes  
 	(
 		tax_id,
 		asset_id,
@@ -299,8 +222,77 @@ func InsertAssetTax(assetTax AssetTax) (int, int, error) {
 		assetTax.CreatedBy,       //8
 	).Scan(&TaxID, &AssetID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, 0, err
+		return -1, -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, -1, err
 	}
 	return int(TaxID), int(AssetID), nil
+}
+
+// for refinedev
+func GetAssetTaxListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]AssetTax, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	sql := `SELECT 
+	source_id,
+	asset_id,
+	uuid, 
+	name, 
+	alternate_name, 
+	source_identifier,
+	description,
+	source_data,
+	created_by, 
+	created_at, 
+	updated_by, 
+	updated_at 
+	FROM asset_taxes 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	assetSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetTax])
+	return assetSources, nil
+}
+
+func GetTotalAssetTaxCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	row := dbConnPgx.QueryRow(ctx, `SELECT COUNT(*) FROM asset_taxes`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }
