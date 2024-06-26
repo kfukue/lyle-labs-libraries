@@ -1276,7 +1276,7 @@ func TestUpdateAsset(t *testing.T) {
 		targetData.ID,                  //20
 	).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	mock.ExpectCommit()
-	err = UpdateAsset(mock, targetData)
+	err = UpdateAsset(mock, &targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in UpdateAsset", err)
 	}
@@ -1320,7 +1320,7 @@ func TestUpdateAssetOnFailure(t *testing.T) {
 	).WillReturnError(fmt.Errorf("Cannot have -1 as ID"))
 
 	mock.ExpectRollback()
-	err = UpdateAsset(mock, targetData)
+	err = UpdateAsset(mock, &targetData)
 	if err == nil {
 		t.Fatalf("was expecting an error, but there was none")
 	}
@@ -1360,7 +1360,7 @@ func TestInsertAsset(t *testing.T) {
 		targetData.ImportGethInitial,   //19
 	).WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit()
-	newID, err := InsertAsset(mock, targetData)
+	newID, err := InsertAsset(mock, &targetData)
 	if newID < 0 {
 		t.Fatalf("ID should not be negative ID: %d", newID)
 	}
@@ -1404,7 +1404,7 @@ func TestInsertAssetOnFailure(t *testing.T) {
 		targetData.ImportGethInitial,   //19
 	).WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
-	newID, err := InsertAsset(mock, targetData)
+	newID, err := InsertAsset(mock, &targetData)
 	if newID >= 0 {
 		t.Fatalf("Expecting -1 for ID because of error ID: %d", newID)
 	}
@@ -1449,7 +1449,7 @@ func TestInsertAssetOnFailureOnCommit(t *testing.T) {
 	).WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
-	newID, err := InsertAsset(mock, targetData)
+	newID, err := InsertAsset(mock, &targetData)
 	if newID >= 0 {
 		t.Fatalf("Expecting -1 for ID because of error ID: %d", newID)
 	}

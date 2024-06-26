@@ -832,7 +832,7 @@ func GetDefaultQuoteAssetList(dbConnPgx utils.PgxIface) ([]Asset, error) {
 	return assets, nil
 }
 
-func UpdateAsset(dbConnPgx utils.PgxIface, asset Asset) error {
+func UpdateAsset(dbConnPgx utils.PgxIface, asset *Asset) error {
 	// if the asset id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -895,7 +895,7 @@ func UpdateAsset(dbConnPgx utils.PgxIface, asset Asset) error {
 	return tx.Commit(ctx)
 }
 
-func InsertAsset(dbConnPgx utils.PgxIface, asset Asset) (int, error) {
+func InsertAsset(dbConnPgx utils.PgxIface, asset *Asset) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
