@@ -9,15 +9,14 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
-func GetDexTxnJob(dexTxnID int) (*DexTxnJob, error) {
+func GetDexTxnJob(dbConnPgx utils.PgxIface, dexTxnID *int) (*DexTxnJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 	id,  
 	job_id,
 	uuid, 
@@ -35,41 +34,28 @@ func GetDexTxnJob(dexTxnID int) (*DexTxnJob, error) {
 	updated_by, 
 	updated_at 
 	FROM dex_txn_jobs 
-	WHERE dex_swap_id = $1
-	`, dexTxnID)
-
-	dexTxnJob := &DexTxnJob{}
-	err := row.Scan(
-		&dexTxnJob.ID,
-		&dexTxnJob.JobID,
-		&dexTxnJob.UUID,
-		&dexTxnJob.Name,
-		&dexTxnJob.AlternateName,
-		&dexTxnJob.StartDate,
-		&dexTxnJob.EndDate,
-		&dexTxnJob.Description,
-		&dexTxnJob.StatusID,
-		&dexTxnJob.ChainID,
-		&dexTxnJob.ExchangeID,
-		&dexTxnJob.TransactionHashes,
-		&dexTxnJob.CreatedBy,
-		&dexTxnJob.CreatedAt,
-		&dexTxnJob.UpdatedBy,
-		&dexTxnJob.UpdatedAt,
-	)
+	WHERE id = $1
+	`, *dexTxnID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
+	defer row.Close()
+	dexTxnJob, err := pgx.CollectOneRow(row, pgx.RowToStructByName[DexTxnJob])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return dexTxnJob, nil
+	return &dexTxnJob, nil
 }
 
-func GetDexTxnJobByJobId(jobID int) ([]DexTxnJob, error) {
+func GetDexTxnJobByJobId(dbConnPgx utils.PgxIface, jobID *int) ([]DexTxnJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	id,  
 	job_id,
 	uuid, 
@@ -87,42 +73,20 @@ func GetDexTxnJobByJobId(jobID int) ([]DexTxnJob, error) {
 	updated_by, 
 	updated_at 
 	FROM dex_txn_jobs
-	job_id = $1	`, jobID)
+	job_id = $1`, *jobID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	dexTxnJobs := make([]DexTxnJob, 0)
-	for results.Next() {
-		var dexTxnJob DexTxnJob
-		results.Scan(
-			&dexTxnJob.ID,
-			&dexTxnJob.JobID,
-			&dexTxnJob.UUID,
-			&dexTxnJob.Name,
-			&dexTxnJob.AlternateName,
-			&dexTxnJob.StartDate,
-			&dexTxnJob.EndDate,
-			&dexTxnJob.Description,
-			&dexTxnJob.StatusID,
-			&dexTxnJob.ChainID,
-			&dexTxnJob.ExchangeID,
-			&dexTxnJob.TransactionHashes,
-			&dexTxnJob.CreatedBy,
-			&dexTxnJob.CreatedAt,
-			&dexTxnJob.UpdatedBy,
-			&dexTxnJob.UpdatedAt,
-		)
-		dexTxnJobs = append(dexTxnJobs, dexTxnJob)
-	}
+	dexTxnJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[DexTxnJob])
 	return dexTxnJobs, nil
 }
 
-func GetDexTxnJobList() ([]DexTxnJob, error) {
+func GetDexTxnJobList(dbConnPgx utils.PgxIface) ([]DexTxnJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	id,  
 	job_id,
 	uuid, 
@@ -145,54 +109,40 @@ func GetDexTxnJobList() ([]DexTxnJob, error) {
 		return nil, err
 	}
 	defer results.Close()
-	dexTxnJobs := make([]DexTxnJob, 0)
-	for results.Next() {
-		var dexTxnJob DexTxnJob
-		results.Scan(
-			&dexTxnJob.ID,
-			&dexTxnJob.JobID,
-			&dexTxnJob.UUID,
-			&dexTxnJob.Name,
-			&dexTxnJob.AlternateName,
-			&dexTxnJob.StartDate,
-			&dexTxnJob.EndDate,
-			&dexTxnJob.Description,
-			&dexTxnJob.StatusID,
-			&dexTxnJob.ChainID,
-			&dexTxnJob.ExchangeID,
-			&dexTxnJob.TransactionHashes,
-			&dexTxnJob.CreatedBy,
-			&dexTxnJob.CreatedAt,
-			&dexTxnJob.UpdatedBy,
-			&dexTxnJob.UpdatedAt,
-		)
-
-		dexTxnJobs = append(dexTxnJobs, dexTxnJob)
-	}
+	dexTxnJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[DexTxnJob])
 	return dexTxnJobs, nil
 }
 
-func RemoveDexTxnJob(dexTxnID int) error {
+func RemoveDexTxnJob(dbConnPgx utils.PgxIface, dexTxnID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM dex_txn_jobs WHERE 
-	id = $1`, dexTxnID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveDexTxnJob DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM dex_txn_jobs WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *dexTxnID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func UpdateDexTxnJob(dexTxnJob DexTxnJob) error {
+func UpdateDexTxnJob(dbConnPgx utils.PgxIface, dexTxnJob *DexTxnJob) error {
 	// if the dexTxnJob id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if dexTxnJob.ID == nil || *dexTxnJob.ID == 0 {
 		return errors.New("dexTxnJob has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE dex_txn_jobs SET 
-
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateAsset DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE dex_txn_jobs SET 
 		name=$1,
 		alternate_name=$2,
 		start_date=$3,
@@ -204,7 +154,9 @@ func UpdateDexTxnJob(dexTxnJob DexTxnJob) error {
 		transaction_hashes=$9,
 		updated_by=$10, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$11 `,
+		WHERE id=$11 `
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		dexTxnJob.Name,                        //1
 		dexTxnJob.AlternateName,               //2
 		dexTxnJob.StartDate,                   //3
@@ -216,19 +168,23 @@ func UpdateDexTxnJob(dexTxnJob DexTxnJob) error {
 		pq.Array(dexTxnJob.TransactionHashes), //9
 		dexTxnJob.UpdatedBy,                   //10
 		dexTxnJob.ID,                          //11
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertDexTxnJob(dexTxnJob DexTxnJob) (int, error) {
+func InsertDexTxnJob(dbConnPgx utils.PgxIface, dexTxnJob *DexTxnJob) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertAsset DbConn.Begin   %s", err.Error())
+		return -1, err
+	}
 	var ID int
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO dex_txn_jobs  
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO dex_txn_jobs  
 	(
 		job_id,
 		uuid, 
@@ -275,13 +231,20 @@ func InsertDexTxnJob(dexTxnJob DexTxnJob) (int, error) {
 		dexTxnJob.CreatedBy,                   //11
 	).Scan(&ID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, err
 	}
 	return int(ID), nil
 }
 
-func InsertDexTxnJobListManual(dexTxnJobList []DexTxnJob) error {
+func InsertDexTxnJobList(dbConnPgx utils.PgxIface, dexTxnJobList []DexTxnJob) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -314,8 +277,7 @@ func InsertDexTxnJobListManual(dexTxnJobList []DexTxnJob) error {
 		rows = append(rows, row)
 	}
 	// Given db is a *sql.DB
-
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"dex_txn_jobs"},
 		[]string{
@@ -340,86 +302,8 @@ func InsertDexTxnJobListManual(dexTxnJobList []DexTxnJob) error {
 	)
 	log.Println(fmt.Printf("copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
-	}
-
-	return nil
-}
-
-func InsertDexTxnJobList(dexTxnJobList []DexTxnJob) error {
-	txn, err := database.DbConn.Begin()
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-
-	layoutPostgres := utils.LayoutPostgres
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	stmt, err := txn.Prepare(pq.CopyIn(
-		"dex_txn_jobs",
-		"id",                 //1
-		"job_id",             //2
-		"uuid",               //3
-		"name",               //4
-		"alternate_name",     //5
-		"start_date",         //6
-		"end_date",           //7
-		"description",        //8
-		"status_id",          //9
-		"chain_id",           //10
-		"exchange_id",        //11
-		"transaction_hashes", //12
-		"created_by",         //13
-		"created_at",         //14
-		"updated_by",         //15
-		"updated_at",         //16
-
-	))
-	if err != nil {
-		log.Fatal(err)
-	}
-	loc, _ := time.LoadLocation("UTC")
-	now := time.Now().In(loc)
-
-	for _, dexTxnJob := range dexTxnJobList {
-		_, err = stmt.Exec(
-			*dexTxnJob.ID,                         //1
-			*dexTxnJob.JobID,                      //2
-			dexTxnJob.UUID,                        //3
-			dexTxnJob.Name,                        //4
-			dexTxnJob.AlternateName,               //5
-			dexTxnJob.StartDate,                   //6
-			dexTxnJob.EndDate,                     //7
-			dexTxnJob.Description,                 //8
-			*dexTxnJob.StatusID,                   //9
-			*dexTxnJob.ChainID,                    //10
-			*dexTxnJob.ExchangeID,                 //11
-			pq.Array(dexTxnJob.TransactionHashes), //12
-			dexTxnJob.CreatedBy,                   //13
-			dexTxnJob.CreatedAt,                   //14
-			dexTxnJob.CreatedBy,                   //15
-			now.Format(layoutPostgres),            //16
-		)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	_, err = stmt.ExecContext(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = stmt.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = txn.Commit()
-	if err != nil {
-		log.Fatal(err)
+		log.Println(err.Error())
+		return err
 	}
 	return nil
 }
