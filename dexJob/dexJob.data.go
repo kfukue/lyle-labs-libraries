@@ -139,7 +139,7 @@ func UpdateDexTxnJob(dbConnPgx utils.PgxIface, dexTxnJob *DexTxnJob) error {
 	}
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in UpdateAsset DbConn.Begin   %s", err.Error())
+		log.Printf("Error in UpdateDexTxnJob DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `UPDATE dex_txn_jobs SET 
@@ -180,7 +180,7 @@ func InsertDexTxnJob(dbConnPgx utils.PgxIface, dexTxnJob *DexTxnJob) (int, error
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in InsertAsset DbConn.Begin   %s", err.Error())
+		log.Printf("Error in InsertDexTxnJob DbConn.Begin   %s", err.Error())
 		return -1, err
 	}
 	var ID int
@@ -256,23 +256,21 @@ func InsertDexTxnJobList(dbConnPgx utils.PgxIface, dexTxnJobList []DexTxnJob) er
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(dexTxnJob.UUID)
 		row := []interface{}{
-
-			*dexTxnJob.ID,                         //1
-			*dexTxnJob.JobID,                      //2
-			uuidString,                            //3
-			dexTxnJob.Name,                        //4
-			dexTxnJob.AlternateName,               //5
-			&dexTxnJob.StartDate,                  //6
-			&dexTxnJob.EndDate,                    //7
-			dexTxnJob.Description,                 //8
-			*dexTxnJob.StatusID,                   //9
-			*dexTxnJob.ChainID,                    //10
-			*dexTxnJob.ExchangeID,                 //11
-			pq.Array(dexTxnJob.TransactionHashes), //12
-			dexTxnJob.CreatedBy,                   //13
-			&dexTxnJob.CreatedAt,                  //14
-			dexTxnJob.CreatedBy,                   //15
-			&now,                                  //16
+			dexTxnJob.JobID,                       //1
+			uuidString,                            //2
+			dexTxnJob.Name,                        //3
+			dexTxnJob.AlternateName,               //4
+			dexTxnJob.StartDate,                   //5
+			dexTxnJob.EndDate,                     //6
+			dexTxnJob.Description,                 //7
+			dexTxnJob.StatusID,                    //8
+			dexTxnJob.ChainID,                     //9
+			dexTxnJob.ExchangeID,                  //10
+			pq.Array(dexTxnJob.TransactionHashes), //11
+			dexTxnJob.CreatedBy,                   //12
+			dexTxnJob.CreatedAt,                   //13
+			dexTxnJob.CreatedBy,                   //14
+			now,                                   //15
 		}
 		rows = append(rows, row)
 	}
@@ -281,26 +279,25 @@ func InsertDexTxnJobList(dbConnPgx utils.PgxIface, dexTxnJobList []DexTxnJob) er
 		ctx,
 		pgx.Identifier{"dex_txn_jobs"},
 		[]string{
-			"id",                 //1
-			"job_id",             //2
-			"uuid",               //3
-			"name",               //4
-			"alternate_name",     //5
-			"start_date",         //6
-			"end_date",           //7
-			"description",        //8
-			"status_id",          //9
-			"chain_id",           //10
-			"exchange_id",        //11
-			"transaction_hashes", //12
-			"created_by",         //13
-			"created_at",         //14
-			"updated_by",         //15
-			"updated_at",         //16
+			"job_id",             //1
+			"uuid",               //2
+			"name",               //3
+			"alternate_name",     //4
+			"start_date",         //5
+			"end_date",           //6
+			"description",        //7
+			"status_id",          //8
+			"chain_id",           //9
+			"exchange_id",        //10
+			"transaction_hashes", //11
+			"created_by",         //12
+			"created_at",         //13
+			"updated_by",         //14
+			"updated_at",         //15
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertDexTxnJobList : copy count: %d", copyCount))
 	if err != nil {
 		log.Println(err.Error())
 		return err

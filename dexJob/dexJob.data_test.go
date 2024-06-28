@@ -30,6 +30,24 @@ var columns = []string{
 	"updated_by",         //15
 	"updated_at",         //16
 }
+
+var columnsInsertList = []string{
+	"job_id",             //1
+	"uuid",               //2
+	"name",               //3
+	"alternate_name",     //4
+	"start_date",         //5
+	"end_date",           //6
+	"description",        //7
+	"status_id",          //8
+	"chain_id",           //9
+	"exchange_id",        //10
+	"transaction_hashes", //11
+	"created_by",         //12
+	"created_at",         //13
+	"updated_by",         //14
+	"updated_at",         //15
+}
 var testTxns = []string{"0x1706fb8bf07d31852bbb0e5d1c8b0378c60b87a1fdccc36eab706603d67522d4", "0x0dc5e228f2520f74abfab4a97867dbf54e5bfc73e5a1d2a68aa79420ae1dd611"}
 
 var data1 = DexTxnJob{
@@ -468,7 +486,7 @@ func TestInsertDexTxnJobList(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	mock.ExpectCopyFrom(pgx.Identifier{"dex_txn_jobs"}, columns)
+	mock.ExpectCopyFrom(pgx.Identifier{"dex_txn_jobs"}, columnsInsertList)
 	targetData := allData
 	err = InsertDexTxnJobList(mock, targetData)
 	if err != nil {
@@ -485,7 +503,7 @@ func TestInsertDexTxnJobListOnFailure(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	mock.ExpectCopyFrom(pgx.Identifier{"dex_txn_jobs"}, columns).WillReturnError(fmt.Errorf("Random SQL Error"))
+	mock.ExpectCopyFrom(pgx.Identifier{"dex_txn_jobs"}, columnsInsertList).WillReturnError(fmt.Errorf("Random SQL Error"))
 	targetData := allData
 	err = InsertDexTxnJobList(mock, targetData)
 	if err == nil {
