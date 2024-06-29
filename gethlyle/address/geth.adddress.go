@@ -31,7 +31,6 @@ func CreateOrGetContractAddressFromAsset(dbConnPgx utils.PgxIface, asset *asset.
 	contractAddress, err := GetGethAddressByAddressStr(dbConnPgx, asset.ContractAddress)
 	if err != nil {
 		log.Printf("Failed GetGethAddressByAddressStr: %v\n", err.Error())
-		log.Fatal(err)
 		return nil, err
 	}
 	// add as new address (contract) if doesn't exists
@@ -48,7 +47,6 @@ func CreateOrGetContractAddressFromAsset(dbConnPgx utils.PgxIface, asset *asset.
 		contractAddressId, err := InsertGethAddress(dbConnPgx, &newContractAddress)
 		if err != nil {
 			log.Printf("Failed in CreateOrGetContractAddressFromAsset :  InsertGethAddress: %v\n", err.Error())
-			log.Fatal(err)
 			return nil, err
 		}
 		newContractAddress.ID = &contractAddressId
@@ -61,7 +59,6 @@ func CreateOrGetAddress(dbConnPgx utils.PgxIface, gethAddress *GethAddress) (*Ge
 	address, err := GetGethAddressByAddressStr(dbConnPgx, gethAddress.AddressStr)
 	if err != nil {
 		log.Printf("Failed GetGethAddressByAddressStr: %v\n", err.Error())
-		log.Fatal(err)
 		return nil, err
 	}
 	// add as new address (contract) if doesn't exists
@@ -69,7 +66,6 @@ func CreateOrGetAddress(dbConnPgx utils.PgxIface, gethAddress *GethAddress) (*Ge
 		contractAddressId, err := InsertGethAddress(dbConnPgx, gethAddress)
 		if err != nil {
 			log.Printf("Failed CreateOrGetAddress : InsertGethAddress: %v\n", err.Error())
-			log.Fatal(err)
 			return nil, err
 		}
 		gethAddress.ID = &contractAddressId
@@ -81,7 +77,6 @@ func CreateOrGetEOAAddress(dbConnPgx utils.PgxIface, addressStr string) (*GethAd
 	eoaAddress, err := GetGethAddressByAddressStr(dbConnPgx, addressStr)
 	if err != nil {
 		log.Printf("Failed GetGethAddressByAddressStr: %v\n", err.Error())
-		log.Fatal(err)
 		return nil, err
 	}
 	// add as new address (contract) if doesn't exists
@@ -98,7 +93,6 @@ func CreateOrGetEOAAddress(dbConnPgx utils.PgxIface, addressStr string) (*GethAd
 		contractAddressId, err := InsertGethAddress(dbConnPgx, &newContractAddress)
 		if err != nil {
 			log.Printf("Failed CreateOrGetEOAAddress : InsertGethAddress: %v\n", err.Error())
-			log.Fatal(err)
 			return nil, err
 		}
 		newContractAddress.ID = &contractAddressId
@@ -111,7 +105,6 @@ func CreateOrGetContractAddress(dbConnPgx utils.PgxIface, addressStr string) (*G
 	contractAddress, err := GetGethAddressByAddressStr(dbConnPgx, addressStr)
 	if err != nil {
 		log.Printf("Failed GetGethAddressByAddressStr: %v\n", err.Error())
-		log.Fatal(err)
 		return nil, err
 	}
 	// add as new address (contract) if doesn't exists
@@ -128,7 +121,6 @@ func CreateOrGetContractAddress(dbConnPgx utils.PgxIface, addressStr string) (*G
 		contractAddressId, err := InsertGethAddress(dbConnPgx, &newContractAddress)
 		if err != nil {
 			log.Printf("Failed CreateOrGetContractAddress: InsertGethAddress: %v\n", err.Error())
-			log.Fatal(err)
 			return nil, err
 		}
 		newContractAddress.ID = &contractAddressId
@@ -143,7 +135,7 @@ func CreateGethAddress(addressStr string, isEOA bool) (*GethAddress, error) {
 	gethAddressUUID, err := uuid.NewV4()
 	if err != nil {
 		msg := fmt.Sprintf("error: uuid.NewV4(), during CreateContractAddress : %s", err.Error())
-		log.Fatal(msg)
+		log.Printf("Failed CreateGethAddress: %v\n", msg)
 		return nil, err
 	}
 	if isEOA {
@@ -165,11 +157,11 @@ func CreateGethAddress(addressStr string, isEOA bool) (*GethAddress, error) {
 	return &gethAddress, nil
 }
 
+// TODO: skip test (need to mock ethclient)
 func CreateEOAOrContractAddress(dbConnPgx utils.PgxIface, addressStr string, cl *ethclient.Client) (*GethAddress, error) {
 	address, err := GetGethAddressByAddressStr(dbConnPgx, addressStr)
 	if err != nil {
 		log.Printf("Failed GetGethAddressByAddressStr: %v\n", err.Error())
-		log.Fatal(err)
 		return nil, err
 	}
 	// add as new address (contract) if doesn't exists
@@ -178,7 +170,6 @@ func CreateEOAOrContractAddress(dbConnPgx utils.PgxIface, addressStr string, cl 
 		codeAtResult, err := cl.CodeAt(context.Background(), address, nil)
 		if err != nil {
 			log.Printf("Failed CreateEOAOrContractAddress:  CodeAt: %v\n", err.Error())
-			log.Fatal(err)
 			return nil, err
 		}
 		//if result len is 0 EOA otherwise contract
@@ -193,7 +184,6 @@ func CreateEOAOrContractAddress(dbConnPgx utils.PgxIface, addressStr string, cl 
 		gethAddress, err = CreateGethAddress(addressStr, isEOA)
 		if err != nil {
 			log.Printf("Failed CreateEOAOrContractAddress->CreateGethAddress: %v\n", err.Error())
-			log.Fatal(err)
 			return nil, err
 		}
 		return gethAddress, nil

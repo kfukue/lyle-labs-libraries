@@ -12,7 +12,7 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-var columns = []string{
+var DBColumns = []string{
 	"id",              //1
 	"uuid",            //2
 	"name",            //3
@@ -25,7 +25,7 @@ var columns = []string{
 	"updated_by",      //10
 	"updated_at",      //11
 }
-var columnsInsertGethAddressList = []string{
+var DBColumnsInsertGethAddressList = []string{
 	"uuid",            //1
 	"name",            //2
 	"alternate_name",  //3
@@ -38,37 +38,37 @@ var columnsInsertGethAddressList = []string{
 	"updated_at",      //10
 }
 
-var data1 = GethAddress{
+var TestData1 = GethAddress{
 	ID:            utils.Ptr[int](1),
 	UUID:          "880607ab-2833-4ad7-a231-b983a61c7b39",
 	Name:          "EOA: 0xFC3d170c29581E60861Ac2b500b098722d9861e9",
 	AlternateName: "EOA: 0xFC3d170c29581E60861Ac2b500b098722d9861e9",
 	Description:   "",
 	AddressStr:    "0xFC3d170c29581E60861Ac2b500b098722d9861e9",
-	AddressTypeID: utils.Ptr[int](84),
+	AddressTypeID: utils.Ptr[int](utils.EOA_ADDRESS_TYPE_STRUCTURED_VALUE_ID),
 	CreatedBy:     "SYSTEM",
 	CreatedAt:     utils.SampleCreatedAtTime,
 	UpdatedBy:     "SYSTEM",
 	UpdatedAt:     utils.SampleCreatedAtTime,
 }
 
-var data2 = GethAddress{
+var TestData2 = GethAddress{
 	ID:            utils.Ptr[int](2),
 	UUID:          "880607ab-2833-4ad7-a231-b983a61cad34",
 	Name:          "Contract: 0x40762e9b87aa6457f069925a86352d13339cb68f",
 	AlternateName: "Contract: 0x40762e9b87aa6457f069925a86352d13339cb68f",
 	Description:   "",
 	AddressStr:    "0x40762e9b87aa6457f069925a86352d13339cb68f",
-	AddressTypeID: utils.Ptr[int](85),
+	AddressTypeID: utils.Ptr[int](utils.CONTRACT_ADDRESS_TYPE_STRUCTURED_VALUE_ID),
 	CreatedBy:     "SYSTEM",
 	CreatedAt:     utils.SampleCreatedAtTime,
 	UpdatedBy:     "SYSTEM",
 	UpdatedAt:     utils.SampleCreatedAtTime,
 }
-var allData = []GethAddress{data1, data2}
+var TestAllData = []GethAddress{TestData1, TestData2}
 
 func AddGethAddressToMockRows(mock pgxmock.PgxPoolIface, dataList []GethAddress) *pgxmock.Rows {
-	rows := mock.NewRows(columns)
+	rows := mock.NewRows(DBColumns)
 	for _, data := range dataList {
 		rows.AddRow(
 			data.ID,            //1
@@ -93,7 +93,7 @@ func TestGetGethAddress(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []GethAddress{targetData}
 	exchangeID := targetData.ID
 	mockRows := AddGethAddressToMockRows(mock, dataList)
@@ -117,7 +117,7 @@ func TestGetGethAddressForErrNoRows(t *testing.T) {
 	}
 	defer mock.Close()
 	exchangeID := 999
-	noRows := pgxmock.NewRows(columns)
+	noRows := pgxmock.NewRows(DBColumns)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(exchangeID).WillReturnRows(noRows)
 	foundGethAddress, err := GetGethAddress(mock, &exchangeID)
 	if err != nil {
@@ -157,7 +157,7 @@ func TestGetGethAddressByAddressStr(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []GethAddress{targetData}
 	addressStr := targetData.AddressStr
 	mockRows := AddGethAddressToMockRows(mock, dataList)
@@ -181,7 +181,7 @@ func TestGetGethAddressByAddressStrForErrNoRows(t *testing.T) {
 	}
 	defer mock.Close()
 	addressStr := "0x1234567894561234567898456121345678987456"
-	noRows := pgxmock.NewRows(columns)
+	noRows := pgxmock.NewRows(DBColumns)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(addressStr).WillReturnRows(noRows)
 	foundGethAddress, err := GetGethAddressByAddressStr(mock, addressStr)
 	if err != nil {
@@ -221,14 +221,14 @@ func TestGetGethAddressList(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []GethAddress{data1, data2}
+	dataList := []GethAddress{TestData1, TestData2}
 	mockRows := AddGethAddressToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WillReturnRows(mockRows)
 	foundGethAddresss, err := GetGethAddressList(mock)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethAddressList", err)
 	}
-	testGethAddresss := allData
+	testGethAddresss := TestAllData
 	for i, foundGethAddress := range foundGethAddresss {
 		if cmp.Equal(foundGethAddress, testGethAddresss[i]) == false {
 			t.Errorf("Expected GethAddress From Method GetGethAddressList: %v is different from actual %v", foundGethAddress, testGethAddresss[i])
@@ -264,15 +264,15 @@ func TestGetGethAddressListByAddressStr(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []GethAddress{data1, data2}
+	dataList := []GethAddress{TestData1, TestData2}
 	mockRows := AddGethAddressToMockRows(mock, dataList)
-	addressStrList := []string{data1.AddressStr, data2.AddressStr}
+	addressStrList := []string{TestData1.AddressStr, TestData2.AddressStr}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(pq.Array(addressStrList)).WillReturnRows(mockRows)
 	foundGethAddresss, err := GetGethAddressListByAddressStr(mock, addressStrList)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethAddressListByAddressStr", err)
 	}
-	testGethAddresss := allData
+	testGethAddresss := TestAllData
 	for i, foundGethAddress := range foundGethAddresss {
 		if cmp.Equal(foundGethAddress, testGethAddresss[i]) == false {
 			t.Errorf("Expected GethAddress From Method GetGethAddressListByAddressStr: %v is different from actual %v", foundGethAddress, testGethAddresss[i])
@@ -309,15 +309,15 @@ func TestGetGethAddressListByIds(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []GethAddress{data1, data2}
+	dataList := []GethAddress{TestData1, TestData2}
 	mockRows := AddGethAddressToMockRows(mock, dataList)
-	ids := []int{*data1.ID, *data2.ID}
+	ids := []int{*TestData1.ID, *TestData2.ID}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(pq.Array(ids)).WillReturnRows(mockRows)
 	foundGethAddresss, err := GetGethAddressListByIds(mock, ids)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethAddressListByIds", err)
 	}
-	testGethAddresss := allData
+	testGethAddresss := TestAllData
 	for i, foundGethAddress := range foundGethAddresss {
 		if cmp.Equal(foundGethAddress, testGethAddresss[i]) == false {
 			t.Errorf("Expected GethAddress From Method GetGethAddressListByIds: %v is different from actual %v", foundGethAddress, testGethAddresss[i])
@@ -354,7 +354,7 @@ func TestRemoveGethAddress(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	exchangeID := targetData.ID
 	mock.ExpectBegin()
 	mock.ExpectExec("^DELETE FROM geth_addresses").WithArgs(*exchangeID).WillReturnResult(pgxmock.NewResult("DELETE", 1))
@@ -393,7 +393,7 @@ func TestUpdateGethAddress(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	mock.ExpectBegin()
 	mock.ExpectExec("^UPDATE geth_addresses").WithArgs(
 		targetData.Name,          //1
@@ -420,7 +420,7 @@ func TestUpdateGethAddressOnFailureAtBegin(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	targetData.ID = utils.Ptr[int](-1)
@@ -439,7 +439,7 @@ func TestUpdateGethAddressOnFailure(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	targetData.ID = utils.Ptr[int](-1)
@@ -470,7 +470,7 @@ func TestInsertGethAddress(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	targetData.Name = "New Name"
 	mock.ExpectBegin()
 	mock.ExpectQuery("^INSERT INTO geth_addresses").WithArgs(
@@ -500,7 +500,7 @@ func TestInsertGethAddressOnFailure(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
@@ -531,7 +531,7 @@ func TestInsertGethAddressOnFailureOnCommit(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
@@ -563,8 +563,8 @@ func TestInsertGethAddressList(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	mock.ExpectCopyFrom(pgx.Identifier{"geth_addresses"}, columnsInsertGethAddressList)
-	targetData := allData
+	mock.ExpectCopyFrom(pgx.Identifier{"geth_addresses"}, DBColumnsInsertGethAddressList)
+	targetData := TestAllData
 	err = InsertGethAddressList(mock, targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in InsertGethAddressList", err)
@@ -580,8 +580,8 @@ func TestInsertGethAddressListOnFailure(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	mock.ExpectCopyFrom(pgx.Identifier{"geth_addresses"}, columnsInsertGethAddressList).WillReturnError(fmt.Errorf("Random SQL Error"))
-	targetData := allData
+	mock.ExpectCopyFrom(pgx.Identifier{"geth_addresses"}, DBColumnsInsertGethAddressList).WillReturnError(fmt.Errorf("Random SQL Error"))
+	targetData := TestAllData
 	err = InsertGethAddressList(mock, targetData)
 	if err == nil {
 		t.Fatalf("was expecting an error, but there was none")
@@ -597,7 +597,7 @@ func TestGetGethAddressListByPagination(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := allData
+	dataList := TestAllData
 	mockRows := AddGethAddressToMockRows(mock, dataList)
 	_start := 0
 	_end := 10

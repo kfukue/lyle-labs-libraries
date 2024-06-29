@@ -12,206 +12,13 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-var columns = []string{
-	"id",
-	"uuid",
-	"name",
-	"alternate_name",
-	"cusip",
-	"ticker",
-	"base_asset_id",
-	"quote_asset_id",
-	"description",
-	"asset_type_id",
-	"created_by",
-	"created_at",
-	"updated_by",
-	"updated_at",
-	"chain_id",
-	"category_id",
-	"sub_category_id",
-	"is_default_quote",
-	"ignore_market_data",
-	"decimals",
-	"contract_address",
-	"starting_block_number",
-	"import_geth",
-	"import_geth_initial",
-}
-
-var columnsAssetWithSources = []string{
-	"id",
-	"uuid",
-	"name",
-	"alternate_name",
-	"cusip",
-	"ticker",
-	"base_asset_id",
-	"quote_asset_id",
-	"description",
-	"asset_type_id",
-	"created_by",
-	"created_at",
-	"updated_by",
-	"updated_at",
-	"chain_id",
-	"category_id",
-	"sub_category_id",
-	"is_default_quote",
-	"ignore_market_data",
-	"decimals",
-	"contract_address",
-	"starting_block_number",
-	"import_geth",
-	"import_geth_initial",
-	"assetSources.source_id",
-	"assetSources.source_identifier",
-}
-
-var data1 = Asset{
-	ID:                  utils.Ptr[int](1),
-	UUID:                "880607ab-2833-4ad7-a231-b983a61c7b39",
-	Name:                "ETHER",
-	AlternateName:       "Ether",
-	Cusip:               "",
-	Ticker:              "ETH",
-	BaseAssetID:         utils.Ptr[int](1),
-	QuoteAssetID:        utils.Ptr[int](2),
-	Description:         "",
-	AssetTypeID:         utils.Ptr[int](1),
-	CreatedBy:           "SYSTEM",
-	CreatedAt:           utils.SampleCreatedAtTime,
-	UpdatedBy:           "SYSTEM",
-	UpdatedAt:           utils.SampleCreatedAtTime,
-	ChainID:             utils.Ptr[int](2),
-	CategoryID:          utils.Ptr[int](27),
-	SubCategoryID:       utils.Ptr[int](10),
-	IsDefaultQuote:      utils.Ptr[bool](true),
-	IgnoreMarketData:    utils.Ptr[bool](false),
-	Decimals:            utils.Ptr[int](1),
-	ContractAddress:     "SYSTEM",
-	StartingBlockNumber: utils.Ptr[uint64](1),
-	ImportGeth:          nil,
-	ImportGethInitial:   nil,
-}
-
-var data2 = Asset{
-	ID:                  utils.Ptr[int](2),
-	UUID:                "880607ab-2833-4ad7-a231-b983a61c7b334",
-	Name:                "BTC",
-	AlternateName:       "Bitcoin",
-	Cusip:               "",
-	Ticker:              "BTC",
-	BaseAssetID:         utils.Ptr[int](2),
-	QuoteAssetID:        utils.Ptr[int](1),
-	Description:         "",
-	AssetTypeID:         utils.Ptr[int](1),
-	CreatedBy:           "SYSTEM",
-	CreatedAt:           utils.SampleCreatedAtTime,
-	UpdatedBy:           "SYSTEM",
-	UpdatedAt:           utils.SampleCreatedAtTime,
-	ChainID:             utils.Ptr[int](1),
-	CategoryID:          utils.Ptr[int](28),
-	SubCategoryID:       utils.Ptr[int](20),
-	IsDefaultQuote:      utils.Ptr[bool](true),
-	IgnoreMarketData:    utils.Ptr[bool](false),
-	Decimals:            utils.Ptr[int](1),
-	ContractAddress:     "SYSTEM",
-	StartingBlockNumber: utils.Ptr[uint64](1),
-	ImportGeth:          nil,
-	ImportGethInitial:   nil,
-}
-var allData = []Asset{data1, data2}
-
-func AddAssetToMockRows(mock pgxmock.PgxPoolIface, dataList []Asset) *pgxmock.Rows {
-	rows := mock.NewRows(columns)
-	for _, data := range dataList {
-		rows.AddRow(
-			data.ID,
-			data.UUID,
-			data.Name,
-			data.AlternateName,
-			data.Cusip,
-			data.Ticker,
-			data.BaseAssetID,
-			data.QuoteAssetID,
-			data.Description,
-			data.AssetTypeID,
-			data.CreatedBy,
-			data.CreatedAt,
-			data.UpdatedBy,
-			data.UpdatedAt,
-			data.ChainID,
-			data.CategoryID,
-			data.SubCategoryID,
-			data.IsDefaultQuote,
-			data.IgnoreMarketData,
-			data.Decimals,
-			data.ContractAddress,
-			data.StartingBlockNumber,
-			data.ImportGeth,
-			data.ImportGethInitial,
-		)
-	}
-	return rows
-}
-
-var dataAssetWithSources1 = AssetWithSources{
-	Asset:            data1,
-	SourceID:         utils.Ptr[int](1),
-	SourceIdentifier: "ETH",
-}
-
-var dataAssetWithSources2 = AssetWithSources{
-	Asset:            data2,
-	SourceID:         utils.Ptr[int](1),
-	SourceIdentifier: "XBT",
-}
-
-var allDataAssetWithSources = []AssetWithSources{dataAssetWithSources1, dataAssetWithSources2}
-
-func AddAssetWithSourcesToMockRows(mock pgxmock.PgxPoolIface, dataList []AssetWithSources) *pgxmock.Rows {
-	rows := mock.NewRows(columnsAssetWithSources)
-	for _, data := range dataList {
-		rows.AddRow(
-			data.ID,
-			data.UUID,
-			data.Name,
-			data.AlternateName,
-			data.Cusip,
-			data.Ticker,
-			data.BaseAssetID,
-			data.QuoteAssetID,
-			data.Description,
-			data.AssetTypeID,
-			data.CreatedBy,
-			data.CreatedAt,
-			data.UpdatedBy,
-			data.UpdatedAt,
-			data.ChainID,
-			data.CategoryID,
-			data.SubCategoryID,
-			data.IsDefaultQuote,
-			data.IgnoreMarketData,
-			data.Decimals,
-			data.ContractAddress,
-			data.StartingBlockNumber,
-			data.ImportGeth,
-			data.ImportGethInitial,
-			data.SourceID,
-			data.SourceIdentifier,
-		)
-	}
-	return rows
-}
-
 func TestGetAsset(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	dataList := []Asset{targetData}
 	mockRows := AddAssetToMockRows(mock, dataList)
 	assetID := 1
@@ -234,7 +41,7 @@ func TestGetAssetForErrNoRows(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	noRows := pgxmock.NewRows(columns)
+	noRows := pgxmock.NewRows(DBColumns)
 	assetID := 1
 	mock.ExpectQuery("^SELECT (.+) FROM assets WHERE id = ?").WithArgs(assetID).WillReturnRows(noRows)
 	foundAsset, err := GetAsset(mock, &assetID)
@@ -275,7 +82,7 @@ func TestGetAssetByTicker(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []Asset{targetData}
 	testTicker := targetData.Ticker
 	mockRows := AddAssetToMockRows(mock, dataList)
@@ -299,7 +106,7 @@ func TestGetAssetByTickerForErrNoRows(t *testing.T) {
 	}
 	defer mock.Close()
 	testTicker := "Fake-Ticker"
-	noRows := pgxmock.NewRows(columns)
+	noRows := pgxmock.NewRows(DBColumns)
 	mock.ExpectQuery("^SELECT (.+) FROM assets WHERE ticker = ?").WithArgs(testTicker).WillReturnRows(noRows)
 	foundAsset, err := GetAssetByTicker(mock, testTicker)
 	if err != nil {
@@ -339,7 +146,7 @@ func TestGetAssetByContractAddress(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []Asset{targetData}
 	testContractAddress := targetData.ContractAddress
 	mockRows := AddAssetToMockRows(mock, dataList)
@@ -363,7 +170,7 @@ func TestGetAssetByContractAddressForErrNoRows(t *testing.T) {
 	}
 	defer mock.Close()
 	testContractAddress := "Fake-ContractAddress"
-	noRows := pgxmock.NewRows(columns)
+	noRows := pgxmock.NewRows(DBColumns)
 	mock.ExpectQuery("^SELECT (.+) FROM assets WHERE contract_address = ?").WithArgs(testContractAddress).WillReturnRows(noRows)
 	foundAsset, err := GetAssetByContractAddress(mock, testContractAddress)
 	if err != nil {
@@ -403,7 +210,7 @@ func TestGetAssetByCusip(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []Asset{targetData}
 	testCusip := targetData.Cusip
 	mockRows := AddAssetToMockRows(mock, dataList)
@@ -427,7 +234,7 @@ func TestGetAssetByCusipForErrNoRows(t *testing.T) {
 	}
 	defer mock.Close()
 	testCusip := "Fake-Cusip"
-	noRows := pgxmock.NewRows(columns)
+	noRows := pgxmock.NewRows(DBColumns)
 	mock.ExpectQuery("^SELECT (.+) FROM assets WHERE cusip = ?").WithArgs(testCusip).WillReturnRows(noRows)
 	foundAsset, err := GetAssetByCusip(mock, testCusip)
 	if err != nil {
@@ -467,7 +274,7 @@ func TestGetAssetByBaseAndQuoteID(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []Asset{targetData}
 	baseAssetID := targetData.BaseAssetID
 	quoteAssetID := targetData.QuoteAssetID
@@ -493,7 +300,7 @@ func TestGetAssetByBaseAndQuoteIDForErrNoRows(t *testing.T) {
 	defer mock.Close()
 	baseAssetID := utils.Ptr[int](1331)
 	quoteAssetID := utils.Ptr[int](1111)
-	noRows := pgxmock.NewRows(columns)
+	noRows := pgxmock.NewRows(DBColumns)
 	mock.ExpectQuery("^SELECT (.+) FROM assets").WithArgs(*baseAssetID, *quoteAssetID).WillReturnRows(noRows)
 	foundAsset, err := GetAssetByBaseAndQuoteID(mock, baseAssetID, quoteAssetID)
 	if err != nil {
@@ -534,7 +341,7 @@ func TestGetGethImportAssets(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []Asset{data1, data2}
+	dataList := []Asset{TestData1, TestData2}
 	mockRows := AddAssetToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM assets WHERE import_geth = TRUE").WillReturnRows(mockRows)
 	foundAssets, err := GetGethImportAssets(mock)
@@ -542,7 +349,7 @@ func TestGetGethImportAssets(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethImportAssets", err)
 	}
-	testAssets := allData
+	testAssets := TestAllData
 	for i, foundAsset := range foundAssets {
 		if cmp.Equal(foundAsset, testAssets[i]) == false {
 			t.Errorf("Expected Asset From Method GetGethImportAssets: %v is different from actual %v", foundAsset, testAssets[i])
@@ -578,7 +385,7 @@ func TestRemoveAsset(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	mock.ExpectBegin()
 	mock.ExpectExec("^DELETE FROM assets WHERE id = ?").WithArgs(*targetData.ID).WillReturnResult(pgxmock.NewResult("DELETE", 1))
 	mock.ExpectCommit()
@@ -597,7 +404,7 @@ func TestRemoveAssetOnFailure(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	invalidID := utils.Ptr[int](-1)
 	targetData.ID = invalidID
 	mock.ExpectBegin()
@@ -618,7 +425,7 @@ func TestGetCurrentTradingAssets(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []Asset{data1, data2}
+	dataList := []Asset{TestData1, TestData2}
 	mockRows := AddAssetToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM public.get_current_assets").WillReturnRows(mockRows)
 	foundAssets, err := GetCurrentTradingAssets(mock)
@@ -626,7 +433,7 @@ func TestGetCurrentTradingAssets(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' in GetCurrentTradingAssets", err)
 	}
-	testAssets := allData
+	testAssets := TestAllData
 	for i, foundAsset := range foundAssets {
 		if cmp.Equal(foundAsset, testAssets[i]) == false {
 			t.Errorf("Expected Asset From Method GetCurrentTradingAssets: %v is different from actual %v", foundAsset, testAssets[i])
@@ -662,7 +469,7 @@ func TestGetCryptoAssets(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []Asset{data1, data2}
+	dataList := []Asset{TestData1, TestData2}
 	mockRows := AddAssetToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM assets where asset_type_id = 1").WillReturnRows(mockRows)
 	foundAssets, err := GetCryptoAssets(mock)
@@ -670,7 +477,7 @@ func TestGetCryptoAssets(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' in GetCryptoAssets", err)
 	}
-	testAssets := allData
+	testAssets := TestAllData
 	for i, foundAsset := range foundAssets {
 		if cmp.Equal(foundAsset, testAssets[i]) == false {
 			t.Errorf("Expected Asset From Method GetCryptoAssets: %v is different from actual %v", foundAsset, testAssets[i])
@@ -707,7 +514,7 @@ func TestGetAssetsByAssetTypeAndSource(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := allDataAssetWithSources
+	dataList := TestAllDataAssetWithSources
 	mockRows := AddAssetWithSourcesToMockRows(mock, dataList)
 	assetTypeID := dataAssetWithSources1.AssetTypeID
 	sourceID := dataAssetWithSources1.SourceID
@@ -718,7 +525,7 @@ func TestGetAssetsByAssetTypeAndSource(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' in GetAssetsByAssetTypeAndSource", err)
 	}
-	testAssets := allDataAssetWithSources
+	testAssets := TestAllDataAssetWithSources
 	for i, foundAsset := range foundAssets {
 		if cmp.Equal(foundAsset, testAssets[i]) == false {
 			t.Errorf("Expected Asset From Method GetAssetsByAssetTypeAndSource: %v is different from actual %v", foundAsset, testAssets[i])
@@ -757,7 +564,7 @@ func TestGetCryptoAssetsBySourceId(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := allDataAssetWithSources
+	dataList := TestAllDataAssetWithSources
 	mockRows := AddAssetWithSourcesToMockRows(mock, dataList)
 	sourceID := dataAssetWithSources1.SourceID
 	excludeIgnoreMarketData := true
@@ -767,7 +574,7 @@ func TestGetCryptoAssetsBySourceId(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' in GetCryptoAssetsBySourceId", err)
 	}
-	testAssets := allDataAssetWithSources
+	testAssets := TestAllDataAssetWithSources
 	for i, foundAsset := range foundAssets {
 		if cmp.Equal(foundAsset, testAssets[i]) == false {
 			t.Errorf("Expected Asset From Method GetCryptoAssetsBySourceId: %v is different from actual %v", foundAsset, testAssets[i])
@@ -805,7 +612,7 @@ func TestGetCryptoAssetsBySourceID(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := allDataAssetWithSources
+	dataList := TestAllDataAssetWithSources
 	mockRows := AddAssetWithSourcesToMockRows(mock, dataList)
 	sourceID := dataAssetWithSources1.SourceID
 	excludeIgnoreMarketData := true
@@ -815,7 +622,7 @@ func TestGetCryptoAssetsBySourceID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' in GetCryptoAssetsBySourceID", err)
 	}
-	testAssets := allData
+	testAssets := TestAllData
 	for i, foundAsset := range foundAssets {
 		if cmp.Equal(foundAsset, testAssets[i]) == false {
 			t.Errorf("Expected Asset From Method GetCryptoAssetsBySourceID: %v is different from actual %v", foundAsset, testAssets[i])
@@ -878,7 +685,7 @@ func TestGetAssetWithSourceByAssetIdAndSourceIDForErrNoRows(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	noRows := pgxmock.NewRows(columns)
+	noRows := pgxmock.NewRows(DBColumns)
 	assetID := dataAssetWithSources1.Asset.ID
 	sourceID := dataAssetWithSources1.SourceID
 	excludeIgnoreMarketData := true
@@ -923,7 +730,7 @@ func TestGetAssetWithSourceByAssetIdsAndSourceID(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := allDataAssetWithSources
+	dataList := TestAllDataAssetWithSources
 	assetIDs := []int{*dataAssetWithSources1.Asset.ID, *dataAssetWithSources2.Asset.ID}
 	mockRows := AddAssetWithSourcesToMockRows(mock, dataList)
 	sourceID := dataAssetWithSources1.SourceID
@@ -934,7 +741,7 @@ func TestGetAssetWithSourceByAssetIdsAndSourceID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' in GetAssetWithSourceByAssetIdsAndSourceID", err)
 	}
-	testAssets := allDataAssetWithSources
+	testAssets := TestAllDataAssetWithSources
 	for i, foundAsset := range foundAssets {
 		if cmp.Equal(foundAsset, testAssets[i]) == false {
 			t.Errorf("Expected Asset From Method GetAssetWithSourceByAssetIdsAndSourceID: %v is different from actual %v", foundAsset, testAssets[i])
@@ -973,17 +780,17 @@ func TestGetAssetList(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []Asset{data1, data2}
+	dataList := []Asset{TestData1, TestData2}
 	mockRows := AddAssetToMockRows(mock, dataList)
 	mock.ExpectQuery(fmt.Sprintf("^SELECT (.+) FROM assets WHERE")).WillReturnRows(mockRows)
 	ids := make([]int, 0)
-	ids = append(ids, *data1.ID)
-	ids = append(ids, *data2.ID)
+	ids = append(ids, *TestData1.ID)
+	ids = append(ids, *TestData2.ID)
 	foundAssets, err := GetAssetList(mock, ids)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetAssetList", err)
 	}
-	testAssets := allData
+	testAssets := TestAllData
 	for i, foundAsset := range foundAssets {
 		// t.Logf("i: %d,  \n mock : %v , \n in memory : %v", i, foundAsset, testAssets[i])
 
@@ -1023,8 +830,8 @@ func TestGetAssetsByChainId(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []Asset{data1}
-	chainID := data1.ChainID
+	dataList := []Asset{TestData1}
+	chainID := TestData1.ChainID
 	mockRows := AddAssetToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM assets WHERE chain_id = ?").WithArgs(*chainID).WillReturnRows(mockRows)
 	foundAssets, err := GetAssetsByChainId(mock, chainID)
@@ -1049,7 +856,7 @@ func TestGetAssetsByChainIdForErr(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	chainID := data1.ChainID
+	chainID := TestData1.ChainID
 	mock.ExpectQuery("^SELECT (.+) FROM assets WHERE chain_id = ?").WithArgs(*chainID).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
 	foundAssets, err := GetAssetsByChainId(mock, chainID)
 	if err == nil {
@@ -1069,7 +876,7 @@ func TestGetAssetListByPagination(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []Asset{data1}
+	dataList := []Asset{TestData1}
 	mockRows := AddAssetToMockRows(mock, dataList)
 	_start := 0
 	_end := 10
@@ -1162,7 +969,7 @@ func TestGetDefaultQuoteAssetListBySourceID(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := allData
+	dataList := TestAllData
 	sourceID := 1
 	mockRows := AddAssetToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM get_default_quotes").WithArgs(sourceID).WillReturnRows(mockRows)
@@ -1170,7 +977,7 @@ func TestGetDefaultQuoteAssetListBySourceID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' in GetDefaultQuoteAssetListBySourceID", err)
 	}
-	testAssets := allData
+	testAssets := TestAllData
 	for i, foundAsset := range foundAssets {
 		if cmp.Equal(foundAsset, testAssets[i]) == false {
 			t.Errorf("Expected Asset From Method GetDefaultQuoteAssetListBySourceID: %v is different from actual %v", foundAsset, testAssets[i])
@@ -1188,7 +995,7 @@ func TestGetDefaultQuoteAssetListBySourceIDForErr(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	chainID := data1.ChainID
+	chainID := TestData1.ChainID
 	mock.ExpectQuery("^SELECT (.+) FROM get_default_quotes").WithArgs(*chainID).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
 	foundAssets, err := GetDefaultQuoteAssetListBySourceID(mock, chainID)
 	if err == nil {
@@ -1208,13 +1015,13 @@ func TestGetDefaultQuoteAssetList(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	mockRows := AddAssetToMockRows(mock, allData)
+	mockRows := AddAssetToMockRows(mock, TestAllData)
 	mock.ExpectQuery("^SELECT (.+) FROM get_default_quotes").WillReturnRows(mockRows)
 	foundAssets, err := GetDefaultQuoteAssetList(mock)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetDefaultQuoteAssetList", err)
 	}
-	testAssets := allData
+	testAssets := TestAllData
 	for i, foundAsset := range foundAssets {
 		if cmp.Equal(foundAsset, testAssets[i]) == false {
 			t.Errorf("Expected Asset From Method GetDefaultQuoteAssetList: %v is different from actual %v", foundAsset, testAssets[i])
@@ -1251,7 +1058,7 @@ func TestUpdateAsset(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	mock.ExpectBegin()
 	mock.ExpectExec("^UPDATE assets").WithArgs(
 		targetData.Name,                //1
@@ -1291,7 +1098,7 @@ func TestUpdateAssetOnFailure(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	targetData.ID = utils.Ptr[int](-1)
@@ -1335,7 +1142,7 @@ func TestInsertAsset(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	targetData.Name = "New Name"
 	mock.ExpectBegin()
 	mock.ExpectQuery("^INSERT INTO assets").WithArgs(
@@ -1378,7 +1185,7 @@ func TestInsertAssetOnFailure(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
@@ -1422,7 +1229,7 @@ func TestInsertAssetOnFailureOnCommit(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
