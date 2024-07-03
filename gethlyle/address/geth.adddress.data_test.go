@@ -224,14 +224,14 @@ func TestGetGethAddressList(t *testing.T) {
 	dataList := []GethAddress{TestData1, TestData2}
 	mockRows := AddGethAddressToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WillReturnRows(mockRows)
-	foundGethAddresss, err := GetGethAddressList(mock)
+	foundGethAddresses, err := GetGethAddressList(mock)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethAddressList", err)
 	}
-	testGethAddresss := TestAllData
-	for i, foundGethAddress := range foundGethAddresss {
-		if cmp.Equal(foundGethAddress, testGethAddresss[i]) == false {
-			t.Errorf("Expected GethAddress From Method GetGethAddressList: %v is different from actual %v", foundGethAddress, testGethAddresss[i])
+	testGethAddresses := TestAllData
+	for i, foundGethAddress := range foundGethAddresses {
+		if cmp.Equal(foundGethAddress, testGethAddresses[i]) == false {
+			t.Errorf("Expected GethAddress From Method GetGethAddressList: %v is different from actual %v", foundGethAddress, testGethAddresses[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -246,12 +246,12 @@ func TestGetGethAddressListForErr(t *testing.T) {
 	}
 	defer mock.Close()
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundGethAddresss, err := GetGethAddressList(mock)
+	foundGethAddresses, err := GetGethAddressList(mock)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethAddressList", err)
 	}
-	if len(foundGethAddresss) != 0 {
-		t.Errorf("Expected From Method GetGethAddresss: to be empty but got this: %v", foundGethAddresss)
+	if len(foundGethAddresses) != 0 {
+		t.Errorf("Expected From Method GetGethAddresses: to be empty but got this: %v", foundGethAddresses)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -268,14 +268,14 @@ func TestGetGethAddressListByAddressStr(t *testing.T) {
 	mockRows := AddGethAddressToMockRows(mock, dataList)
 	addressStrList := []string{TestData1.AddressStr, TestData2.AddressStr}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(pq.Array(addressStrList)).WillReturnRows(mockRows)
-	foundGethAddresss, err := GetGethAddressListByAddressStr(mock, addressStrList)
+	foundGethAddresses, err := GetGethAddressListByAddressStr(mock, addressStrList)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethAddressListByAddressStr", err)
 	}
-	testGethAddresss := TestAllData
-	for i, foundGethAddress := range foundGethAddresss {
-		if cmp.Equal(foundGethAddress, testGethAddresss[i]) == false {
-			t.Errorf("Expected GethAddress From Method GetGethAddressListByAddressStr: %v is different from actual %v", foundGethAddress, testGethAddresss[i])
+	testGethAddresses := TestAllData
+	for i, foundGethAddress := range foundGethAddresses {
+		if cmp.Equal(foundGethAddress, testGethAddresses[i]) == false {
+			t.Errorf("Expected GethAddress From Method GetGethAddressListByAddressStr: %v is different from actual %v", foundGethAddress, testGethAddresses[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -291,12 +291,12 @@ func TestGetGethAddressListByAddressStrForErr(t *testing.T) {
 	defer mock.Close()
 	addressStrList := []string{"0x", "0x1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(pq.Array(addressStrList)).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundGethAddresss, err := GetGethAddressListByAddressStr(mock, addressStrList)
+	foundGethAddresses, err := GetGethAddressListByAddressStr(mock, addressStrList)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethAddressListByAddressStr", err)
 	}
-	if len(foundGethAddresss) != 0 {
-		t.Errorf("Expected From Method GetGethAddressListByAddressStr: to be empty but got this: %v", foundGethAddresss)
+	if len(foundGethAddresses) != 0 {
+		t.Errorf("Expected From Method GetGethAddressListByAddressStr: to be empty but got this: %v", foundGethAddresses)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -313,14 +313,14 @@ func TestGetGethAddressListByIds(t *testing.T) {
 	mockRows := AddGethAddressToMockRows(mock, dataList)
 	ids := []int{*TestData1.ID, *TestData2.ID}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(pq.Array(ids)).WillReturnRows(mockRows)
-	foundGethAddresss, err := GetGethAddressListByIds(mock, ids)
+	foundGethAddresses, err := GetGethAddressListByIds(mock, ids)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethAddressListByIds", err)
 	}
-	testGethAddresss := TestAllData
-	for i, foundGethAddress := range foundGethAddresss {
-		if cmp.Equal(foundGethAddress, testGethAddresss[i]) == false {
-			t.Errorf("Expected GethAddress From Method GetGethAddressListByIds: %v is different from actual %v", foundGethAddress, testGethAddresss[i])
+	testGethAddresses := TestAllData
+	for i, foundGethAddress := range foundGethAddresses {
+		if cmp.Equal(foundGethAddress, testGethAddresses[i]) == false {
+			t.Errorf("Expected GethAddress From Method GetGethAddressListByIds: %v is different from actual %v", foundGethAddress, testGethAddresses[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -336,12 +336,12 @@ func TestGetGethAddressListByIdsForErr(t *testing.T) {
 	defer mock.Close()
 	ids := []int{-1, -2}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(pq.Array(ids)).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundGethAddresss, err := GetGethAddressListByIds(mock, ids)
+	foundGethAddresses, err := GetGethAddressListByIds(mock, ids)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethAddressListByIds", err)
 	}
-	if len(foundGethAddresss) != 0 {
-		t.Errorf("Expected From Method GetGethAddressListByIds: to be empty but got this: %v", foundGethAddresss)
+	if len(foundGethAddresses) != 0 {
+		t.Errorf("Expected From Method GetGethAddressListByIds: to be empty but got this: %v", foundGethAddresses)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -482,9 +482,9 @@ func TestInsertGethAddress(t *testing.T) {
 		targetData.CreatedBy,     //6
 	).WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit()
-	chainID, err := InsertGethAddress(mock, &targetData)
-	if chainID < 0 {
-		t.Fatalf("chainID should not be negative ID: %d", chainID)
+	gethAddressID, err := InsertGethAddress(mock, &targetData)
+	if gethAddressID < 0 {
+		t.Fatalf("gethAddressID should not be negative ID: %d", gethAddressID)
 	}
 	if err != nil {
 		t.Fatalf("an error '%s' in InsertGethAddress", err)
@@ -513,9 +513,9 @@ func TestInsertGethAddressOnFailure(t *testing.T) {
 		targetData.CreatedBy,     //6
 	).WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
-	chainID, err := InsertGethAddress(mock, &targetData)
-	if chainID >= 0 {
-		t.Fatalf("Expecting -1 for ID because of error chainID: %d", chainID)
+	gethAddressID, err := InsertGethAddress(mock, &targetData)
+	if gethAddressID >= 0 {
+		t.Fatalf("Expecting -1 for ID because of error gethAddressID: %d", gethAddressID)
 	}
 	if err == nil {
 		t.Fatalf("was expecting an error, but there was none")
@@ -545,9 +545,9 @@ func TestInsertGethAddressOnFailureOnCommit(t *testing.T) {
 	).WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
-	chainID, err := InsertGethAddress(mock, &targetData)
-	if chainID >= 0 {
-		t.Fatalf("Expecting -1 for chainID because of error chainID: %d", chainID)
+	gethAddressID, err := InsertGethAddress(mock, &targetData)
+	if gethAddressID >= 0 {
+		t.Fatalf("Expecting -1 for gethAddressID because of error gethAddressID: %d", gethAddressID)
 	}
 	if err == nil {
 		t.Fatalf("was expecting an error, but there was none")

@@ -190,7 +190,7 @@ func UpdateGethAddress(dbConnPgx utils.PgxIface, gethAddress *GethAddress) error
 	}
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in UpdateAsset DbConn.Begin   %s", err.Error())
+		log.Printf("Error in UpdateGethAddress DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `UPDATE geth_addresses SET 
