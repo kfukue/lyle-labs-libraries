@@ -169,7 +169,7 @@ func RemoveGethAddress(dbConnPgx utils.PgxIface, gethAddressID *int) error {
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in RemoveDexTxnJob DbConn.Begin   %s", err.Error())
+		log.Printf("Error in RemoveGethAddress DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `DELETE FROM geth_addresses WHERE id = $1`
@@ -367,6 +367,10 @@ func GetGethAddressListByPagination(dbConnPgx utils.PgxIface, _start, _end *int,
 	}
 	defer results.Close()
 	gethAddressList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethAddress])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return gethAddressList, nil
 }
 
