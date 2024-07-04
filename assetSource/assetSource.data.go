@@ -40,6 +40,10 @@ func GetAllAssetSourceBySourceAndAssetType(dbConnPgx utils.PgxIface, sourceID, a
 	}
 	defer results.Close()
 	assetSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetSource])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assetSources, nil
 }
 
@@ -170,6 +174,10 @@ func GetAssetSourceList(dbConnPgx utils.PgxIface, assetIds []int, sourceIds []in
 	defer results.Close()
 	defer results.Close()
 	assetSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetSource])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assetSources, nil
 }
 
@@ -322,6 +330,10 @@ func GetAssetSourceListByPagination(dbConnPgx utils.PgxIface, _start, _end *int,
 	}
 	defer results.Close()
 	assetSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetSource])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assetSources, nil
 }
 
