@@ -969,15 +969,15 @@ func TestGetDefaultQuoteAssetListBySourceID(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := TestAllData
+	dataList := TestAllDataAssetWithSources
 	sourceID := 1
-	mockRows := AddAssetToMockRows(mock, dataList)
+	mockRows := AddAssetWithSourcesToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM get_default_quotes").WithArgs(sourceID).WillReturnRows(mockRows)
 	foundAssets, err := GetDefaultQuoteAssetListBySourceID(mock, &sourceID)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetDefaultQuoteAssetListBySourceID", err)
 	}
-	testAssets := TestAllData
+	testAssets := TestAllDataAssetWithSources
 	for i, foundAsset := range foundAssets {
 		if cmp.Equal(foundAsset, testAssets[i]) == false {
 			t.Errorf("Expected Asset From Method GetDefaultQuoteAssetListBySourceID: %v is different from actual %v", foundAsset, testAssets[i])
@@ -995,9 +995,9 @@ func TestGetDefaultQuoteAssetListBySourceIDForErr(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	chainID := TestData1.ChainID
-	mock.ExpectQuery("^SELECT (.+) FROM get_default_quotes").WithArgs(*chainID).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundAssets, err := GetDefaultQuoteAssetListBySourceID(mock, chainID)
+	sourceID := -1
+	mock.ExpectQuery("^SELECT (.+) FROM get_default_quotes").WithArgs(sourceID).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
+	foundAssets, err := GetDefaultQuoteAssetListBySourceID(mock, &sourceID)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetDefaultQuoteAssetListBySourceID", err)
 	}

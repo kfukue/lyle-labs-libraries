@@ -281,6 +281,10 @@ func GetGethImportAssets(dbConnPgx utils.PgxIface) ([]Asset, error) {
 	}
 	defer results.Close()
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assets, nil
 }
 
@@ -336,6 +340,10 @@ func GetCurrentTradingAssets(dbConnPgx utils.PgxIface) ([]Asset, error) {
 	}
 	defer results.Close()
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assets, nil
 
 }
@@ -377,6 +385,10 @@ func GetCryptoAssets(dbConnPgx utils.PgxIface) ([]Asset, error) {
 	}
 	defer results.Close()
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assets, nil
 }
 
@@ -425,6 +437,10 @@ func GetAssetsByAssetTypeAndSource(dbConnPgx utils.PgxIface, assetTypeID *int, s
 	}
 	defer results.Close()
 	assetsWithSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetWithSources])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assetsWithSources, nil
 }
 
@@ -473,6 +489,10 @@ func GetCryptoAssetsBySourceId(dbConnPgx utils.PgxIface, sourceID *int, excludeI
 	}
 	defer results.Close()
 	assetsWithSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetWithSources])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assetsWithSources, nil
 
 }
@@ -591,6 +611,10 @@ func GetAssetWithSourceByAssetIdsAndSourceID(dbConnPgx utils.PgxIface, assetIDs 
 	}
 	defer results.Close()
 	assetsWithSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetWithSources])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assetsWithSources, nil
 }
 
@@ -635,6 +659,10 @@ func GetAssetList(dbConnPgx utils.PgxIface, ids []int) ([]Asset, error) {
 	}
 	defer results.Close()
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assets, nil
 }
 
@@ -674,6 +702,10 @@ func GetAssetsByChainId(dbConnPgx utils.PgxIface, chainID *int) ([]Asset, error)
 	}
 	defer results.Close()
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assets, nil
 }
 
@@ -733,6 +765,10 @@ func GetAssetListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _orde
 	}
 	defer results.Close()
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assets, nil
 }
 
@@ -774,13 +810,13 @@ func GetDefaultQuoteAssetListBySourceID(dbConnPgx utils.PgxIface, sourceID *int)
 	assets.sub_category_id,
 	assets.is_default_quote,
 	assets.ignore_market_data,
-	assetSources.source_id,
-	assetSources.source_identifier,
 	assets.decimals,
 	contract_address,
 	starting_block_number,
 	import_geth,
-	import_geth_initial
+	import_geth_initial,
+	assetSources.source_id,
+	assetSources.source_identifier
 	FROM get_default_quotes assets
 	JOIN asset_sources assetSources ON assets.id = assetSources.asset_id
 	WHERE assetSources.source_id = $1
@@ -791,6 +827,10 @@ func GetDefaultQuoteAssetListBySourceID(dbConnPgx utils.PgxIface, sourceID *int)
 	}
 	defer results.Close()
 	assetWithSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetWithSources])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assetWithSources, nil
 
 }
@@ -829,6 +869,10 @@ func GetDefaultQuoteAssetList(dbConnPgx utils.PgxIface) ([]Asset, error) {
 	}
 	defer results.Close()
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assets, nil
 }
 
