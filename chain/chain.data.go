@@ -184,6 +184,10 @@ func GetChainList(dbConnPgx utils.PgxIface, ids []int) ([]Chain, error) {
 	}
 	defer results.Close()
 	chains, err := pgx.CollectRows(results, pgx.RowToStructByName[Chain])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return chains, nil
 }
 
@@ -236,6 +240,10 @@ func GetChainListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _orde
 	}
 	defer results.Close()
 	chains, err := pgx.CollectRows(results, pgx.RowToStructByName[Chain])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return chains, nil
 }
 
