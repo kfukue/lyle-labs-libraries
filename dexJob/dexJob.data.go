@@ -80,6 +80,10 @@ func GetDexTxnJobByJobId(dbConnPgx utils.PgxIface, jobID *int) ([]DexTxnJob, err
 	}
 	defer results.Close()
 	dexTxnJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[DexTxnJob])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return dexTxnJobs, nil
 }
 
@@ -110,6 +114,10 @@ func GetDexTxnJobList(dbConnPgx utils.PgxIface) ([]DexTxnJob, error) {
 	}
 	defer results.Close()
 	dexTxnJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[DexTxnJob])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return dexTxnJobs, nil
 }
 
