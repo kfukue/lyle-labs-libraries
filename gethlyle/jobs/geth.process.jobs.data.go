@@ -9,14 +9,13 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
-func GetGethProcessJob(gethProcessJobID int) (*GethProcessJob, error) {
+func GetGethProcessJob(dbConnPgx utils.PgxIface, gethProcessJobID *int) (*GethProcessJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 	id,  
 	uuid, 
 	name,
@@ -37,42 +36,27 @@ func GetGethProcessJob(gethProcessJobID int) (*GethProcessJob, error) {
 	asset_id
 	FROM geth_process_jobs 
 	WHERE id = $1
-	`, gethProcessJobID)
-
-	gethProcessJob := &GethProcessJob{}
-	err := row.Scan(
-		&gethProcessJob.ID,
-		&gethProcessJob.UUID,
-		&gethProcessJob.Name,
-		&gethProcessJob.AlternateName,
-		&gethProcessJob.StartDate,
-		&gethProcessJob.EndDate,
-		&gethProcessJob.Description,
-		&gethProcessJob.StatusID,
-		&gethProcessJob.JobCategoryID,
-		&gethProcessJob.ImportTypeID,
-		&gethProcessJob.ChainID,
-		&gethProcessJob.StartBlockNumber,
-		&gethProcessJob.EndBlockNumber,
-		&gethProcessJob.CreatedBy,
-		&gethProcessJob.CreatedAt,
-		&gethProcessJob.UpdatedBy,
-		&gethProcessJob.UpdatedAt,
-		&gethProcessJob.AssetID,
-	)
+	`, *gethProcessJobID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
+	defer row.Close()
+	gethProcessJob, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethProcessJob])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethProcessJob, nil
+	return &gethProcessJob, nil
 }
 
-func GetLatestGethProcessJobByImportTypeIDAndAssetID(importTypeID int, assetID int) (*GethProcessJob, error) {
+func GetLatestGethProcessJobByImportTypeIDAndAssetID(dbConnPgx utils.PgxIface, importTypeID, assetID *int) (*GethProcessJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 	id,  
 	uuid, 
 	name,
@@ -98,42 +82,27 @@ func GetLatestGethProcessJobByImportTypeIDAndAssetID(importTypeID int, assetID i
 	AND status_id =$3
 	ORDER BY id desc
 	LIMIT 1
-	`, importTypeID, assetID, utils.SUCCESS_STRUCTURED_VALUE_ID)
+	`, *importTypeID, *assetID, utils.SUCCESS_STRUCTURED_VALUE_ID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer row.Close()
+	gethProcessJob, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethProcessJob])
 
-	gethProcessJob := &GethProcessJob{}
-	err := row.Scan(
-		&gethProcessJob.ID,
-		&gethProcessJob.UUID,
-		&gethProcessJob.Name,
-		&gethProcessJob.AlternateName,
-		&gethProcessJob.StartDate,
-		&gethProcessJob.EndDate,
-		&gethProcessJob.Description,
-		&gethProcessJob.StatusID,
-		&gethProcessJob.JobCategoryID,
-		&gethProcessJob.ImportTypeID,
-		&gethProcessJob.ChainID,
-		&gethProcessJob.StartBlockNumber,
-		&gethProcessJob.EndBlockNumber,
-		&gethProcessJob.CreatedBy,
-		&gethProcessJob.CreatedAt,
-		&gethProcessJob.UpdatedBy,
-		&gethProcessJob.UpdatedAt,
-		&gethProcessJob.AssetID,
-	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethProcessJob, nil
+	return &gethProcessJob, nil
 }
 
-func GetGethProcessJobList() ([]GethProcessJob, error) {
+func GetGethProcessJobList(dbConnPgx utils.PgxIface) ([]GethProcessJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	id,  
 	uuid, 
 	name,
@@ -158,56 +127,44 @@ func GetGethProcessJobList() ([]GethProcessJob, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethProcessJobs := make([]GethProcessJob, 0)
-	for results.Next() {
-		var gethProcessJob GethProcessJob
-		results.Scan(
-			&gethProcessJob.ID,
-			&gethProcessJob.UUID,
-			&gethProcessJob.Name,
-			&gethProcessJob.AlternateName,
-			&gethProcessJob.StartDate,
-			&gethProcessJob.EndDate,
-			&gethProcessJob.Description,
-			&gethProcessJob.StatusID,
-			&gethProcessJob.JobCategoryID,
-			&gethProcessJob.ImportTypeID,
-			&gethProcessJob.ChainID,
-			&gethProcessJob.StartBlockNumber,
-			&gethProcessJob.EndBlockNumber,
-			&gethProcessJob.CreatedBy,
-			&gethProcessJob.CreatedAt,
-			&gethProcessJob.UpdatedBy,
-			&gethProcessJob.UpdatedAt,
-			&gethProcessJob.AssetID,
-		)
-
-		gethProcessJobs = append(gethProcessJobs, gethProcessJob)
+	gethProcessJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethProcessJob])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethProcessJobs, nil
 }
 
-func RemoveGethProcessJob(gethProcessJobID *int) error {
+func RemoveGethProcessJob(dbConnPgx utils.PgxIface, gethProcessJobID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_process_jobs WHERE 
-	id = $1`, *gethProcessJobID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethProcessJob DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM geth_process_jobs WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *gethProcessJobID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func UpdateGethProcessJob(gethProcessJob GethProcessJob) error {
+func UpdateGethProcessJob(dbConnPgx utils.PgxIface, gethProcessJob *GethProcessJob) error {
 	// if the gethProcessJob id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if gethProcessJob.ID == nil || *gethProcessJob.ID == 0 {
 		return errors.New("gethProcessJob has invalid ID")
 	}
-	_, err := database.DbConnPgx.Exec(ctx, `UPDATE geth_process_jobs SET 
-
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethProcessJob DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_process_jobs SET 
 		name=$1,
 		alternate_name=$2,
 		start_date=$3,
@@ -222,7 +179,9 @@ func UpdateGethProcessJob(gethProcessJob GethProcessJob) error {
 		updated_by=$12, 
 		updated_at=current_timestamp at time zone 'UTC',
 		asset_id =$13
-		WHERE id=$14 `,
+		WHERE id=$14 `
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethProcessJob.Name,             //1
 		gethProcessJob.AlternateName,    //2
 		gethProcessJob.StartDate,        //3
@@ -237,19 +196,24 @@ func UpdateGethProcessJob(gethProcessJob GethProcessJob) error {
 		gethProcessJob.UpdatedBy,        //12
 		gethProcessJob.AssetID,          //13
 		gethProcessJob.ID,               //14
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
+
 }
 
-func InsertGethProcessJob(gethProcessJob GethProcessJob) (int, error) {
+func InsertGethProcessJob(dbConnPgx utils.PgxIface, gethProcessJob *GethProcessJob) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertGethProcessJob DbConn.Begin   %s", err.Error())
+		return -1, err
+	}
 	var ID int
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO geth_process_jobs  
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO geth_process_jobs  
 	(
 		uuid, 
 		name,
@@ -303,13 +267,20 @@ func InsertGethProcessJob(gethProcessJob GethProcessJob) (int, error) {
 		gethProcessJob.AssetID,          //13
 	).Scan(&ID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, err
 	}
 	return int(ID), nil
 }
 
-func InsertGethProcessJobList(gethProcessJobList []GethProcessJob) error {
+func InsertGethProcessJobList(dbConnPgx utils.PgxIface, gethProcessJobList []GethProcessJob) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -321,60 +292,127 @@ func InsertGethProcessJobList(gethProcessJobList []GethProcessJob) error {
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(gethProcessJob.UUID)
 		row := []interface{}{
-
-			*gethProcessJob.ID,               //1
-			uuidString,                       //2
-			gethProcessJob.Name,              //3
-			gethProcessJob.AlternateName,     //4
-			&gethProcessJob.StartDate,        //5
-			&gethProcessJob.EndDate,          //6
-			gethProcessJob.Description,       //7
-			*gethProcessJob.StatusID,         //8
-			*gethProcessJob.JobCategoryID,    //9
-			*gethProcessJob.ImportTypeID,     //10
-			*gethProcessJob.ChainID,          //11
-			*gethProcessJob.StartBlockNumber, //12
-			*gethProcessJob.EndBlockNumber,   //13
-			gethProcessJob.CreatedBy,         //14
-			&gethProcessJob.CreatedAt,        //15
-			gethProcessJob.CreatedBy,         //16
-			&now,                             //17
-			*gethProcessJob.AssetID,          //18
+			uuidString,                       //1
+			gethProcessJob.Name,              //2
+			gethProcessJob.AlternateName,     //3
+			&gethProcessJob.StartDate,        //4
+			&gethProcessJob.EndDate,          //5
+			gethProcessJob.Description,       //6
+			*gethProcessJob.StatusID,         //7
+			*gethProcessJob.JobCategoryID,    //8
+			*gethProcessJob.ImportTypeID,     //9
+			*gethProcessJob.ChainID,          //10
+			*gethProcessJob.StartBlockNumber, //11
+			*gethProcessJob.EndBlockNumber,   //12
+			gethProcessJob.CreatedBy,         //13
+			&gethProcessJob.CreatedAt,        //14
+			gethProcessJob.CreatedBy,         //15
+			&now,                             //16
+			*gethProcessJob.AssetID,          //17
 		}
 		rows = append(rows, row)
 	}
-	// Given db is a *sql.DB
-
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"geth_process_jobs"},
 		[]string{
-			"id",                 //1
-			"uuid",               //2
-			"name",               //3
-			"alternate_name",     //4
-			"start_date",         //5
-			"end_date",           //6
-			"description",        //7
-			"status_id",          //8
-			"job_category_id",    //9
-			"import_type_id",     //10
-			"chain_id",           //11
-			"start_block_number", //12
-			"end_block_number",   //13
-			"created_by",         //14
-			"created_at",         //15
-			"updated_by",         //16
-			"updated_at",         //17
-			"asset_id",           //18
+			"uuid",               //1
+			"name",               //2
+			"alternate_name",     //3
+			"start_date",         //4
+			"end_date",           //5
+			"description",        //6
+			"status_id",          //7
+			"job_category_id",    //8
+			"import_type_id",     //9
+			"chain_id",           //10
+			"start_block_number", //11
+			"end_block_number",   //12
+			"created_by",         //13
+			"created_at",         //14
+			"updated_by",         //15
+			"updated_at",         //16
+			"asset_id",           //17
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertGethProcessJobList: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
 	}
 
 	return nil
+}
+
+// for refinedev
+func GetGethProcessJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]GethProcessJob, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `SELECT 
+		id,  
+		uuid, 
+		name,
+		alternate_name,
+		start_date,
+		end_date,
+		description,
+		status_id,
+		job_category_id,
+		import_type_id,
+		chain_id,
+		start_block_number,
+		end_block_number,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at,
+		asset_id
+		FROM geth_process_jobs
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethProcessJobList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethProcessJob])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return gethProcessJobList, nil
+}
+
+func GetTotalGethProcessJobCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT COUNT(*) FROM geth_process_jobs`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }
