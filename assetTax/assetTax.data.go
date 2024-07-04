@@ -39,6 +39,10 @@ func GetAllAssetTaxesByTaxType(dbConnPgx utils.PgxIface, taxTypeID *int) ([]Asse
 	}
 	defer results.Close()
 	assetTaxes, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetTax])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assetTaxes, nil
 }
 
@@ -133,6 +137,10 @@ func GetAssetTaxList(dbConnPgx utils.PgxIface, assetIds []int, taxIds []int) ([]
 	}
 	defer results.Close()
 	assetTaxes, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetTax])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assetTaxes, nil
 }
 
@@ -279,6 +287,10 @@ func GetAssetTaxListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _o
 	}
 	defer results.Close()
 	assetSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetTax])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return assetSources, nil
 }
 
