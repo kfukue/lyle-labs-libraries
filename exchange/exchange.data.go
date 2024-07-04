@@ -89,6 +89,10 @@ func GetExchanges(dbConnPgx utils.PgxIface) ([]Exchange, error) {
 	}
 	defer results.Close()
 	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return exchanges, nil
 }
 
@@ -122,6 +126,10 @@ func GetExchangeList(dbConnPgx utils.PgxIface, ids []int) ([]Exchange, error) {
 	}
 	defer results.Close()
 	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return exchanges, nil
 }
 
@@ -151,6 +159,10 @@ func GetExchangesByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Exchang
 	}
 	defer results.Close()
 	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return exchanges, nil
 }
 
@@ -180,6 +192,10 @@ func GetStartAndEndDateDiffExchanges(dbConnPgx utils.PgxIface, diffInDate *int) 
 	}
 	defer results.Close()
 	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return exchanges, nil
 }
 
@@ -515,6 +531,10 @@ func GetExchangeListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _o
 	}
 	defer results.Close()
 	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return exchanges, nil
 }
 
