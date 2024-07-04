@@ -8,24 +8,8 @@ import (
 	"time"
 
 	pgx "github.com/jackc/pgx/v5"
-	pgconn "github.com/jackc/pgx/v5/pgconn"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
-
-type PgxIface interface {
-	Begin(context.Context) (pgx.Tx, error)
-	Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error)
-	QueryRow(context.Context, string, ...interface{}) pgx.Row
-	Query(context.Context, string, ...interface{}) (pgx.Rows, error)
-	Ping(context.Context) error
-	Prepare(context.Context, string, string) (*pgconn.StatementDescription, error)
-	Close()
-}
-
-type TestAccount struct {
-	ID   *int   `db:"id"`
-	Name string `db:"name"`
-}
 
 func GetAccount(dbConnPgx utils.PgxIface, accountID *int) (*Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
@@ -185,6 +169,10 @@ func GetAccountList(dbConnPgx utils.PgxIface, ids []int) ([]Account, error) {
 	}
 	defer results.Close()
 	accounts, err := pgx.CollectRows(results, pgx.RowToStructByName[Account])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return accounts, nil
 }
 
