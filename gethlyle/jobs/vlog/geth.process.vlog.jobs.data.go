@@ -123,7 +123,7 @@ func UpdateGethProcessVlogJob(dbConnPgx utils.PgxIface, gethProcessVlogJob *Geth
 	}
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in UpdateGethProcessJob DbConn.Begin   %s", err.Error())
+		log.Printf("Error in UpdateGethProcessVlogJob DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `UPDATE geth_process_vlog_jobs SET 
