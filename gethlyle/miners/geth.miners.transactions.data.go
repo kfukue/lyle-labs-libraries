@@ -9,15 +9,13 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
-	gethlyletransactions "github.com/kfukue/lyle-labs-libraries/gethlyle/transactions"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
-func GetAllGethMinerTransactionsByMinerID(minerID *int) ([]*GethMinerTransaction, error) {
+func GetAllGethMinerTransactionsByMinerID(dbConnPgx utils.PgxIface, minerID *int) ([]GethMinerTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT 
 		miner_id,
 		transaction_id,
@@ -32,37 +30,24 @@ func GetAllGethMinerTransactionsByMinerID(minerID *int) ([]*GethMinerTransaction
 	FROM geth_miners_transactions 
 	WHERE 
 	miner_id = $1
-	`, minerID)
+	`, *minerID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethMinerTransactions := make([]*GethMinerTransaction, 0)
-	for results.Next() {
-		var gethMinerTransaction GethMinerTransaction
-		results.Scan(
-			&gethMinerTransaction.MinerID,
-			&gethMinerTransaction.TransactionID,
-			&gethMinerTransaction.UUID,
-			&gethMinerTransaction.Name,
-			&gethMinerTransaction.AlternateName,
-			&gethMinerTransaction.Description,
-			&gethMinerTransaction.CreatedBy,
-			&gethMinerTransaction.CreatedAt,
-			&gethMinerTransaction.UpdatedBy,
-			&gethMinerTransaction.UpdatedAt,
-		)
-
-		gethMinerTransactions = append(gethMinerTransactions, &gethMinerTransaction)
+	gethMinerTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMinerTransaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethMinerTransactions, nil
 }
 
-func GetMinAndMaxDatesFromTransactionsByMinerID(minerID *int) (*time.Time, *time.Time, error) {
+func GetMinAndMaxDatesFromTransactionsByMinerID(dbConnPgx utils.PgxIface, minerID *int) (*time.Time, *time.Time, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `
+	row := dbConnPgx.QueryRow(ctx, `
 	SELECT 
 		MIN(gt.txn_date) as min_date,
 		MAX(gt.txn_date) as max_date
@@ -70,7 +55,7 @@ func GetMinAndMaxDatesFromTransactionsByMinerID(minerID *int) (*time.Time, *time
 	LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id
 	WHERE 
 	gmt.miner_id = $1
-	`, minerID)
+	`, *minerID)
 	var minDate, maxDate *time.Time
 	err := row.Scan(
 		&minDate,
@@ -84,10 +69,10 @@ func GetMinAndMaxDatesFromTransactionsByMinerID(minerID *int) (*time.Time, *time
 	}
 	return minDate, maxDate, nil
 }
-func GetDistinctAddressesFromGethTransactionsByMinerIDAndBeforeDate(minerID *int, beforeDate *time.Time) ([]string, error) {
+func GetDistinctAddressesFromGethTransactionsByMinerIDAndBeforeDate(dbConnPgx utils.PgxIface, minerID *int, beforeDate *time.Time) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT 
 		DISTINCT
 		gt.from_address
@@ -97,7 +82,7 @@ func GetDistinctAddressesFromGethTransactionsByMinerIDAndBeforeDate(minerID *int
 	gmt.miner_id = $1
 	AND 
 	gt.txn_date <= $2
-	`, minerID, beforeDate.Format(utils.LayoutPostgres))
+	`, *minerID, beforeDate.Format(utils.LayoutPostgres))
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -115,248 +100,10 @@ func GetDistinctAddressesFromGethTransactionsByMinerIDAndBeforeDate(minerID *int
 	return addressesStr, nil
 }
 
-func GetAllGethTransactionsByMinerIDAndFromAddress(minerID *int, fromAddress string) ([]*gethlyletransactions.GethTransaction, error) {
+func GetAllGethMinerTransactionsByTransactionID(dbConnPgx utils.PgxIface, transactionID *int) ([]GethMinerTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-	SELECT 
-		gt.id,
-		gt.uuid,
-		gt.chain_id,
-		gt.exchange_id,
-		gt.block_number,
-		gt.index_number,
-		gt.txn_date,
-		gt.txn_hash,
-		gt.from_address,
-		gt.from_address_id,
-		gt.to_address,
-		gt.to_address_id,
-		gt.interacted_contract_address,
-		gt.interacted_contract_address_id,
-		gt.native_asset_id,
-		gt.geth_process_job_id,
-		gt.value,
-		gt.geth_transction_input_id,
-		gt.status_id,
-		gt.description,
-		gt.created_by,
-		gt.created_at,
-		gt.updated_by,
-		gt.updated_at
-	FROM geth_miners_transactions gmt
-	LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id
-	WHERE 
-	gmt.miner_id = $1
-	AND 
-	gt.from_address = $2
-	ORDER BY gt.txn_date asc
-	`, minerID, fromAddress)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	gethTransactions := make([]*gethlyletransactions.GethTransaction, 0)
-	for results.Next() {
-		var gethTransaction gethlyletransactions.GethTransaction
-		results.Scan(
-			&gethTransaction.ID,
-			&gethTransaction.UUID,
-			&gethTransaction.ChainID,
-			&gethTransaction.ExchangeID,
-			&gethTransaction.BlockNumber,
-			&gethTransaction.IndexNumber,
-			&gethTransaction.TxnDate,
-			&gethTransaction.TxnHash,
-			&gethTransaction.FromAddress,
-			&gethTransaction.FromAddressID,
-			&gethTransaction.ToAddress,
-			&gethTransaction.ToAddressID,
-			&gethTransaction.InteractedContractAddress,
-			&gethTransaction.InteractedContractAddressID,
-			&gethTransaction.NativeAssetID,
-			&gethTransaction.GethProcessJobID,
-			&gethTransaction.Value,
-			&gethTransaction.GethTransctionInputId,
-			&gethTransaction.StatusID,
-			&gethTransaction.Description,
-			&gethTransaction.CreatedBy,
-			&gethTransaction.CreatedAt,
-			&gethTransaction.UpdatedBy,
-			&gethTransaction.UpdatedAt,
-		)
-
-		gethTransactions = append(gethTransactions, &gethTransaction)
-	}
-	return gethTransactions, nil
-}
-
-func GetAllGethTransactionsByMinerIDAndFromAddressToDate(minerID *int, fromAddress string, toDate *time.Time) ([]*gethlyletransactions.GethTransaction, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-	SELECT 
-		gt.id,
-		gt.uuid,
-		gt.chain_id,
-		gt.exchange_id,
-		gt.block_number,
-		gt.index_number,
-		gt.txn_date,
-		gt.txn_hash,
-		gt.from_address,
-		gt.from_address_id,
-		gt.to_address,
-		gt.to_address_id,
-		gt.interacted_contract_address,
-		gt.interacted_contract_address_id,
-		gt.native_asset_id,
-		gt.geth_process_job_id,
-		gt.value,
-		gt.geth_transction_input_id,
-		gt.status_id,
-		gt.description,
-		gt.created_by,
-		gt.created_at,
-		gt.updated_by,
-		gt.updated_at
-	FROM geth_miners_transactions gmt
-	LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id
-	WHERE 
-		gmt.miner_id = $1
-			AND 
-		gt.from_address = $2
-			AND 
-		gt.txn_date <= $3
-	ORDER BY gt.txn_date asc
-	`, minerID, fromAddress, toDate.Format(utils.LayoutPostgres))
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	gethTransactions := make([]*gethlyletransactions.GethTransaction, 0)
-	for results.Next() {
-		var gethTransaction gethlyletransactions.GethTransaction
-		results.Scan(
-			&gethTransaction.ID,
-			&gethTransaction.UUID,
-			&gethTransaction.ChainID,
-			&gethTransaction.ExchangeID,
-			&gethTransaction.BlockNumber,
-			&gethTransaction.IndexNumber,
-			&gethTransaction.TxnDate,
-			&gethTransaction.TxnHash,
-			&gethTransaction.FromAddress,
-			&gethTransaction.FromAddressID,
-			&gethTransaction.ToAddress,
-			&gethTransaction.ToAddressID,
-			&gethTransaction.InteractedContractAddress,
-			&gethTransaction.InteractedContractAddressID,
-			&gethTransaction.NativeAssetID,
-			&gethTransaction.GethProcessJobID,
-			&gethTransaction.Value,
-			&gethTransaction.GethTransctionInputId,
-			&gethTransaction.StatusID,
-			&gethTransaction.Description,
-			&gethTransaction.CreatedBy,
-			&gethTransaction.CreatedAt,
-			&gethTransaction.UpdatedBy,
-			&gethTransaction.UpdatedAt,
-		)
-
-		gethTransactions = append(gethTransactions, &gethTransaction)
-	}
-	return gethTransactions, nil
-}
-
-// fromDate inclusive and toDate exclusive
-func GetAllGethTransactionsByMinerIDAndFromAddressFromToDate(minerID *int, fromAddress string, fromDate, toDate *time.Time) ([]*gethlyletransactions.GethTransaction, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-	SELECT 
-		gt.id,
-		gt.uuid,
-		gt.chain_id,
-		gt.exchange_id,
-		gt.block_number,
-		gt.index_number,
-		gt.txn_date,
-		gt.txn_hash,
-		gt.from_address,
-		gt.from_address_id,
-		gt.to_address,
-		gt.to_address_id,
-		gt.interacted_contract_address,
-		gt.interacted_contract_address_id,
-		gt.native_asset_id,
-		gt.geth_process_job_id,
-		gt.value,
-		gt.geth_transction_input_id,
-		gt.status_id,
-		gt.description,
-		gt.created_by,
-		gt.created_at,
-		gt.updated_by,
-		gt.updated_at
-	FROM geth_miners_transactions gmt
-	LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id
-	WHERE 
-		gmt.miner_id = $1
-			AND 
-		gt.from_address = $2
-			AND 
-		gt.txn_date >= $3
-			AND 
-		gt.txn_date < $4
-	ORDER BY gt.txn_date asc
-	`, minerID, fromAddress, fromDate.Format(utils.LayoutPostgres), toDate.Format(utils.LayoutPostgres))
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	gethTransactions := make([]*gethlyletransactions.GethTransaction, 0)
-	for results.Next() {
-		var gethTransaction gethlyletransactions.GethTransaction
-		results.Scan(
-			&gethTransaction.ID,
-			&gethTransaction.UUID,
-			&gethTransaction.ChainID,
-			&gethTransaction.ExchangeID,
-			&gethTransaction.BlockNumber,
-			&gethTransaction.IndexNumber,
-			&gethTransaction.TxnDate,
-			&gethTransaction.TxnHash,
-			&gethTransaction.FromAddress,
-			&gethTransaction.FromAddressID,
-			&gethTransaction.ToAddress,
-			&gethTransaction.ToAddressID,
-			&gethTransaction.InteractedContractAddress,
-			&gethTransaction.InteractedContractAddressID,
-			&gethTransaction.NativeAssetID,
-			&gethTransaction.GethProcessJobID,
-			&gethTransaction.Value,
-			&gethTransaction.GethTransctionInputId,
-			&gethTransaction.StatusID,
-			&gethTransaction.Description,
-			&gethTransaction.CreatedBy,
-			&gethTransaction.CreatedAt,
-			&gethTransaction.UpdatedBy,
-			&gethTransaction.UpdatedAt,
-		)
-
-		gethTransactions = append(gethTransactions, &gethTransaction)
-	}
-	return gethTransactions, nil
-}
-
-func GetAllGethMinerTransactionsByTransactionID(transactionID *int) ([]*GethMinerTransaction, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT 
 		miner_id,
 		transaction_id,
@@ -371,37 +118,24 @@ func GetAllGethMinerTransactionsByTransactionID(transactionID *int) ([]*GethMine
 	FROM geth_miners_transactions 
 	WHERE 
 	transaction_id = $1
-	`, transactionID)
+	`, *transactionID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethMinerTransactions := make([]*GethMinerTransaction, 0)
-	for results.Next() {
-		var gethMinerTransaction GethMinerTransaction
-		results.Scan(
-			&gethMinerTransaction.MinerID,
-			&gethMinerTransaction.TransactionID,
-			&gethMinerTransaction.UUID,
-			&gethMinerTransaction.Name,
-			&gethMinerTransaction.AlternateName,
-			&gethMinerTransaction.Description,
-			&gethMinerTransaction.CreatedBy,
-			&gethMinerTransaction.CreatedAt,
-			&gethMinerTransaction.UpdatedBy,
-			&gethMinerTransaction.UpdatedAt,
-		)
-
-		gethMinerTransactions = append(gethMinerTransactions, &gethMinerTransaction)
+	gethMinerTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMinerTransaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethMinerTransactions, nil
 }
 
-func GetMinerTransaction(minerID, transactionID *int) (*GethMinerTransaction, error) {
+func GetGethMinerTransaction(dbConnPgx utils.PgxIface, minerID, transactionID *int) (*GethMinerTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `
+	row, err := dbConnPgx.Query(ctx, `
 	SELECT 
 		miner_id,
 		transaction_id,
@@ -416,43 +150,39 @@ func GetMinerTransaction(minerID, transactionID *int) (*GethMinerTransaction, er
 	FROM geth_miners_transactions 
 	WHERE miner_id = $1
 	AND transaction_id = $2
-	`, minerID, transactionID)
-
-	gethMinerTransaction := &GethMinerTransaction{}
-	err := row.Scan(
-		&gethMinerTransaction.MinerID,
-		&gethMinerTransaction.TransactionID,
-		&gethMinerTransaction.UUID,
-		&gethMinerTransaction.Name,
-		&gethMinerTransaction.AlternateName,
-		&gethMinerTransaction.Description,
-		&gethMinerTransaction.CreatedBy,
-		&gethMinerTransaction.CreatedAt,
-		&gethMinerTransaction.UpdatedBy,
-		&gethMinerTransaction.UpdatedAt,
-	)
+	`, *minerID, *transactionID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	gethMinerTransaction, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethMinerTransaction])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethMinerTransaction, nil
+	return &gethMinerTransaction, nil
 }
 
-func RemoveMinerTransaction(minerID, transactionID *int) error {
+func RemoveGethMinerTransaction(dbConnPgx utils.PgxIface, minerID, transactionID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM geth_miners_transactions WHERE 
-	miner_id = $1 AND transaction_id =$2`, minerID, transactionID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethMinerTransaction DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM geth_miners_transactions WHERE miner_id = $1 AND transaction_id =$2`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *minerID, *transactionID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetMinerTransactionList(minerIDs, transactionIDs []int) ([]*GethMinerTransaction, error) {
+func GetGethMinerTransactionList(dbConnPgx utils.PgxIface, minerIDs, transactionIDs []int) ([]GethMinerTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `
@@ -483,67 +213,65 @@ func GetMinerTransactionList(minerIDs, transactionIDs []int) ([]*GethMinerTransa
 		}
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	minerTransactionInputs := make([]*GethMinerTransaction, 0)
-	for results.Next() {
-		var minerTransactionInput GethMinerTransaction
-		results.Scan(
-			&minerTransactionInput.MinerID,
-			&minerTransactionInput.TransactionID,
-			&minerTransactionInput.UUID,
-			&minerTransactionInput.Name,
-			&minerTransactionInput.AlternateName,
-			&minerTransactionInput.Description,
-			&minerTransactionInput.CreatedBy,
-			&minerTransactionInput.CreatedAt,
-			&minerTransactionInput.UpdatedBy,
-			&minerTransactionInput.UpdatedAt,
-		)
-
-		minerTransactionInputs = append(minerTransactionInputs, &minerTransactionInput)
+	gethMinerTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMinerTransaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
-	return minerTransactionInputs, nil
+	return gethMinerTransactions, nil
 }
 
-func UpdateMinerTransaction(minerTransactionInput GethMinerTransaction) error {
+func UpdateGethMinerTransaction(dbConnPgx utils.PgxIface, minerTransactionInput *GethMinerTransaction) error {
 	// if the minerTransactionInput id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if (minerTransactionInput.MinerID == nil || *minerTransactionInput.MinerID == 0) || (minerTransactionInput.TransactionID == nil || *minerTransactionInput.TransactionID == 0) {
 		return errors.New("minerTransactionInput has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE geth_miners_transactions SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethMinerTransaction DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_miners_transactions SET 
 		name=$1,  
 		alternate_name=$2, 
 		description=$3,
 		updated_by=$4, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE miner_id=$5 AND transaction_id=$6`,
+		WHERE miner_id=$5 AND transaction_id=$6`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		minerTransactionInput.Name,          //1
 		minerTransactionInput.AlternateName, //2
 		minerTransactionInput.Description,   //3
 		minerTransactionInput.UpdatedBy,     //4
 		minerTransactionInput.MinerID,       //5
 		minerTransactionInput.TransactionID, //6
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertMinerTransaction(minerTransactionInput GethMinerTransaction) (int, int, error) {
+func InsertGethMinerTransaction(dbConnPgx utils.PgxIface, minerTransactionInput *GethMinerTransaction) (int, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertGethMinerTransaction DbConn.Begin   %s", err.Error())
+		return -1, -1, err
+	}
 	var MinerID int
 	var TransactionID int
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO geth_miners_transactions  
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO geth_miners_transactions  
 	(
 		miner_id,
 		transaction_id,
@@ -576,13 +304,20 @@ func InsertMinerTransaction(minerTransactionInput GethMinerTransaction) (int, in
 		minerTransactionInput.CreatedBy,     //6
 	).Scan(&MinerID, &TransactionID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, 0, err
+		return -1, -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, -1, err
 	}
 	return int(MinerID), int(TransactionID), nil
 }
 
-func InsertGethMinersTransactions(gethMinersTransaction []*GethMinerTransaction) error {
+func InsertGethMinersTransactions(dbConnPgx utils.PgxIface, gethMinersTransaction []GethMinerTransaction) error {
 	// need to supply uuid
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -608,7 +343,7 @@ func InsertGethMinersTransactions(gethMinersTransaction []*GethMinerTransaction)
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"geth_miners_transactions"},
 		[]string{
@@ -625,22 +360,7 @@ func InsertGethMinersTransactions(gethMinersTransaction []*GethMinerTransaction)
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("geth_miners_transactions copy count: %d", copyCount))
-	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
-	}
-	return nil
-}
-
-func RemoveAllTransactionsAndTransactionInputs() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `
-	DELETE FROM geth_miners_transactions;
-	DELETE FROM geth_transactions;
-			`,
-	)
+	log.Println(fmt.Printf("InsertGethMinersTransactions: copy count: %d", copyCount))
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -648,8 +368,26 @@ func RemoveAllTransactionsAndTransactionInputs() error {
 	return nil
 }
 
+func RemoveAllTransactionsAndTransactionInputs(dbConnPgx utils.PgxIface) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in RemoveAllTransactionsAndTransactionInputs DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `DELETE FROM geth_miners_transactions;
+		DELETE FROM geth_transactions;`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
 // for refinedev
-func GetMinerTransactionListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]*GethMinerTransaction, error) {
+func GetMinerTransactionListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]GethMinerTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
@@ -683,38 +421,25 @@ func GetMinerTransactionListByPagination(_start, _end *int, _order, _sort string
 		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
 	}
 
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	minerTransactionInputs := make([]*GethMinerTransaction, 0)
-	for results.Next() {
-		var minerTransactionInput GethMinerTransaction
-		results.Scan(
-			&minerTransactionInput.MinerID,
-			&minerTransactionInput.TransactionID,
-			&minerTransactionInput.UUID,
-			&minerTransactionInput.Name,
-			&minerTransactionInput.AlternateName,
-			&minerTransactionInput.Description,
-			&minerTransactionInput.CreatedBy,
-			&minerTransactionInput.CreatedAt,
-			&minerTransactionInput.UpdatedBy,
-			&minerTransactionInput.UpdatedAt,
-		)
-
-		minerTransactionInputs = append(minerTransactionInputs, &minerTransactionInput)
+	gethMinerTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMinerTransaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
-	return minerTransactionInputs, nil
+	return gethMinerTransactions, nil
 }
 
-func GetTotalMinerTransactionCount() (*int, error) {
+func GetTotalMinerTransactionCount(dbConnPgx utils.PgxIface) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
 	COUNT(*)
 	FROM geth_miners_transactions
 	`)

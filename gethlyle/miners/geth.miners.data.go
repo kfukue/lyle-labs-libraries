@@ -9,13 +9,13 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
-func GetGethMiner(gethMinerID int) (*GethMiner, error) {
+func GetGethMiner(dbConnPgx utils.PgxIface, gethMinerID *int) (*GethMiner, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -37,30 +37,14 @@ func GetGethMiner(gethMinerID int) (*GethMiner, error) {
 		updated_at
 	FROM geth_miners
 	WHERE id = $1
-	`, gethMinerID)
-
-	gethMiner := GethMiner{}
-	err := row.Scan(
-		&gethMiner.ID,
-		&gethMiner.UUID,
-		&gethMiner.Name,
-		&gethMiner.AlternateName,
-		&gethMiner.ChainID,
-		&gethMiner.ExchangeID,
-		&gethMiner.StartingBlockNumber,
-		&gethMiner.CreatedTxnHash,
-		&gethMiner.LastBlockNumber,
-		&gethMiner.ContractAddress,
-		&gethMiner.ContractAddressID,
-		&gethMiner.DeveloperAddress,
-		&gethMiner.DeveloperAddressID,
-		&gethMiner.MiningAssetID,
-		&gethMiner.Description,
-		&gethMiner.CreatedBy,
-		&gethMiner.CreatedAt,
-		&gethMiner.UpdatedBy,
-		&gethMiner.UpdatedAt,
-	)
+	`, *gethMinerID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
+	defer row.Close()
+	gethMiner, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethMiner])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
@@ -70,21 +54,27 @@ func GetGethMiner(gethMinerID int) (*GethMiner, error) {
 	return &gethMiner, nil
 }
 
-func RemoveGethMiner(gethMinerID int) error {
+func RemoveGethMiner(dbConnPgx utils.PgxIface, gethMinerID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_miners WHERE id = $1`, gethMinerID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethMiner DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM geth_miners WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *gethMinerID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetGethMinerList() ([]*GethMiner, error) {
+func GetGethMinerList(dbConnPgx utils.PgxIface) ([]GethMiner, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT
 		id,
 		uuid,
@@ -111,40 +101,18 @@ func GetGethMinerList() ([]*GethMiner, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethMiners := make([]*GethMiner, 0)
-	for results.Next() {
-		var gethMiner GethMiner
-		results.Scan(
-			&gethMiner.ID,
-			&gethMiner.UUID,
-			&gethMiner.Name,
-			&gethMiner.AlternateName,
-			&gethMiner.ChainID,
-			&gethMiner.ExchangeID,
-			&gethMiner.StartingBlockNumber,
-			&gethMiner.CreatedTxnHash,
-			&gethMiner.LastBlockNumber,
-			&gethMiner.ContractAddress,
-			&gethMiner.ContractAddressID,
-			&gethMiner.DeveloperAddress,
-			&gethMiner.DeveloperAddressID,
-			&gethMiner.MiningAssetID,
-			&gethMiner.Description,
-			&gethMiner.CreatedBy,
-			&gethMiner.CreatedAt,
-			&gethMiner.UpdatedBy,
-			&gethMiner.UpdatedAt,
-		)
-
-		gethMiners = append(gethMiners, &gethMiner)
+	gethMiners, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMiner])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethMiners, nil
 }
 
-func GetGethMinerListByMiningAssetId(miningAssetID *int) ([]*GethMiner, error) {
+func GetGethMinerListByMiningAssetId(dbConnPgx utils.PgxIface, miningAssetID *int) ([]GethMiner, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT
 		id,
 		uuid,
@@ -167,50 +135,33 @@ func GetGethMinerListByMiningAssetId(miningAssetID *int) ([]*GethMiner, error) {
 		updated_at
 	FROM geth_miners
 	WHERE
-		mining_asset_id = $1  `, miningAssetID)
+		mining_asset_id = $1  `, *miningAssetID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethMiners := make([]*GethMiner, 0)
-	for results.Next() {
-		var gethMiner GethMiner
-		results.Scan(
-			&gethMiner.ID,
-			&gethMiner.UUID,
-			&gethMiner.Name,
-			&gethMiner.AlternateName,
-			&gethMiner.ChainID,
-			&gethMiner.ExchangeID,
-			&gethMiner.StartingBlockNumber,
-			&gethMiner.CreatedTxnHash,
-			&gethMiner.LastBlockNumber,
-			&gethMiner.ContractAddress,
-			&gethMiner.ContractAddressID,
-			&gethMiner.DeveloperAddress,
-			&gethMiner.DeveloperAddressID,
-			&gethMiner.MiningAssetID,
-			&gethMiner.Description,
-			&gethMiner.CreatedBy,
-			&gethMiner.CreatedAt,
-			&gethMiner.UpdatedBy,
-			&gethMiner.UpdatedAt,
-		)
-
-		gethMiners = append(gethMiners, &gethMiner)
+	gethMiners, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMiner])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethMiners, nil
 }
 
-func UpdateGethMiner(gethMiner GethMiner) error {
+func UpdateGethMiner(dbConnPgx utils.PgxIface, gethMiner *GethMiner) error {
 	// if the gethMiner id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if gethMiner.ID == nil {
 		return errors.New("gethMiner has invalid ID")
 	}
-	_, err := database.DbConnPgx.Exec(ctx, `UPDATE geth_miners SET
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethMiner DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_miners SET 
 		name=$1,
 		alternate_name=$2,
 		chain_id=$3,
@@ -226,7 +177,9 @@ func UpdateGethMiner(gethMiner GethMiner) error {
 		description=$13,
 		updated_by=$14,
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$15`,
+		WHERE id=$15`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethMiner.Name,                //1
 		gethMiner.AlternateName,       //2
 		gethMiner.ChainID,             //3
@@ -242,20 +195,24 @@ func UpdateGethMiner(gethMiner GethMiner) error {
 		gethMiner.Description,         //13
 		gethMiner.UpdatedBy,           //14
 		gethMiner.ID,                  //15
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertGethMiner(gethMiner GethMiner) (int, string, error) {
+func InsertGethMiner(dbConnPgx utils.PgxIface, gethMiner *GethMiner) (int, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertGethMiner DbConn.Begin   %s", err.Error())
+		return -1, "", err
+	}
 	var gethMinerID int
 	var gethMinerUUID string
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO geth_miners
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO geth_miners
 	(
 		uuid,
 		name,
@@ -311,13 +268,21 @@ func InsertGethMiner(gethMiner GethMiner) (int, string, error) {
 		gethMiner.Description,         //13
 		gethMiner.CreatedBy,           //14
 	).Scan(&gethMinerID, &gethMinerUUID)
+
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, "", err
+		return -1, "", err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, "", err
 	}
 	return int(gethMinerID), gethMinerUUID, nil
 }
-func InsertGethMiners(gethMiners []*GethMiner) error {
+func InsertGethMiners(dbConnPgx utils.PgxIface, gethMiners []GethMiner) error {
 	// need to supply uuid
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -351,7 +316,7 @@ func InsertGethMiners(gethMiners []*GethMiner) error {
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"geth_miners"},
 		[]string{
@@ -376,51 +341,50 @@ func InsertGethMiners(gethMiners []*GethMiner) error {
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("geth_miners copy count: %d", copyCount))
-	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
-	}
-	return nil
-}
-
-func UpdateGethMinerAddresses(gethMinerID *int) error {
-	// update address ids from existing addresses in geth_addresses
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `
-		UPDATE geth_miners as gm SET
-		contract_address_id = ga.id from geth_addresses as ga
-			WHERE LOWER(gm.contract_address) = LOWER(ga.address_str)
-			AND gm.contract_address_id IS NULL
-			AND gm.id = $1
-			`, *gethMinerID,
-	)
+	log.Println(fmt.Printf("InsertGethMiners: copy count: %d", copyCount))
 	if err != nil {
 		log.Println(err.Error())
 		return err
 	}
-	_, err = database.DbConnPgx.Exec(ctx, `
+	return nil
+}
+
+func UpdateGethMinerAddresses(dbConnPgx utils.PgxIface, gethMinerID *int) error {
+	// update address ids from existing addresses in geth_addresses
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethMinerAddresses DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_miners SET 
+		contract_address_id = ga.id from geth_addresses as ga
+			WHERE LOWER(gm.contract_address) = LOWER(ga.address_str)
+			AND gm.contract_address_id IS NULL
+			AND gm.id = $1
+			`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *gethMinerID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	sql2 := `UPDATE geth_miners SET 
 			UPDATE geth_miners as gm SET
 			developer_address_id = ga.id from geth_addresses as ga
 			WHERE LOWER(gm.developer_address) = LOWER(ga.address_str)
 			AND gm.developer_address_id IS NULL
 			AND gm.id = $1
-			`, *gethMinerID,
-	)
-	if err != nil {
-		log.Println(err.Error())
+			`
+	if _, err := dbConnPgx.Exec(ctx, sql2, *gethMinerID); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	if err != nil {
-		log.Println(err.Error())
-		return err
-	}
-	return nil
+	return tx.Commit(ctx)
 }
 
 // for refinedev
-func GetMinerListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]*GethMiner, error) {
+func GetGethMinerListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]GethMiner, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `
@@ -463,39 +427,13 @@ func GetMinerListByPagination(_start, _end *int, _order, _sort string, _filters 
 		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
 	}
 
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethMiners := make([]*GethMiner, 0)
-	for results.Next() {
-		var gethMiner GethMiner
-		results.Scan(
-			&gethMiner.ID,
-			&gethMiner.UUID,
-			&gethMiner.Name,
-			&gethMiner.AlternateName,
-			&gethMiner.ChainID,
-			&gethMiner.ExchangeID,
-			&gethMiner.StartingBlockNumber,
-			&gethMiner.CreatedTxnHash,
-			&gethMiner.LastBlockNumber,
-			&gethMiner.ContractAddress,
-			&gethMiner.ContractAddressID,
-			&gethMiner.DeveloperAddress,
-			&gethMiner.DeveloperAddressID,
-			&gethMiner.MiningAssetID,
-			&gethMiner.Description,
-			&gethMiner.CreatedBy,
-			&gethMiner.CreatedAt,
-			&gethMiner.UpdatedBy,
-			&gethMiner.UpdatedAt,
-		)
-
-		gethMiners = append(gethMiners, &gethMiner)
-	}
+	gethMiners, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMiner])
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -505,11 +443,11 @@ func GetMinerListByPagination(_start, _end *int, _order, _sort string, _filters 
 	return gethMiners, nil
 }
 
-func GetTotalMinersCount() (*int, error) {
+func GetTotalGethMinersCount(dbConnPgx utils.PgxIface) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
 	COUNT(*)
 	FROM geth_miners
 	`)
