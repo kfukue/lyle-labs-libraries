@@ -164,12 +164,12 @@ func TestGetGethTransaction(t *testing.T) {
 	gethTransactionID := targetData.ID
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(*gethTransactionID).WillReturnRows(mockRows)
-	foundMarketData, err := GetGethTransaction(mock, gethTransactionID)
+	foundGethTransaction, err := GetGethTransaction(mock, gethTransactionID)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethTransaction", err)
 	}
-	if cmp.Equal(*foundMarketData, targetData) == false {
-		t.Errorf("Expected GethTransaction From Method GetGethTransaction: %v is different from actual %v", foundMarketData, targetData)
+	if cmp.Equal(*foundGethTransaction, targetData) == false {
+		t.Errorf("Expected GethTransaction From Method GetGethTransaction: %v is different from actual %v", foundGethTransaction, targetData)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -185,12 +185,12 @@ func TestGetGethTransactionForErrNoRows(t *testing.T) {
 	gethTransactionID := 999
 	noRows := pgxmock.NewRows(DBColumns)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(gethTransactionID).WillReturnRows(noRows)
-	foundMarketData, err := GetGethTransaction(mock, &gethTransactionID)
+	foundGethTransaction, err := GetGethTransaction(mock, &gethTransactionID)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethTransaction", err)
 	}
-	if foundMarketData != nil {
-		t.Errorf("Expected GethTransaction From Method GetGethTransaction: to be empty but got this: %v", foundMarketData)
+	if foundGethTransaction != nil {
+		t.Errorf("Expected GethTransaction From Method GetGethTransaction: to be empty but got this: %v", foundGethTransaction)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -205,12 +205,12 @@ func TestGetGethTransactionForErr(t *testing.T) {
 	defer mock.Close()
 	gethTransactionID := -1
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(gethTransactionID).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketData, err := GetGethTransaction(mock, &gethTransactionID)
+	foundGethTransaction, err := GetGethTransaction(mock, &gethTransactionID)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethTransaction", err)
 	}
-	if foundMarketData != nil {
-		t.Errorf("Expected GethTransaction From Method GetGethTransaction: to be empty but got this: %v", foundMarketData)
+	if foundGethTransaction != nil {
+		t.Errorf("Expected GethTransaction From Method GetGethTransaction: to be empty but got this: %v", foundGethTransaction)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -227,14 +227,14 @@ func TestGetGethTransactionByFromToAddress(t *testing.T) {
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	fromToAddressID := TestData1.FromAddressID
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(*fromToAddressID).WillReturnRows(mockRows)
-	foundMarketDataList, err := GetGethTransactionByFromToAddress(mock, fromToAddressID)
+	foundGethTransactionList, err := GetGethTransactionByFromToAddress(mock, fromToAddressID)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethTransactionByFromToAddress", err)
 	}
 	testMarketDataList := TestAllData
-	for i, foundMarketData := range foundMarketDataList {
-		if cmp.Equal(foundMarketData, testMarketDataList[i]) == false {
-			t.Errorf("Expected GethTransaction From Method GetGethTransactionByFromToAddress: %v is different from actual %v", foundMarketData, testMarketDataList[i])
+	for i, foundGethTransaction := range foundGethTransactionList {
+		if cmp.Equal(foundGethTransaction, testMarketDataList[i]) == false {
+			t.Errorf("Expected GethTransaction From Method GetGethTransactionByFromToAddress: %v is different from actual %v", foundGethTransaction, testMarketDataList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -250,12 +250,12 @@ func TestGetGethTransactionByFromToAddressForErr(t *testing.T) {
 	defer mock.Close()
 	fromToAddressID := -999
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(fromToAddressID).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketDataList, err := GetGethTransactionByFromToAddress(mock, &fromToAddressID)
+	foundGethTransactionList, err := GetGethTransactionByFromToAddress(mock, &fromToAddressID)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethTransactionByFromToAddress", err)
 	}
-	if len(foundMarketDataList) != 0 {
-		t.Errorf("Expected From Method GetGethTransactionByFromToAddress: to be empty but got this: %v", foundMarketDataList)
+	if len(foundGethTransactionList) != 0 {
+		t.Errorf("Expected From Method GetGethTransactionByFromToAddress: to be empty but got this: %v", foundGethTransactionList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -273,14 +273,14 @@ func TestGetGethTransactionByFromAddressAndBeforeBlockNumber(t *testing.T) {
 	fromToAddressID := TestData1.FromAddressID
 	blockNumber := TestData1.BlockNumber
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(*fromToAddressID, *blockNumber).WillReturnRows(mockRows)
-	foundMarketDataList, err := GetGethTransactionByFromAddressAndBeforeBlockNumber(mock, fromToAddressID, blockNumber)
+	foundGethTransactionList, err := GetGethTransactionByFromAddressAndBeforeBlockNumber(mock, fromToAddressID, blockNumber)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethTransactionByFromAddressAndBeforeBlockNumber", err)
 	}
 	testMarketDataList := TestAllData
-	for i, foundMarketData := range foundMarketDataList {
-		if cmp.Equal(foundMarketData, testMarketDataList[i]) == false {
-			t.Errorf("Expected GethTransaction From Method GetGethTransactionByFromAddressAndBeforeBlockNumber: %v is different from actual %v", foundMarketData, testMarketDataList[i])
+	for i, foundGethTransaction := range foundGethTransactionList {
+		if cmp.Equal(foundGethTransaction, testMarketDataList[i]) == false {
+			t.Errorf("Expected GethTransaction From Method GetGethTransactionByFromAddressAndBeforeBlockNumber: %v is different from actual %v", foundGethTransaction, testMarketDataList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -297,12 +297,12 @@ func TestGetGethTransactionByFromAddressAndBeforeBlockNumberForErr(t *testing.T)
 	fromToAddressID := -999
 	blockNumber := uint64(20272060)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(fromToAddressID, blockNumber).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketDataList, err := GetGethTransactionByFromAddressAndBeforeBlockNumber(mock, &fromToAddressID, &blockNumber)
+	foundGethTransactionList, err := GetGethTransactionByFromAddressAndBeforeBlockNumber(mock, &fromToAddressID, &blockNumber)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethTransactionByFromAddressAndBeforeBlockNumber", err)
 	}
-	if len(foundMarketDataList) != 0 {
-		t.Errorf("Expected From Method GetGethTransactionByFromAddressAndBeforeBlockNumber: to be empty but got this: %v", foundMarketDataList)
+	if len(foundGethTransactionList) != 0 {
+		t.Errorf("Expected From Method GetGethTransactionByFromAddressAndBeforeBlockNumber: to be empty but got this: %v", foundGethTransactionList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -319,14 +319,14 @@ func TestGetGethTransactionsByTxnHash(t *testing.T) {
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	txnHash := TestData1.TxnHash
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(txnHash).WillReturnRows(mockRows)
-	foundMarketDataList, err := GetGethTransactionsByTxnHash(mock, txnHash)
+	foundGethTransactionList, err := GetGethTransactionsByTxnHash(mock, txnHash)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethTransactionsByTxnHash", err)
 	}
 	testMarketDataList := TestAllData
-	for i, foundMarketData := range foundMarketDataList {
-		if cmp.Equal(foundMarketData, testMarketDataList[i]) == false {
-			t.Errorf("Expected GethTransaction From Method GetGethTransactionsByTxnHash: %v is different from actual %v", foundMarketData, testMarketDataList[i])
+	for i, foundGethTransaction := range foundGethTransactionList {
+		if cmp.Equal(foundGethTransaction, testMarketDataList[i]) == false {
+			t.Errorf("Expected GethTransaction From Method GetGethTransactionsByTxnHash: %v is different from actual %v", foundGethTransaction, testMarketDataList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -342,12 +342,12 @@ func TestGetGethTransactionsByTxnHashForErr(t *testing.T) {
 	defer mock.Close()
 	txnHash := "0x-invalid"
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(txnHash).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketDataList, err := GetGethTransactionsByTxnHash(mock, txnHash)
+	foundGethTransactionList, err := GetGethTransactionsByTxnHash(mock, txnHash)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethTransactionsByTxnHash", err)
 	}
-	if len(foundMarketDataList) != 0 {
-		t.Errorf("Expected From Method GetGethTransactionsByTxnHash: to be empty but got this: %v", foundMarketDataList)
+	if len(foundGethTransactionList) != 0 {
+		t.Errorf("Expected From Method GetGethTransactionsByTxnHash: to be empty but got this: %v", foundGethTransactionList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -364,14 +364,14 @@ func TestGetGethTransactionsByTxnHashes(t *testing.T) {
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	txnHashes := []string{TestData1.TxnHash, TestData2.TxnHash}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(pq.Array(txnHashes)).WillReturnRows(mockRows)
-	foundMarketDataList, err := GetGethTransactionsByTxnHashes(mock, txnHashes)
+	foundGethTransactionList, err := GetGethTransactionsByTxnHashes(mock, txnHashes)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethTransactionsByTxnHashes", err)
 	}
 	testMarketDataList := TestAllData
-	for i, foundMarketData := range foundMarketDataList {
-		if cmp.Equal(foundMarketData, testMarketDataList[i]) == false {
-			t.Errorf("Expected GethTransaction From Method GetGethTransactionsByTxnHashes: %v is different from actual %v", foundMarketData, testMarketDataList[i])
+	for i, foundGethTransaction := range foundGethTransactionList {
+		if cmp.Equal(foundGethTransaction, testMarketDataList[i]) == false {
+			t.Errorf("Expected GethTransaction From Method GetGethTransactionsByTxnHashes: %v is different from actual %v", foundGethTransaction, testMarketDataList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -388,12 +388,12 @@ func TestGetGethTransactionsByTxnHashesForErr(t *testing.T) {
 
 	txnHashes := []string{"0x-invalid-1", "0x-invalid-2"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(pq.Array(txnHashes)).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketDataList, err := GetGethTransactionsByTxnHashes(mock, txnHashes)
+	foundGethTransactionList, err := GetGethTransactionsByTxnHashes(mock, txnHashes)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethTransactionsByTxnHashes", err)
 	}
-	if len(foundMarketDataList) != 0 {
-		t.Errorf("Expected From Method GetGethTransactionsByTxnHashes: to be empty but got this: %v", foundMarketDataList)
+	if len(foundGethTransactionList) != 0 {
+		t.Errorf("Expected From Method GetGethTransactionsByTxnHashes: to be empty but got this: %v", foundGethTransactionList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -410,14 +410,14 @@ func TestGetGethTransactionsByUUIDs(t *testing.T) {
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	uuids := []string{TestData1.UUID, TestData2.UUID}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(pq.Array(uuids)).WillReturnRows(mockRows)
-	foundMarketDataList, err := GetGethTransactionsByUUIDs(mock, uuids)
+	foundGethTransactionList, err := GetGethTransactionsByUUIDs(mock, uuids)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethTransactionsByUUIDs", err)
 	}
 	testMarketDataList := TestAllData
-	for i, foundMarketData := range foundMarketDataList {
-		if cmp.Equal(foundMarketData, testMarketDataList[i]) == false {
-			t.Errorf("Expected GethTransaction From Method GetGethTransactionsByUUIDs: %v is different from actual %v", foundMarketData, testMarketDataList[i])
+	for i, foundGethTransaction := range foundGethTransactionList {
+		if cmp.Equal(foundGethTransaction, testMarketDataList[i]) == false {
+			t.Errorf("Expected GethTransaction From Method GetGethTransactionsByUUIDs: %v is different from actual %v", foundGethTransaction, testMarketDataList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -434,12 +434,12 @@ func TestGetGethTransactionsByUUIDsForErr(t *testing.T) {
 
 	uuids := []string{"uuid-invalid-1", "uuid-invalid-2"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(pq.Array(uuids)).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketDataList, err := GetGethTransactionsByUUIDs(mock, uuids)
+	foundGethTransactionList, err := GetGethTransactionsByUUIDs(mock, uuids)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethTransactionsByUUIDs", err)
 	}
-	if len(foundMarketDataList) != 0 {
-		t.Errorf("Expected From Method GetGethTransactionsByUUIDs: to be empty but got this: %v", foundMarketDataList)
+	if len(foundGethTransactionList) != 0 {
+		t.Errorf("Expected From Method GetGethTransactionsByUUIDs: to be empty but got this: %v", foundGethTransactionList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -575,14 +575,14 @@ func TestGetGethTransactionList(t *testing.T) {
 
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WillReturnRows(mockRows)
-	foundMarketDataList, err := GetGethTransactionList(mock)
+	foundGethTransactionList, err := GetGethTransactionList(mock)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethTransactionList", err)
 	}
 	testMarketDataList := TestAllData
-	for i, foundMarketData := range foundMarketDataList {
-		if cmp.Equal(foundMarketData, testMarketDataList[i]) == false {
-			t.Errorf("Expected GethTransaction From Method GetGethTransactionList: %v is different from actual %v", foundMarketData, testMarketDataList[i])
+	for i, foundGethTransaction := range foundGethTransactionList {
+		if cmp.Equal(foundGethTransaction, testMarketDataList[i]) == false {
+			t.Errorf("Expected GethTransaction From Method GetGethTransactionList: %v is different from actual %v", foundGethTransaction, testMarketDataList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -597,12 +597,12 @@ func TestGetGethTransactionListForErr(t *testing.T) {
 	}
 	defer mock.Close()
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketDataList, err := GetGethTransactionList(mock)
+	foundGethTransactionList, err := GetGethTransactionList(mock)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethTransactionList", err)
 	}
-	if len(foundMarketDataList) != 0 {
-		t.Errorf("Expected From Method GetGethTransactionList: to be empty but got this: %v", foundMarketDataList)
+	if len(foundGethTransactionList) != 0 {
+		t.Errorf("Expected From Method GetGethTransactionList: to be empty but got this: %v", foundGethTransactionList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -967,19 +967,19 @@ func TestGetNullAddressStrsFromTransactionsForErr(t *testing.T) {
 	}
 	defer mock.Close()
 	mock.ExpectQuery("^WITH sender_table as ").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketDataList, err := GetNullAddressStrsFromTransactions(mock)
+	foundGethTransactionList, err := GetNullAddressStrsFromTransactions(mock)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetNullAddressStrsFromTransactions", err)
 	}
-	if len(foundMarketDataList) != 0 {
-		t.Errorf("Expected From Method GetNullAddressStrsFromTransactions: to be empty but got this: %v", foundMarketDataList)
+	if len(foundGethTransactionList) != 0 {
+		t.Errorf("Expected From Method GetNullAddressStrsFromTransactions: to be empty but got this: %v", foundGethTransactionList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
 	}
 }
 
-func TestGetTransactionListByPagination(t *testing.T) {
+func TestGetGethTransactionListByPagination(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
@@ -993,14 +993,14 @@ func TestGetTransactionListByPagination(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"import_type_id = 1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WillReturnRows(mockRows)
-	foundChains, err := GetTransactionListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundChains, err := GetGethTransactionListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
-		t.Fatalf("an error '%s' in GetTransactionListByPagination", err)
+		t.Fatalf("an error '%s' in GetGethTransactionListByPagination", err)
 	}
 	testChains := dataList
 	for i, foundChain := range foundChains {
 		if cmp.Equal(foundChain, testChains[i]) == false {
-			t.Errorf("Expected Chain From Method GetTransactionListByPagination: %v is different from actual %v", foundChain, testChains[i])
+			t.Errorf("Expected Chain From Method GetGethTransactionListByPagination: %v is different from actual %v", foundChain, testChains[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -1008,7 +1008,7 @@ func TestGetTransactionListByPagination(t *testing.T) {
 	}
 }
 
-func TestGetTransactionListByPaginationForErr(t *testing.T) {
+func TestGetGethTransactionListByPaginationForErr(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
@@ -1020,12 +1020,12 @@ func TestGetTransactionListByPaginationForErr(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"import_type_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundChains, err := GetTransactionListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundChains, err := GetGethTransactionListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
-		t.Fatalf("expected an error '%s' in GetTransactionListByPagination", err)
+		t.Fatalf("expected an error '%s' in GetGethTransactionListByPagination", err)
 	}
 	if len(foundChains) != 0 {
-		t.Errorf("Expected From Method GetTransactionListByPagination: to be empty but got this: %v", foundChains)
+		t.Errorf("Expected From Method GetGethTransactionListByPagination: to be empty but got this: %v", foundChains)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -1082,14 +1082,14 @@ func TestGetAllGethTransactionsByMinerIDAndFromAddress(t *testing.T) {
 	minerID := 1
 	fromAddress := "Test-From-Address"
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions gmt LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id").WithArgs(minerID, fromAddress).WillReturnRows(mockRows)
-	foundMarketDataList, err := GetAllGethTransactionsByMinerIDAndFromAddress(mock, &minerID, fromAddress)
+	foundGethTransactionList, err := GetAllGethTransactionsByMinerIDAndFromAddress(mock, &minerID, fromAddress)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetAllGethTransactionsByMinerIDAndFromAddress", err)
 	}
 	testMarketDataList := TestAllData
-	for i, foundMarketData := range foundMarketDataList {
-		if cmp.Equal(foundMarketData, testMarketDataList[i]) == false {
-			t.Errorf("Expected GethTransaction From Method GetAllGethTransactionsByMinerIDAndFromAddress: %v is different from actual %v", foundMarketData, testMarketDataList[i])
+	for i, foundGethTransaction := range foundGethTransactionList {
+		if cmp.Equal(foundGethTransaction, testMarketDataList[i]) == false {
+			t.Errorf("Expected GethTransaction From Method GetAllGethTransactionsByMinerIDAndFromAddress: %v is different from actual %v", foundGethTransaction, testMarketDataList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -1106,12 +1106,12 @@ func TestGetAllGethTransactionsByMinerIDAndFromAddressForErr(t *testing.T) {
 	minerID := -1
 	fromAddress := "Test-From-Address"
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions gmt LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id").WithArgs(minerID, fromAddress).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketDataList, err := GetAllGethTransactionsByMinerIDAndFromAddress(mock, &minerID, fromAddress)
+	foundGethTransactionList, err := GetAllGethTransactionsByMinerIDAndFromAddress(mock, &minerID, fromAddress)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetAllGethTransactionsByMinerIDAndFromAddress", err)
 	}
-	if len(foundMarketDataList) != 0 {
-		t.Errorf("Expected From Method GetAllGethTransactionsByMinerIDAndFromAddress: to be empty but got this: %v", foundMarketDataList)
+	if len(foundGethTransactionList) != 0 {
+		t.Errorf("Expected From Method GetAllGethTransactionsByMinerIDAndFromAddress: to be empty but got this: %v", foundGethTransactionList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -1130,14 +1130,14 @@ func TestGetAllGethTransactionsByMinerIDAndFromAddressToDate(t *testing.T) {
 	fromAddress := "Test-From-Address"
 	toDate := utils.SampleCreatedAtTime
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions gmt LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id").WithArgs(minerID, fromAddress, toDate.Format(utils.LayoutPostgres)).WillReturnRows(mockRows)
-	foundMarketDataList, err := GetAllGethTransactionsByMinerIDAndFromAddressToDate(mock, &minerID, fromAddress, &toDate)
+	foundGethTransactionList, err := GetAllGethTransactionsByMinerIDAndFromAddressToDate(mock, &minerID, fromAddress, &toDate)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetAllGethTransactionsByMinerIDAndFromAddressToDate", err)
 	}
 	testMarketDataList := TestAllData
-	for i, foundMarketData := range foundMarketDataList {
-		if cmp.Equal(foundMarketData, testMarketDataList[i]) == false {
-			t.Errorf("Expected GethTransaction From Method GetAllGethTransactionsByMinerIDAndFromAddressToDate: %v is different from actual %v", foundMarketData, testMarketDataList[i])
+	for i, foundGethTransaction := range foundGethTransactionList {
+		if cmp.Equal(foundGethTransaction, testMarketDataList[i]) == false {
+			t.Errorf("Expected GethTransaction From Method GetAllGethTransactionsByMinerIDAndFromAddressToDate: %v is different from actual %v", foundGethTransaction, testMarketDataList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -1155,12 +1155,12 @@ func TestGetAllGethTransactionsByMinerIDAndFromAddressToDateForErr(t *testing.T)
 	fromAddress := "Test-From-Address"
 	toDate := utils.SampleCreatedAtTime
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions gmt LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id").WithArgs(minerID, fromAddress, toDate.Format(utils.LayoutPostgres)).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketDataList, err := GetAllGethTransactionsByMinerIDAndFromAddressToDate(mock, &minerID, fromAddress, &toDate)
+	foundGethTransactionList, err := GetAllGethTransactionsByMinerIDAndFromAddressToDate(mock, &minerID, fromAddress, &toDate)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetAllGethTransactionsByMinerIDAndFromAddressToDate", err)
 	}
-	if len(foundMarketDataList) != 0 {
-		t.Errorf("Expected From Method GetAllGethTransactionsByMinerIDAndFromAddressToDate: to be empty but got this: %v", foundMarketDataList)
+	if len(foundGethTransactionList) != 0 {
+		t.Errorf("Expected From Method GetAllGethTransactionsByMinerIDAndFromAddressToDate: to be empty but got this: %v", foundGethTransactionList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -1180,14 +1180,14 @@ func TestGetAllGethTransactionsByMinerIDAndFromAddressFromToDate(t *testing.T) {
 	fromDate := utils.SampleCreatedAtTime
 	toDate := utils.SampleCreatedAtTime
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions gmt LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id").WithArgs(minerID, fromAddress, fromDate.Format(utils.LayoutPostgres), toDate.Format(utils.LayoutPostgres)).WillReturnRows(mockRows)
-	foundMarketDataList, err := GetAllGethTransactionsByMinerIDAndFromAddressFromToDate(mock, &minerID, fromAddress, &fromDate, &toDate)
+	foundGethTransactionList, err := GetAllGethTransactionsByMinerIDAndFromAddressFromToDate(mock, &minerID, fromAddress, &fromDate, &toDate)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetAllGethTransactionsByMinerIDAndFromAddressFromToDate", err)
 	}
 	testMarketDataList := TestAllData
-	for i, foundMarketData := range foundMarketDataList {
-		if cmp.Equal(foundMarketData, testMarketDataList[i]) == false {
-			t.Errorf("Expected GethTransaction From Method GetAllGethTransactionsByMinerIDAndFromAddressFromToDate: %v is different from actual %v", foundMarketData, testMarketDataList[i])
+	for i, foundGethTransaction := range foundGethTransactionList {
+		if cmp.Equal(foundGethTransaction, testMarketDataList[i]) == false {
+			t.Errorf("Expected GethTransaction From Method GetAllGethTransactionsByMinerIDAndFromAddressFromToDate: %v is different from actual %v", foundGethTransaction, testMarketDataList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -1206,12 +1206,12 @@ func TestGetAllGethTransactionsByMinerIDAndFromAddressFromToDateForErr(t *testin
 	fromDate := utils.SampleCreatedAtTime
 	toDate := utils.SampleCreatedAtTime
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions gmt LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id").WithArgs(minerID, fromAddress, fromDate.Format(utils.LayoutPostgres), toDate.Format(utils.LayoutPostgres)).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketDataList, err := GetAllGethTransactionsByMinerIDAndFromAddressFromToDate(mock, &minerID, fromAddress, &fromDate, &toDate)
+	foundGethTransactionList, err := GetAllGethTransactionsByMinerIDAndFromAddressFromToDate(mock, &minerID, fromAddress, &fromDate, &toDate)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetAllGethTransactionsByMinerIDAndFromAddressFromToDate", err)
 	}
-	if len(foundMarketDataList) != 0 {
-		t.Errorf("Expected From Method GetAllGethTransactionsByMinerIDAndFromAddressFromToDate: to be empty but got this: %v", foundMarketDataList)
+	if len(foundGethTransactionList) != 0 {
+		t.Errorf("Expected From Method GetAllGethTransactionsByMinerIDAndFromAddressFromToDate: to be empty but got this: %v", foundGethTransactionList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)

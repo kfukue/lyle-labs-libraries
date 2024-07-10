@@ -703,7 +703,7 @@ func GetNullAddressStrsFromTransactions(dbConnPgx utils.PgxIface) ([]string, err
 }
 
 // for refinedev
-func GetTransactionListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]GethTransaction, error) {
+func GetGethTransactionListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `
