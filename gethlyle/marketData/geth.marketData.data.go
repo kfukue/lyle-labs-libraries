@@ -212,6 +212,10 @@ func GetGethMarketDataList(dbConnPgx utils.PgxIface, ids []int) ([]GethMarketDat
 	}
 	defer results.Close()
 	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMarketData])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return marketDataList, nil
 }
 
@@ -256,6 +260,10 @@ func GetGethMarketDataListByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) (
 	}
 	defer results.Close()
 	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMarketData])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return marketDataList, nil
 }
 
@@ -300,6 +308,10 @@ func GetStartAndEndDateDiffGethMarketDataList(dbConnPgx utils.PgxIface, diffInDa
 	}
 	defer results.Close()
 	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMarketData])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return marketDataList, nil
 }
 
