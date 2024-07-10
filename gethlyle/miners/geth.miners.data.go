@@ -438,7 +438,6 @@ func GetGethMinerListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
 
 	return gethMiners, nil
 }

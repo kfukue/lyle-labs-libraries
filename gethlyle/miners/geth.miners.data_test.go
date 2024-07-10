@@ -138,12 +138,12 @@ func TestGetGethMiner(t *testing.T) {
 	gethMinerID := targetData.ID
 	mockRows := AddGethMinerToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners").WithArgs(*gethMinerID).WillReturnRows(mockRows)
-	foundMarketData, err := GetGethMiner(mock, gethMinerID)
+	foundGethMiner, err := GetGethMiner(mock, gethMinerID)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethMiner", err)
 	}
-	if cmp.Equal(*foundMarketData, targetData) == false {
-		t.Errorf("Expected GethMiner From Method GetGethMiner: %v is different from actual %v", foundMarketData, targetData)
+	if cmp.Equal(*foundGethMiner, targetData) == false {
+		t.Errorf("Expected GethMiner From Method GetGethMiner: %v is different from actual %v", foundGethMiner, targetData)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -159,12 +159,12 @@ func TestGetGethMinerForErrNoRows(t *testing.T) {
 	gethMinerID := 999
 	noRows := pgxmock.NewRows(DBColumns)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners").WithArgs(gethMinerID).WillReturnRows(noRows)
-	foundMarketData, err := GetGethMiner(mock, &gethMinerID)
+	foundGethMiner, err := GetGethMiner(mock, &gethMinerID)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethMiner", err)
 	}
-	if foundMarketData != nil {
-		t.Errorf("Expected GethMiner From Method GetGethMiner: to be empty but got this: %v", foundMarketData)
+	if foundGethMiner != nil {
+		t.Errorf("Expected GethMiner From Method GetGethMiner: to be empty but got this: %v", foundGethMiner)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -179,12 +179,12 @@ func TestGetGethMinerForErr(t *testing.T) {
 	defer mock.Close()
 	gethMinerID := -1
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners").WithArgs(gethMinerID).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketData, err := GetGethMiner(mock, &gethMinerID)
+	foundGethMiner, err := GetGethMiner(mock, &gethMinerID)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethMiner", err)
 	}
-	if foundMarketData != nil {
-		t.Errorf("Expected GethMiner From Method GetGethMiner: to be empty but got this: %v", foundMarketData)
+	if foundGethMiner != nil {
+		t.Errorf("Expected GethMiner From Method GetGethMiner: to be empty but got this: %v", foundGethMiner)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -239,14 +239,14 @@ func TestGetGethMinerList(t *testing.T) {
 	dataList := []GethMiner{TestData1, TestData2}
 	mockRows := AddGethMinerToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners").WillReturnRows(mockRows)
-	foundMarketDataList, err := GetGethMinerList(mock)
+	foundGethMinerList, err := GetGethMinerList(mock)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethMinerList", err)
 	}
 	testMarketDataList := TestAllData
-	for i, foundMarketData := range foundMarketDataList {
-		if cmp.Equal(foundMarketData, testMarketDataList[i]) == false {
-			t.Errorf("Expected GethMiner From Method GetGethMinerList: %v is different from actual %v", foundMarketData, testMarketDataList[i])
+	for i, foundGethMiner := range foundGethMinerList {
+		if cmp.Equal(foundGethMiner, testMarketDataList[i]) == false {
+			t.Errorf("Expected GethMiner From Method GetGethMinerList: %v is different from actual %v", foundGethMiner, testMarketDataList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -261,12 +261,12 @@ func TestGetGethMinerListForErr(t *testing.T) {
 	}
 	defer mock.Close()
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketDataList, err := GetGethMinerList(mock)
+	foundGethMinerList, err := GetGethMinerList(mock)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethMinerList", err)
 	}
-	if len(foundMarketDataList) != 0 {
-		t.Errorf("Expected From Method GetGethMinerList: to be empty but got this: %v", foundMarketDataList)
+	if len(foundGethMinerList) != 0 {
+		t.Errorf("Expected From Method GetGethMinerList: to be empty but got this: %v", foundGethMinerList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -283,14 +283,14 @@ func TestGetGethMinerListByMiningAssetId(t *testing.T) {
 	mockRows := AddGethMinerToMockRows(mock, dataList)
 	miningAssetID := TestData1.MiningAssetID
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners").WithArgs(*miningAssetID).WillReturnRows(mockRows)
-	foundMarketDataList, err := GetGethMinerListByMiningAssetId(mock, miningAssetID)
+	foundGethMinerList, err := GetGethMinerListByMiningAssetId(mock, miningAssetID)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethMinerListByMiningAssetId", err)
 	}
 	testMarketDataList := TestAllData
-	for i, foundMarketData := range foundMarketDataList {
-		if cmp.Equal(foundMarketData, testMarketDataList[i]) == false {
-			t.Errorf("Expected GethMiner From Method GetGethMinerListByMiningAssetId: %v is different from actual %v", foundMarketData, testMarketDataList[i])
+	for i, foundGethMiner := range foundGethMinerList {
+		if cmp.Equal(foundGethMiner, testMarketDataList[i]) == false {
+			t.Errorf("Expected GethMiner From Method GetGethMinerListByMiningAssetId: %v is different from actual %v", foundGethMiner, testMarketDataList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -306,12 +306,12 @@ func TestGetGethMinerListByMiningAssetIdForErr(t *testing.T) {
 	defer mock.Close()
 	miningAssetID := -999
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners").WithArgs(miningAssetID).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundMarketDataList, err := GetGethMinerListByMiningAssetId(mock, &miningAssetID)
+	foundGethMinerList, err := GetGethMinerListByMiningAssetId(mock, &miningAssetID)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethMinerListByMiningAssetId", err)
 	}
-	if len(foundMarketDataList) != 0 {
-		t.Errorf("Expected From Method GetGethMinerListByMiningAssetId: to be empty but got this: %v", foundMarketDataList)
+	if len(foundGethMinerList) != 0 {
+		t.Errorf("Expected From Method GetGethMinerListByMiningAssetId: to be empty but got this: %v", foundGethMinerList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
