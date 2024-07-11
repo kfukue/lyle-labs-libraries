@@ -417,7 +417,7 @@ func TestInsertGethMinerTransactionInput(t *testing.T) {
 		targetData.AlternateName,      //4
 		targetData.Description,        //5
 		targetData.CreatedBy,          //6
-	).WillReturnRows(pgxmock.NewRows([]string{"id", "transaction_input_id"}).AddRow(1, 2))
+	).WillReturnRows(pgxmock.NewRows([]string{"miner_id", "transaction_input_id"}).AddRow(1, 2))
 	mock.ExpectCommit()
 	gethMinerID, transactionInputID, err := InsertGethMinerTransactionInput(mock, &targetData)
 	if gethMinerID < 0 {
@@ -485,7 +485,7 @@ func TestInsertGethMinerTransactionInputOnFailureOnCommit(t *testing.T) {
 		targetData.AlternateName,      //4
 		targetData.Description,        //5
 		targetData.CreatedBy,          //6
-	).WillReturnRows(pgxmock.NewRows([]string{"id", "transaction_input_id"}).AddRow(1, 2))
+	).WillReturnRows(pgxmock.NewRows([]string{"miner_id", "transaction_input_id"}).AddRow(1, 2))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
 	gethMinerID, transactionInputID, err := InsertGethMinerTransactionInput(mock, &targetData)
