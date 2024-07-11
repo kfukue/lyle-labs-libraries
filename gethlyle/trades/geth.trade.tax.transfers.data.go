@@ -9,14 +9,13 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
-func GetAllGethTradeTaxTransfersByTradeID(gethTradeID int) ([]GethTradeTaxTransfer, error) {
+func GetAllGethTradeTaxTransfersByTradeID(dbConnPgx utils.PgxIface, gethTradeID *int) ([]GethTradeTaxTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT 
 		geth_trade_transfers.geth_trade_id,
 		geth_trade_transfers.geth_transfer_id,
@@ -34,37 +33,23 @@ func GetAllGethTradeTaxTransfersByTradeID(gethTradeID int) ([]GethTradeTaxTransf
 	ON geth_trade_transfers.geth_trade_id = geth_trades.id 
 	WHERE 
 	geth_trades.id = $1
-	`, gethTradeID)
+	`, *gethTradeID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethTradeTaxTransfers := make([]GethTradeTaxTransfer, 0)
-	for results.Next() {
-		var gethTradeTaxTransfer GethTradeTaxTransfer
-		results.Scan(
-			&gethTradeTaxTransfer.GethTradeID,
-			&gethTradeTaxTransfer.GethTransferID,
-			&gethTradeTaxTransfer.TaxID,
-			&gethTradeTaxTransfer.UUID,
-			&gethTradeTaxTransfer.Name,
-			&gethTradeTaxTransfer.AlternateName,
-			&gethTradeTaxTransfer.Description,
-			&gethTradeTaxTransfer.CreatedBy,
-			&gethTradeTaxTransfer.CreatedAt,
-			&gethTradeTaxTransfer.UpdatedBy,
-			&gethTradeTaxTransfer.UpdatedAt,
-		)
-
-		gethTradeTaxTransfers = append(gethTradeTaxTransfers, gethTradeTaxTransfer)
+	gethTradeTaxTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeTaxTransfer])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTradeTaxTransfers, nil
 }
-func GetGethTradeTaxTransfer(gethTradeID int, gethGethTransferID int) (*GethTradeTaxTransfer, error) {
+func GetGethTradeTaxTransfer(dbConnPgx utils.PgxIface, gethTradeID, gethGethTransferID *int) (*GethTradeTaxTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `
+	row, err := dbConnPgx.Query(ctx, `
 	SELECT 
 		geth_trade_id,
 		geth_transfer_id,
@@ -81,44 +66,40 @@ func GetGethTradeTaxTransfer(gethTradeID int, gethGethTransferID int) (*GethTrad
 	WHERE 
 	geth_trade_id = $1
 	AND geth_transfer_id = $2
-	`, gethTradeID, gethGethTransferID)
+	`, *gethTradeID, *gethGethTransferID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	gethTradeTaxTransfer, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethTradeTaxTransfer])
 
-	gethTradeTaxTransfer := &GethTradeTaxTransfer{}
-	err := row.Scan(
-		&gethTradeTaxTransfer.GethTradeID,
-		&gethTradeTaxTransfer.GethTransferID,
-		&gethTradeTaxTransfer.TaxID,
-		&gethTradeTaxTransfer.UUID,
-		&gethTradeTaxTransfer.Name,
-		&gethTradeTaxTransfer.AlternateName,
-		&gethTradeTaxTransfer.Description,
-		&gethTradeTaxTransfer.CreatedBy,
-		&gethTradeTaxTransfer.CreatedAt,
-		&gethTradeTaxTransfer.UpdatedBy,
-		&gethTradeTaxTransfer.UpdatedAt,
-	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethTradeTaxTransfer, nil
+	return &gethTradeTaxTransfer, nil
 }
 
-func RemoveGethTradeTaxTransfer(gethTradeID int, gethGethTransferID int) error {
+func RemoveGethTradeTaxTransfer(dbConnPgx utils.PgxIface, gethTradeID, gethGethTransferID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM geth_trade_transfers WHERE 
-	geth_trade_id =$1 AND geth_transfer_id = $2`, gethTradeID, gethGethTransferID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethTradeTaxTransfer DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM geth_trade_transfers WHERE geth_trade_id =$1 AND geth_transfer_id = $2`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *gethTradeID, *gethGethTransferID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetGethTradeTaxTransferList(gethTradeIds []int, swapIds []int) ([]GethTradeTaxTransfer, error) {
+func GetGethTradeTaxTransferList(dbConnPgx utils.PgxIface, gethTradeIds []int, swapIds []int) ([]GethTradeTaxTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `
@@ -150,42 +131,33 @@ func GetGethTradeTaxTransferList(gethTradeIds []int, swapIds []int) ([]GethTrade
 		}
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethTradeTaxTransfers := make([]GethTradeTaxTransfer, 0)
-	for results.Next() {
-		var gethTradeTaxTransfer GethTradeTaxTransfer
-		results.Scan(
-			&gethTradeTaxTransfer.GethTradeID,
-			&gethTradeTaxTransfer.GethTransferID,
-			&gethTradeTaxTransfer.TaxID,
-			&gethTradeTaxTransfer.UUID,
-			&gethTradeTaxTransfer.Name,
-			&gethTradeTaxTransfer.AlternateName,
-			&gethTradeTaxTransfer.Description,
-			&gethTradeTaxTransfer.CreatedBy,
-			&gethTradeTaxTransfer.CreatedAt,
-			&gethTradeTaxTransfer.UpdatedBy,
-			&gethTradeTaxTransfer.UpdatedAt,
-		)
-
-		gethTradeTaxTransfers = append(gethTradeTaxTransfers, gethTradeTaxTransfer)
+	gethTradeTaxTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeTaxTransfer])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTradeTaxTransfers, nil
 }
 
-func UpdateGethTradeTaxTransfer(gethTradeTaxTransfer GethTradeTaxTransfer) error {
+func UpdateGethTradeTaxTransfer(dbConnPgx utils.PgxIface, gethTradeTaxTransfer *GethTradeTaxTransfer) error {
 	// if the gethTradeTaxTransfer id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if (gethTradeTaxTransfer.GethTransferID == nil || *gethTradeTaxTransfer.GethTransferID == 0) || (gethTradeTaxTransfer.GethTradeID == nil || *gethTradeTaxTransfer.GethTradeID == 0) {
 		return errors.New("gethTradeTaxTransfer has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE geth_trade_transfers SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethTradeTaxTransfer DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_trade_transfers SET 
 		tax_id 				=$1,	
 		name				=$2,  
 		alternate_name		=$3, 
@@ -195,7 +167,8 @@ func UpdateGethTradeTaxTransfer(gethTradeTaxTransfer GethTradeTaxTransfer) error
 		WHERE 
 			geth_trade_id=$6 AND
 			geth_transfer_id=$7
-		`,
+		`
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethTradeTaxTransfer.TaxID,          //1
 		gethTradeTaxTransfer.Name,           //2
 		gethTradeTaxTransfer.AlternateName,  //3
@@ -203,20 +176,24 @@ func UpdateGethTradeTaxTransfer(gethTradeTaxTransfer GethTradeTaxTransfer) error
 		gethTradeTaxTransfer.UpdatedBy,      //5
 		gethTradeTaxTransfer.GethTradeID,    //6
 		gethTradeTaxTransfer.GethTransferID, //7
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertGethTradeTaxTransfer(gethTradeTaxTransfer GethTradeTaxTransfer) (int, int, error) {
+func InsertGethTradeTaxTransfer(dbConnPgx utils.PgxIface, gethTradeTaxTransfer *GethTradeTaxTransfer) (int, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertGethTradeTaxTransfer DbConn.Begin   %s", err.Error())
+		return -1, -1, err
+	}
 	var GethTransferID int
 	var GethTradeID int
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO geth_trade_transfers  
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO geth_trade_transfers  
 	(
 		geth_trade_id,
 		geth_transfer_id,
@@ -251,13 +228,20 @@ func InsertGethTradeTaxTransfer(gethTradeTaxTransfer GethTradeTaxTransfer) (int,
 		gethTradeTaxTransfer.CreatedBy,      //7
 	).Scan(&GethTradeID, &GethTransferID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, 0, err
+		return -1, -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, -1, err
 	}
 	return int(GethTradeID), int(GethTransferID), nil
 }
 
-func InsertGethTradeTaxTransfers(gethTradeTaxTransfers []*GethTradeTaxTransfer) error {
+func InsertGethTradeTaxTransfers(dbConnPgx utils.PgxIface, gethTradeTaxTransfers []GethTradeTaxTransfer) error {
 	// need to supply uuid
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -283,7 +267,7 @@ func InsertGethTradeTaxTransfers(gethTradeTaxTransfers []*GethTradeTaxTransfer) 
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"geth_trade_transfers"},
 		[]string{
@@ -301,10 +285,82 @@ func InsertGethTradeTaxTransfers(gethTradeTaxTransfers []*GethTradeTaxTransfer) 
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertGethTradeTaxTransfers: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
 	}
 	return nil
+}
+
+// for refinedev
+func GetGethTradeTaxTransferListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]GethTradeTaxTransfer, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	sql := `SELECT 
+	geth_trade_id,
+		geth_trade_id,
+		geth_transfer_id,
+		tax_id,
+		uuid, 
+		name, 
+		alternate_name, 
+		description,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
+	FROM geth_trade_transfers 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	minerTransactionInputs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeTaxTransfer])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return minerTransactionInputs, nil
+}
+
+func GetTotalGethTradeTaxTransferCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM geth_trade_transfers
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }
