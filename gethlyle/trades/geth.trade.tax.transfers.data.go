@@ -336,12 +336,12 @@ func GetGethTradeTaxTransferListByPagination(dbConnPgx utils.PgxIface, _start, _
 		return nil, err
 	}
 	defer results.Close()
-	minerTransactionInputs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeTaxTransfer])
+	gethTradeTaxTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeTaxTransfer])
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return minerTransactionInputs, nil
+	return gethTradeTaxTransfers, nil
 }
 
 func GetTotalGethTradeTaxTransferCount(dbConnPgx utils.PgxIface) (*int, error) {

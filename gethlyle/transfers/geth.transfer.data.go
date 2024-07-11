@@ -9,15 +9,15 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	gethlyleaddresses "github.com/kfukue/lyle-labs-libraries/gethlyle/address"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
-func GetGethTransfer(gethTransferID int) (*GethTransfer, error) {
+func GetGethTransfer(dbConnPgx utils.PgxIface, gethTransferID *int) (*GethTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT
+	row, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -45,49 +45,25 @@ func GetGethTransfer(gethTransferID int) (*GethTransfer, error) {
 		transfer_type_id
 	FROM geth_transfers
 	WHERE id = $1
-	`, gethTransferID)
-
-	gethTransfer := &GethTransfer{}
-	err := row.Scan(
-		&gethTransfer.ID,
-		&gethTransfer.UUID,
-		&gethTransfer.ChainID,
-		&gethTransfer.TokenAddress,
-		&gethTransfer.TokenAddressID,
-		&gethTransfer.AssetID,
-		&gethTransfer.BlockNumber,
-		&gethTransfer.IndexNumber,
-		&gethTransfer.TransferDate,
-		&gethTransfer.TxnHash,
-		&gethTransfer.SenderAddress,
-		&gethTransfer.SenderAddressID,
-		&gethTransfer.ToAddress,
-		&gethTransfer.ToAddressID,
-		&gethTransfer.Amount,
-		&gethTransfer.Description,
-		&gethTransfer.CreatedBy,
-		&gethTransfer.CreatedAt,
-		&gethTransfer.UpdatedBy,
-		&gethTransfer.UpdatedAt,
-		&gethTransfer.GethProcessJobID,
-		&gethTransfer.TopicsStr,
-		&gethTransfer.StatusID,
-		&gethTransfer.BaseAssetID,
-		&gethTransfer.TransferTypeID,
-	)
+	`, *gethTransferID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	gethTransfer, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethTransfer])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethTransfer, nil
+	return &gethTransfer, nil
 }
 
-func GetGethTransferByBlockChain(txnHash string, blockNumber *uint64, indexNumber *uint) (*GethTransfer, error) {
+func GetGethTransferByBlockChain(dbConnPgx utils.PgxIface, txnHash string, blockNumber *uint64, indexNumber *uint) (*GethTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT
+	row, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -117,54 +93,31 @@ func GetGethTransferByBlockChain(txnHash string, blockNumber *uint64, indexNumbe
 	WHERE txn_hash = $1
 	AND block_number = $2
 	AND index_number = $3
-	`, txnHash, blockNumber, indexNumber)
-
-	gethTransfer := &GethTransfer{}
-	err := row.Scan(
-		&gethTransfer.ID,
-		&gethTransfer.UUID,
-		&gethTransfer.ChainID,
-		&gethTransfer.TokenAddress,
-		&gethTransfer.TokenAddressID,
-		&gethTransfer.AssetID,
-		&gethTransfer.BlockNumber,
-		&gethTransfer.IndexNumber,
-		&gethTransfer.TransferDate,
-		&gethTransfer.TxnHash,
-		&gethTransfer.SenderAddress,
-		&gethTransfer.SenderAddressID,
-		&gethTransfer.ToAddress,
-		&gethTransfer.ToAddressID,
-		&gethTransfer.Amount,
-		&gethTransfer.Description,
-		&gethTransfer.CreatedBy,
-		&gethTransfer.CreatedAt,
-		&gethTransfer.UpdatedBy,
-		&gethTransfer.UpdatedAt,
-		&gethTransfer.GethProcessJobID,
-		&gethTransfer.TopicsStr,
-		&gethTransfer.StatusID,
-		&gethTransfer.StatusID,
-	)
+	`, txnHash, *blockNumber, *indexNumber)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	gethTransfer, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethTransfer])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethTransfer, nil
+	return &gethTransfer, nil
 }
 
-func GetTransfersTransactionHashByUserAddress(userAddressID *int, assetID *int, blockNumber *uint64) ([]string, error) {
+func GetTransfersTransactionHashByUserAddress(dbConnPgx utils.PgxIface, userAddressID, assetID *int, blockNumber *uint64) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT DISTINCT txn_hash FROM geth_transfers
+	results, err := dbConnPgx.Query(ctx, `SELECT DISTINCT txn_hash FROM geth_transfers
 	WHERE
 	(to_address_id =$1 OR sender_address_id = $1)
 	AND asset_id = $2
 	AND block_number > $3
 	`,
-		userAddressID, assetID, blockNumber)
+		*userAddressID, *assetID, *blockNumber)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -182,11 +135,10 @@ func GetTransfersTransactionHashByUserAddress(userAddressID *int, assetID *int, 
 	return txnAddresses, nil
 }
 
-func GetDistinctAddressesFromAssetId(assetID *int) ([]gethlyleaddresses.GethAddress, error) {
+func GetDistinctAddressesFromAssetId(dbConnPgx utils.PgxIface, assetID *int) ([]gethlyleaddresses.GethAddress, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-		
+	results, err := dbConnPgx.Query(ctx, `
 	WITH sender_table as(
 		SELECT DISTINCT sender_address_id as address  
 		FROM geth_transfers
@@ -215,43 +167,31 @@ func GetDistinctAddressesFromAssetId(assetID *int) ([]gethlyleaddresses.GethAddr
 	SELECT * FROM to_table
 		)
 	`,
-		assetID)
+		*assetID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethAddresses := make([]gethlyleaddresses.GethAddress, 0)
-	for results.Next() {
-		var gethAddress gethlyleaddresses.GethAddress
-		results.Scan(
-			&gethAddress.ID,
-			&gethAddress.UUID,
-			&gethAddress.Name,
-			&gethAddress.AlternateName,
-			&gethAddress.Description,
-			&gethAddress.AddressStr,
-			&gethAddress.AddressTypeID,
-			&gethAddress.CreatedBy,
-			&gethAddress.CreatedAt,
-			&gethAddress.UpdatedBy,
-			&gethAddress.UpdatedAt,
-		)
-
-		gethAddresses = append(gethAddresses, gethAddress)
+	gethAddresses, err := pgx.CollectRows(results, pgx.RowToStructByName[gethlyleaddresses.GethAddress])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethAddresses, nil
 
 }
 
-func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(assetID *int, startingBlock *uint64) ([]string, error) {
+func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(dbConnPgx utils.PgxIface, assetID *int, startingBlock *uint64) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-		
-	SELECT DISTINCT txn_hash FROM geth_transfers
-	WHERE block_number >= $1
-	AND asset_id = $2
+	results, err := dbConnPgx.Query(ctx, `
+	SELECT
+		DISTINCT txn_hash 
+	FROM geth_transfers
+	WHERE
+		block_number >= $1
+		AND asset_id = $2
 	`,
 		*startingBlock, *assetID)
 	if err != nil {
@@ -271,13 +211,13 @@ func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(assetID *int, start
 
 }
 
-func GetHighestBlockFromBaseAssetId(baseAssetID *int) (*uint64, error) {
+func GetHighestBlockFromBaseAssetId(dbConnPgx utils.PgxIface, baseAssetID *int) (*uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row, err := database.DbConnPgx.Query(ctx, `SELECT COALESCE (MAX(block_number), 0) FROM geth_transfers
+	row, err := dbConnPgx.Query(ctx, `SELECT COALESCE (MAX(block_number), 0) FROM geth_transfers
 	WHERE base_asset_id=$1
 		`,
-		baseAssetID)
+		*baseAssetID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -300,10 +240,10 @@ func GetHighestBlockFromBaseAssetId(baseAssetID *int) (*uint64, error) {
 	return &maxBlockNumber, nil
 }
 
-func GetGethTransferByFromTokenAddress(tokenAddressID *int) ([]GethTransfer, error) {
+func GetGethTransferByFromTokenAddress(dbConnPgx utils.PgxIface, tokenAddressID *int) ([]GethTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -333,50 +273,25 @@ func GetGethTransferByFromTokenAddress(tokenAddressID *int) ([]GethTransfer, err
 		WHERE
 		token_address_id = $1
 		`,
-		tokenAddressID,
+		*tokenAddressID,
 	)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethTransfers := make([]GethTransfer, 0)
-	for results.Next() {
-		var gethTransfer GethTransfer
-		results.Scan(
-			&gethTransfer.ID,
-			&gethTransfer.UUID,
-			&gethTransfer.ChainID,
-			&gethTransfer.TokenAddress,
-			&gethTransfer.TokenAddressID,
-			&gethTransfer.AssetID,
-			&gethTransfer.BlockNumber,
-			&gethTransfer.IndexNumber,
-			&gethTransfer.TransferDate,
-			&gethTransfer.TxnHash,
-			&gethTransfer.SenderAddress,
-			&gethTransfer.SenderAddressID,
-			&gethTransfer.ToAddress,
-			&gethTransfer.ToAddressID,
-			&gethTransfer.Amount,
-			&gethTransfer.Description,
-			&gethTransfer.CreatedBy,
-			&gethTransfer.CreatedAt,
-			&gethTransfer.UpdatedBy,
-			&gethTransfer.UpdatedAt,
-			&gethTransfer.GethProcessJobID,
-			&gethTransfer.TopicsStr,
-			&gethTransfer.StatusID,
-		)
-		gethTransfers = append(gethTransfers, gethTransfer)
+	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethTransfers, nil
 }
 
-func GetGethTransferByFromMakerAddressAndTokenAddressID(makerAddressID *int, tokenAddressID *int) ([]GethTransfer, error) {
+func GetGethTransferByFromMakerAddressAndTokenAddressID(dbConnPgx utils.PgxIface, makerAddressID, tokenAddressID *int) ([]GethTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -404,56 +319,29 @@ func GetGethTransferByFromMakerAddressAndTokenAddressID(makerAddressID *int, tok
 		transfer_type_id
 		FROM geth_transfers
 		WHERE
-		asset_id = $1
+		token_address_id = $1
 		AND (sender_address_id =$2 OR 
 			to_address_id = $2)
 		`,
-		tokenAddressID, makerAddressID,
+		*tokenAddressID, *makerAddressID,
 	)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethTransfers := make([]GethTransfer, 0)
-	for results.Next() {
-		var gethTransfer GethTransfer
-		results.Scan(
-			&gethTransfer.ID,
-			&gethTransfer.UUID,
-			&gethTransfer.ChainID,
-			&gethTransfer.TokenAddress,
-			&gethTransfer.TokenAddressID,
-			&gethTransfer.AssetID,
-			&gethTransfer.BlockNumber,
-			&gethTransfer.IndexNumber,
-			&gethTransfer.TransferDate,
-			&gethTransfer.TxnHash,
-			&gethTransfer.SenderAddress,
-			&gethTransfer.SenderAddressID,
-			&gethTransfer.ToAddress,
-			&gethTransfer.ToAddressID,
-			&gethTransfer.Amount,
-			&gethTransfer.Description,
-			&gethTransfer.CreatedBy,
-			&gethTransfer.CreatedAt,
-			&gethTransfer.UpdatedBy,
-			&gethTransfer.UpdatedAt,
-			&gethTransfer.GethProcessJobID,
-			&gethTransfer.TopicsStr,
-			&gethTransfer.StatusID,
-			&gethTransfer.BaseAssetID,
-			&gethTransfer.TransferTypeID,
-		)
-		gethTransfers = append(gethTransfers, gethTransfer)
+	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethTransfers, nil
 }
 
-func GetGethTransferByFromMakerAddressAndTokenAddressIDAndBeforeBlockNumber(makerAddressID, baseAssetID, blockNumber *int) ([]GethTransfer, error) {
+func GetGethTransferByFromMakerAddressAndTokenAddressIDAndBeforeBlockNumber(dbConnPgx utils.PgxIface, makerAddressID, baseAssetID *int, blockNumber *uint64) ([]GethTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -495,45 +383,18 @@ func GetGethTransferByFromMakerAddressAndTokenAddressIDAndBeforeBlockNumber(make
 		return nil, err
 	}
 	defer results.Close()
-	gethTransfers := make([]GethTransfer, 0)
-	for results.Next() {
-		var gethTransfer GethTransfer
-		results.Scan(
-			&gethTransfer.ID,
-			&gethTransfer.UUID,
-			&gethTransfer.ChainID,
-			&gethTransfer.TokenAddress,
-			&gethTransfer.TokenAddressID,
-			&gethTransfer.AssetID,
-			&gethTransfer.BlockNumber,
-			&gethTransfer.IndexNumber,
-			&gethTransfer.TransferDate,
-			&gethTransfer.TxnHash,
-			&gethTransfer.SenderAddress,
-			&gethTransfer.SenderAddressID,
-			&gethTransfer.ToAddress,
-			&gethTransfer.ToAddressID,
-			&gethTransfer.Amount,
-			&gethTransfer.Description,
-			&gethTransfer.CreatedBy,
-			&gethTransfer.CreatedAt,
-			&gethTransfer.UpdatedBy,
-			&gethTransfer.UpdatedAt,
-			&gethTransfer.GethProcessJobID,
-			&gethTransfer.TopicsStr,
-			&gethTransfer.StatusID,
-			&gethTransfer.BaseAssetID,
-			&gethTransfer.TransferTypeID,
-		)
-		gethTransfers = append(gethTransfers, gethTransfer)
+	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethTransfers, nil
 }
 
-func GetGethTransferByFromBaseAssetIDAndBeforeBlockNumber(baseAssetID, blockNumber *int) ([]GethTransfer, error) {
+func GetGethTransferByFromBaseAssetIDAndBeforeBlockNumber(dbConnPgx utils.PgxIface, baseAssetID *int, blockNumber *uint64) ([]GethTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -575,45 +436,18 @@ func GetGethTransferByFromBaseAssetIDAndBeforeBlockNumber(baseAssetID, blockNumb
 		return nil, err
 	}
 	defer results.Close()
-	gethTransfers := make([]GethTransfer, 0)
-	for results.Next() {
-		var gethTransfer GethTransfer
-		results.Scan(
-			&gethTransfer.ID,
-			&gethTransfer.UUID,
-			&gethTransfer.ChainID,
-			&gethTransfer.TokenAddress,
-			&gethTransfer.TokenAddressID,
-			&gethTransfer.AssetID,
-			&gethTransfer.BlockNumber,
-			&gethTransfer.IndexNumber,
-			&gethTransfer.TransferDate,
-			&gethTransfer.TxnHash,
-			&gethTransfer.SenderAddress,
-			&gethTransfer.SenderAddressID,
-			&gethTransfer.ToAddress,
-			&gethTransfer.ToAddressID,
-			&gethTransfer.Amount,
-			&gethTransfer.Description,
-			&gethTransfer.CreatedBy,
-			&gethTransfer.CreatedAt,
-			&gethTransfer.UpdatedBy,
-			&gethTransfer.UpdatedAt,
-			&gethTransfer.GethProcessJobID,
-			&gethTransfer.TopicsStr,
-			&gethTransfer.StatusID,
-			&gethTransfer.BaseAssetID,
-			&gethTransfer.TransferTypeID,
-		)
-		gethTransfers = append(gethTransfers, gethTransfer)
+	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethTransfers, nil
 }
 
-func GetGethTransfersByTxnHash(txnHash string, baseAssetID *int) ([]GethTransfer, error) {
+func GetGethTransfersByTxnHash(dbConnPgx utils.PgxIface, txnHash string, baseAssetID *int) ([]GethTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -651,45 +485,18 @@ func GetGethTransfersByTxnHash(txnHash string, baseAssetID *int) ([]GethTransfer
 		return nil, err
 	}
 	defer results.Close()
-	gethTransfers := make([]GethTransfer, 0)
-	for results.Next() {
-		var gethTransfer GethTransfer
-		results.Scan(
-			&gethTransfer.ID,
-			&gethTransfer.UUID,
-			&gethTransfer.ChainID,
-			&gethTransfer.TokenAddress,
-			&gethTransfer.TokenAddressID,
-			&gethTransfer.AssetID,
-			&gethTransfer.BlockNumber,
-			&gethTransfer.IndexNumber,
-			&gethTransfer.TransferDate,
-			&gethTransfer.TxnHash,
-			&gethTransfer.SenderAddress,
-			&gethTransfer.SenderAddressID,
-			&gethTransfer.ToAddress,
-			&gethTransfer.ToAddressID,
-			&gethTransfer.Amount,
-			&gethTransfer.Description,
-			&gethTransfer.CreatedBy,
-			&gethTransfer.CreatedAt,
-			&gethTransfer.UpdatedBy,
-			&gethTransfer.UpdatedAt,
-			&gethTransfer.GethProcessJobID,
-			&gethTransfer.TopicsStr,
-			&gethTransfer.StatusID,
-			&gethTransfer.BaseAssetID,
-			&gethTransfer.TransferTypeID,
-		)
-		gethTransfers = append(gethTransfers, gethTransfer)
+	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethTransfers, nil
 }
 
-func GetGethTransfersByTxnHashes(txnHashes []string, baseAssetID *int) ([]GethTransfer, error) {
+func GetGethTransfersByTxnHashes(dbConnPgx utils.PgxIface, txnHashes []string, baseAssetID *int) ([]GethTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -727,78 +534,69 @@ func GetGethTransfersByTxnHashes(txnHashes []string, baseAssetID *int) ([]GethTr
 		return nil, err
 	}
 	defer results.Close()
-	gethTransfers := make([]GethTransfer, 0)
-	for results.Next() {
-		var gethTransfer GethTransfer
-		results.Scan(
-			&gethTransfer.ID,
-			&gethTransfer.UUID,
-			&gethTransfer.ChainID,
-			&gethTransfer.TokenAddress,
-			&gethTransfer.TokenAddressID,
-			&gethTransfer.AssetID,
-			&gethTransfer.BlockNumber,
-			&gethTransfer.IndexNumber,
-			&gethTransfer.TransferDate,
-			&gethTransfer.TxnHash,
-			&gethTransfer.SenderAddress,
-			&gethTransfer.SenderAddressID,
-			&gethTransfer.ToAddress,
-			&gethTransfer.ToAddressID,
-			&gethTransfer.Amount,
-			&gethTransfer.Description,
-			&gethTransfer.CreatedBy,
-			&gethTransfer.CreatedAt,
-			&gethTransfer.UpdatedBy,
-			&gethTransfer.UpdatedAt,
-			&gethTransfer.GethProcessJobID,
-			&gethTransfer.TopicsStr,
-			&gethTransfer.StatusID,
-			&gethTransfer.BaseAssetID,
-			&gethTransfer.TransferTypeID,
-		)
-		gethTransfers = append(gethTransfers, gethTransfer)
+	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethTransfers, nil
 }
 
-func RemoveGethTransfer(gethTransferID int) error {
+func RemoveGethTransfer(dbConnPgx utils.PgxIface, gethTransferID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_transfers WHERE id = $1`, gethTransferID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethTransfer DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
-}
-
-func RemoveGethTransfersFromBaseAssetIDAndStartBlockNumber(baseAssetID *int, startBlockNumber *int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_transfers WHERE base_asset_id = $1 AND block_number >=  $2`, *baseAssetID, *startBlockNumber)
-	if err != nil {
-		log.Println(err.Error())
+	sql := `DELETE FROM geth_transfers WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *gethTransferID); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func RemoveGethTransfersFromBaseAssetID(baseAssetID *int) error {
+func RemoveGethTransfersFromBaseAssetIDAndStartBlockNumber(dbConnPgx utils.PgxIface, baseAssetID *int, startBlockNumber *uint64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_transfers WHERE base_asset_id = $1`, *baseAssetID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethTransfersFromBaseAssetIDAndStartBlockNumber DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM geth_transfers WHERE base_asset_id = $1 AND block_number >=  $2`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID, *startBlockNumber); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetGethTransferList() ([]GethTransfer, error) {
+func RemoveGethTransfersFromBaseAssetID(dbConnPgx utils.PgxIface, baseAssetID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in RemoveGethTransfersFromBaseAssetID DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `DELETE FROM geth_transfers WHERE base_asset_id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func GetGethTransferList(dbConnPgx utils.PgxIface) ([]GethTransfer, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -830,49 +628,27 @@ func GetGethTransferList() ([]GethTransfer, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethTransfers := make([]GethTransfer, 0)
-	for results.Next() {
-		var gethTransfer GethTransfer
-		results.Scan(
-			&gethTransfer.ID,
-			&gethTransfer.UUID,
-			&gethTransfer.ChainID,
-			&gethTransfer.TokenAddress,
-			&gethTransfer.TokenAddressID,
-			&gethTransfer.AssetID,
-			&gethTransfer.BlockNumber,
-			&gethTransfer.IndexNumber,
-			&gethTransfer.TransferDate,
-			&gethTransfer.TxnHash,
-			&gethTransfer.SenderAddress,
-			&gethTransfer.SenderAddressID,
-			&gethTransfer.ToAddress,
-			&gethTransfer.ToAddressID,
-			&gethTransfer.Amount,
-			&gethTransfer.Description,
-			&gethTransfer.CreatedBy,
-			&gethTransfer.CreatedAt,
-			&gethTransfer.UpdatedBy,
-			&gethTransfer.GethProcessJobID,
-			&gethTransfer.TopicsStr,
-			&gethTransfer.StatusID,
-			&gethTransfer.BaseAssetID,
-			&gethTransfer.TransferTypeID,
-		)
-
-		gethTransfers = append(gethTransfers, gethTransfer)
+	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethTransfers, nil
 }
 
-func UpdateGethTransfer(gethTransfer GethTransfer) error {
+func UpdateGethTransfer(dbConnPgx utils.PgxIface, gethTransfer *GethTransfer) error {
 	// if the gethTransfer id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if gethTransfer.ID == nil {
 		return errors.New("gethTransfer has invalid ID")
 	}
-	_, err := database.DbConnPgx.Exec(ctx, `UPDATE geth_transfers SET
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethTransfer DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_transfers SET 
 		chain_id=$1,
 		token_address=$2,
 		token_address_id = $3,
@@ -894,7 +670,9 @@ func UpdateGethTransfer(gethTransfer GethTransfer) error {
 		status_id=$18,
 		base_asset_id=$19,
 		transfer_type_id=$20
-		WHERE id=$21`,
+		WHERE id=$21`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethTransfer.ChainID,             //1
 		gethTransfer.TokenAddress,        //2
 		gethTransfer.TokenAddressID,      //3
@@ -916,20 +694,25 @@ func UpdateGethTransfer(gethTransfer GethTransfer) error {
 		gethTransfer.BaseAssetID,         //19
 		gethTransfer.TransferTypeID,      //20
 		gethTransfer.ID,                  //21
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertGethTransfer(gethTransfer GethTransfer) (int, string, error) {
+func InsertGethTransfer(dbConnPgx utils.PgxIface, gethTransfer *GethTransfer) (int, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertGethMiner DbConn.Begin   %s", err.Error())
+		return -1, "", err
+	}
 	var gethTransferID int
 	var gethTransferUUID string
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO geth_transfers
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO geth_transfers
 	(
 		uuid,
 		chain_id,
@@ -1004,12 +787,19 @@ func InsertGethTransfer(gethTransfer GethTransfer) (int, string, error) {
 		gethTransfer.TransferTypeID,      //20
 	).Scan(&gethTransferID, &gethTransferUUID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, "", err
+		return -1, "", err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, "", err
 	}
 	return int(gethTransferID), gethTransferUUID, nil
 }
-func InsertGethTransfers(gethTransfers []*GethTransfer) error {
+func InsertGethTransfers(dbConnPgx utils.PgxIface, gethTransfers []GethTransfer) error {
 	// need to supply uuid
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -1049,7 +839,7 @@ func InsertGethTransfers(gethTransfers []*GethTransfer) error {
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"geth_transfers"},
 		[]string{
@@ -1080,61 +870,66 @@ func InsertGethTransfers(gethTransfers []*GethTransfer) error {
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertGethTransfers: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
 	}
 	return nil
 }
 
-func UpdateGethTransferAddresses(baseAssetID *int) error {
+func UpdateGethTransferAddresses(dbConnPgx utils.PgxIface, baseAssetID *int) error {
 	// update address ids from existing addresses in geth_addresses
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `
-		UPDATE geth_transfers as gt SET
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethTransferAddresses DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_transfers as gt SET
 			sender_address_id = ga.id from geth_addresses as ga
 			WHERE LOWER(gt.sender_address) = LOWER(ga.address_str)
 			AND gt.sender_address_id IS NULL
 			AND gt.base_asset_id = $1
-			`, *baseAssetID,
-	)
-	if err != nil {
-		log.Println(err.Error())
+			`
+
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
+		log.Println(fmt.Printf("UpdateGethTransferAddresses: Error at sql1 %v", err))
+		tx.Rollback(ctx)
 		return err
 	}
-	_, err = database.DbConnPgx.Exec(ctx, `
-			UPDATE geth_transfers as gt SET
+	sql2 := `UPDATE geth_transfers as gt SET
 			to_address_id = ga.id from geth_addresses as ga
 			WHERE LOWER(gt.to_address) = LOWER(ga.address_str)
 			AND gt.to_address_id IS NULL
 			AND gt.base_asset_id = $1
-			`, *baseAssetID,
-	)
-	if err != nil {
-		log.Println(err.Error())
+			`
+	if _, err := dbConnPgx.Exec(ctx, sql2, *baseAssetID); err != nil {
+		log.Println(fmt.Printf("UpdateGethTransferAddresses: Error at sql2 %v", err))
+		tx.Rollback(ctx)
 		return err
 	}
-	_, err = database.DbConnPgx.Exec(ctx, `UPDATE geth_transfers as gt SET
+	sql3 := `UPDATE geth_transfers as gt SET
 			asset_id = assets.id
 			from assets as assets
 			WHERE LOWER(gt.token_address) = LOWER(assets.contract_address)
 			AND gt.asset_id IS NULL
 			AND gt.base_asset_id = $1
-	`, *baseAssetID,
-	)
-	if err != nil {
-		log.Println(err.Error())
+	`
+	if _, err := dbConnPgx.Exec(ctx, sql3, *baseAssetID); err != nil {
+		log.Println(fmt.Printf("UpdateGethTransferAddresses: Error at sql3 %v", err))
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func GetNullAddressStrsFromTransfers(baseAssetID *int) ([]string, error) {
+func GetNullAddressStrsFromTransfers(dbConnPgx utils.PgxIface, baseAssetID *int) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 		WITH sender_table as(
 			SELECT DISTINCT LOWER(gt.sender_address) as address  
 			FROM geth_transfers gt
@@ -1174,20 +969,109 @@ func GetNullAddressStrsFromTransfers(baseAssetID *int) ([]string, error) {
 	return gethNullAddressStrs, nil
 }
 
-func UpdateGethTransfersAssetIDs() error {
+func UpdateGethTransfersAssetIDs(dbConnPgx utils.PgxIface) error {
 	// update address ids from existing addresses in geth_addresses
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `
-		UPDATE geth_transfers as gt SET
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethSwap DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_transfers as gt SET
 		asset_id = assets.id from assets as assets
 			WHERE LOWER(gt.token_address) = LOWER(assets.contract_address) AND
 			gt.asset_id is NULL
-	`,
-	)
-	if err != nil {
-		log.Println(err.Error())
+	`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
+}
+
+// for refinedev
+func GetGethTransferListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]GethTransfer, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `
+	SELECT
+		id,
+		uuid,
+		chain_id,
+		token_address,
+		token_address_id,
+		asset_id,
+		block_number,
+		index_number,
+		transfer_date,
+		txn_hash,
+		sender_address,
+		sender_address_id,
+		to_address,
+		to_address_id,
+		amount,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at,
+		geth_process_job_id,
+		topics_str,
+		status_id,
+		base_asset_id,
+		transfer_type_id
+	FROM geth_transfers 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return gethTransfers, nil
+}
+
+func GetTotalTransactionsCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM geth_transfers
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }
