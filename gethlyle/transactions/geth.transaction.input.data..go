@@ -91,7 +91,7 @@ func RemoveGethTransactionInput(dbConnPgx utils.PgxIface, gethTransactionInputID
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in RemoveGethMinerTransaction DbConn.Begin   %s", err.Error())
+		log.Printf("Error in RemoveGethTransactionInput DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `DELETE FROM geth_transaction_inputs WHERE id = $1`

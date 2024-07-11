@@ -305,7 +305,7 @@ func RemoveGethTransaction(dbConnPgx utils.PgxIface, gethTransactionID *int) err
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in RemoveGethMinerTransaction DbConn.Begin   %s", err.Error())
+		log.Printf("Error in RemoveGethTransaction DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `DELETE FROM geth_transactions WHERE id = $1`
@@ -322,7 +322,7 @@ func RemoveGethTransactionsFromChainIDAndStartBlockNumber(dbConnPgx utils.PgxIfa
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in RemoveGethMinerTransaction DbConn.Begin   %s", err.Error())
+		log.Printf("Error in RemoveGethTransactionsFromChainIDAndStartBlockNumber DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `DELETE FROM geth_transactions WHERE chain_id = $1 AND block_number >=  $2`
@@ -339,7 +339,7 @@ func RemoveGethTransactionsFromChainID(dbConnPgx utils.PgxIface, chainID *int) e
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in RemoveGethMinerTransaction DbConn.Begin   %s", err.Error())
+		log.Printf("Error in RemoveGethTransactionsFromChainID DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `DELETE FROM geth_transactions WHERE chain_id = $1`

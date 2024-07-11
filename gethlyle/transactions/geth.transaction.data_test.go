@@ -223,7 +223,7 @@ func TestGetGethTransactionByFromToAddress(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []GethTransaction{TestData1}
+	dataList := []GethTransaction{TestData1, TestData2}
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	fromToAddressID := TestData1.FromAddressID
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(*fromToAddressID).WillReturnRows(mockRows)
@@ -268,7 +268,7 @@ func TestGetGethTransactionByFromAddressAndBeforeBlockNumber(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []GethTransaction{TestData1}
+	dataList := []GethTransaction{TestData1, TestData2}
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	fromToAddressID := TestData1.FromAddressID
 	blockNumber := TestData1.BlockNumber
@@ -315,7 +315,7 @@ func TestGetGethTransactionsByTxnHash(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []GethTransaction{TestData1}
+	dataList := TestAllData
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	txnHash := TestData1.TxnHash
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(txnHash).WillReturnRows(mockRows)
@@ -360,7 +360,7 @@ func TestGetGethTransactionsByTxnHashes(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []GethTransaction{TestData1, TestData2}
+	dataList := TestAllData
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	txnHashes := []string{TestData1.TxnHash, TestData2.TxnHash}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(pq.Array(txnHashes)).WillReturnRows(mockRows)
@@ -406,7 +406,7 @@ func TestGetGethTransactionsByUUIDs(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []GethTransaction{TestData1, TestData2}
+	dataList := TestAllData
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	uuids := []string{TestData1.UUID, TestData2.UUID}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(pq.Array(uuids)).WillReturnRows(mockRows)
@@ -571,7 +571,7 @@ func TestGetGethTransactionList(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []GethTransaction{TestData1, TestData2}
+	dataList := TestAllData
 
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WillReturnRows(mockRows)
@@ -1077,7 +1077,7 @@ func TestGetAllGethTransactionsByMinerIDAndFromAddress(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []GethTransaction{TestData1, TestData2}
+	dataList := TestAllData
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	minerID := 1
 	fromAddress := "Test-From-Address"
@@ -1124,7 +1124,7 @@ func TestGetAllGethTransactionsByMinerIDAndFromAddressToDate(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []GethTransaction{TestData1, TestData2}
+	dataList := TestAllData
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	minerID := 1
 	fromAddress := "Test-From-Address"
@@ -1173,7 +1173,7 @@ func TestGetAllGethTransactionsByMinerIDAndFromAddressFromToDate(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []GethTransaction{TestData1, TestData2}
+	dataList := TestAllData
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	minerID := 1
 	fromAddress := "Test-From-Address"
