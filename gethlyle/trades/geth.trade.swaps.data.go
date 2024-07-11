@@ -490,12 +490,12 @@ func GetGethTradeSwapListByPagination(dbConnPgx utils.PgxIface, _start, _end *in
 		return nil, err
 	}
 	defer results.Close()
-	minerTransactionInputs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeSwap])
+	gethTradeSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeSwap])
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return minerTransactionInputs, nil
+	return gethTradeSwaps, nil
 }
 
 func GetTotalGethTradeSwapCount(dbConnPgx utils.PgxIface) (*int, error) {

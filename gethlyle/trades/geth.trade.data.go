@@ -889,12 +889,12 @@ func GetGethTradeListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
+	gethTrades, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethTransactions, nil
+	return gethTrades, nil
 }
 
 func GetTotalTransactionsCount(dbConnPgx utils.PgxIface) (*int, error) {
