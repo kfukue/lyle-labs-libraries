@@ -704,7 +704,6 @@ func UpdateGethTransfer(dbConnPgx utils.PgxIface, gethTransfer *GethTransfer) er
 func InsertGethTransfer(dbConnPgx utils.PgxIface, gethTransfer *GethTransfer) (int, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
 		log.Printf("Error in InsertGethMiner DbConn.Begin   %s", err.Error())
