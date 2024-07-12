@@ -19,7 +19,7 @@ CREATE TABLE liquidity_pools
   start_block INT NULL,
   latest_block_synced INT NULL,
   created_txn_hash VARCHAR(255) NULL,
-  IsActive BOOLEAN NULL,
+  is_active BOOLEAN NULL,
   description TEXT NULL,
   created_by VARCHAR(255) NOT NULL,
   created_at timestamp NOT NULL,
@@ -74,3 +74,6 @@ CREATE TABLE liquidity_pool_assets
   CONSTRAINT fk_liquidity_pool_id FOREIGN KEY(liquidity_pool_id) REFERENCES liquidity_pools(id),
   CONSTRAINT fk_asset_id FOREIGN KEY(asset_id) REFERENCES assets(id)
 );
+
+
+--07/11/2024 rename IsActive to is_active

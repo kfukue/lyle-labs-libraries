@@ -9,15 +9,14 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
-func GetLiquidityPool(liquidityPoolID int) (*LiquidityPool, error) {
+func GetLiquidityPool(dbConnPgx utils.PgxIface, liquidityPoolID *int) (*LiquidityPool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		name,
@@ -43,58 +42,42 @@ func GetLiquidityPool(liquidityPoolID int) (*LiquidityPool, error) {
 		quote_asset_chainlink_address_usd
 
 	FROM liquidity_pools 
-	WHERE id = $1`, liquidityPoolID)
-
-	liquidityPool := &LiquidityPool{}
-	err := row.Scan(
-		&liquidityPool.ID,
-		&liquidityPool.UUID,
-		&liquidityPool.Name,
-		&liquidityPool.AlternateName,
-		&liquidityPool.PairAddress,
-		&liquidityPool.ChainID,
-		&liquidityPool.ExchangeID,
-		&liquidityPool.LiquidityPoolTypeID,
-		&liquidityPool.Token0ID,
-		&liquidityPool.Token1ID,
-		&liquidityPool.Url,
-		&liquidityPool.StartBlock,
-		&liquidityPool.LatestBlockSynced,
-		&liquidityPool.CreatedTxnHash,
-		&liquidityPool.IsActive,
-		&liquidityPool.Description,
-		&liquidityPool.CreatedBy,
-		&liquidityPool.CreatedAt,
-		&liquidityPool.UpdatedBy,
-		&liquidityPool.UpdatedAt,
-		&liquidityPool.BaseAssetID,
-		&liquidityPool.QuoteAssetID,
-		&liquidityPool.QuoteAssetChainlinkAddress,
-	)
+	WHERE id = $1`, *liquidityPoolID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	liquidityPool, err := pgx.CollectOneRow(row, pgx.RowToStructByName[LiquidityPool])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return liquidityPool, nil
+	return &liquidityPool, nil
 }
 
-func RemoveLiquidityPool(liquidityPoolID int) error {
+func RemoveLiquidityPool(dbConnPgx utils.PgxIface, liquidityPoolID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM liquidity_pools WHERE id = $1`, liquidityPoolID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveJob DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM liquidity_pools WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *liquidityPoolID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetLiquidityPools() ([]LiquidityPool, error) {
+func GetLiquidityPools(dbConnPgx utils.PgxIface) ([]LiquidityPool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -124,41 +107,15 @@ func GetLiquidityPools() ([]LiquidityPool, error) {
 		return nil, err
 	}
 	defer results.Close()
-	liquidityPools := make([]LiquidityPool, 0)
-	for results.Next() {
-		var liquidityPool LiquidityPool
-		results.Scan(
-			&liquidityPool.ID,
-			&liquidityPool.UUID,
-			&liquidityPool.Name,
-			&liquidityPool.AlternateName,
-			&liquidityPool.PairAddress,
-			&liquidityPool.ChainID,
-			&liquidityPool.ExchangeID,
-			&liquidityPool.LiquidityPoolTypeID,
-			&liquidityPool.Token0ID,
-			&liquidityPool.Token1ID,
-			&liquidityPool.Url,
-			&liquidityPool.StartBlock,
-			&liquidityPool.LatestBlockSynced,
-			&liquidityPool.CreatedTxnHash,
-			&liquidityPool.IsActive,
-			&liquidityPool.Description,
-			&liquidityPool.CreatedBy,
-			&liquidityPool.CreatedAt,
-			&liquidityPool.UpdatedBy,
-			&liquidityPool.UpdatedAt,
-			&liquidityPool.BaseAssetID,
-			&liquidityPool.QuoteAssetID,
-			&liquidityPool.QuoteAssetChainlinkAddress,
-		)
-
-		liquidityPools = append(liquidityPools, liquidityPool)
+	liquidityPools, err := pgx.CollectRows(results, pgx.RowToStructByName[LiquidityPool])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return liquidityPools, nil
 }
 
-func GetLiquidityPoolList(ids []int) ([]LiquidityPool, error) {
+func GetLiquidityPoolList(dbConnPgx utils.PgxIface, ids []int) ([]LiquidityPool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
@@ -191,46 +148,21 @@ func GetLiquidityPoolList(ids []int) ([]LiquidityPool, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	liquidityPools := make([]LiquidityPool, 0)
-	for results.Next() {
-		var liquidityPool LiquidityPool
-		results.Scan(
-			&liquidityPool.ID,
-			&liquidityPool.UUID,
-			&liquidityPool.Name,
-			&liquidityPool.AlternateName,
-			&liquidityPool.PairAddress,
-			&liquidityPool.ChainID,
-			&liquidityPool.ExchangeID,
-			&liquidityPool.LiquidityPoolTypeID,
-			&liquidityPool.Token0ID,
-			&liquidityPool.Token1ID,
-			&liquidityPool.Url,
-			&liquidityPool.StartBlock,
-			&liquidityPool.LatestBlockSynced,
-			&liquidityPool.CreatedTxnHash,
-			&liquidityPool.IsActive,
-			&liquidityPool.Description,
-			&liquidityPool.CreatedBy,
-			&liquidityPool.CreatedAt,
-			&liquidityPool.UpdatedBy,
-			&liquidityPool.UpdatedAt,
-			&liquidityPool.BaseAssetID,
-			&liquidityPool.QuoteAssetID,
-			&liquidityPool.QuoteAssetChainlinkAddress,
-		)
-		liquidityPools = append(liquidityPools, liquidityPool)
+	liquidityPools, err := pgx.CollectRows(results, pgx.RowToStructByName[LiquidityPool])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return liquidityPools, nil
 }
 
-func GetLiquidityPoolListByBaseAssetID(asset0ID *int) ([]LiquidityPoolWithTokens, error) {
+func GetLiquidityPoolListByBaseAssetID(dbConnPgx utils.PgxIface, baseAssetID *int) ([]LiquidityPoolWithTokens, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
@@ -312,7 +244,7 @@ func GetLiquidityPoolListByBaseAssetID(asset0ID *int) ([]LiquidityPoolWithTokens
 	LEFT JOIN assets token1 ON lp.token1_id = token1.id
 	WHERE lp.base_asset_id = $1
 	`
-	results, err := database.DbConnPgx.Query(ctx, sql, asset0ID)
+	results, err := dbConnPgx.Query(ctx, sql, *baseAssetID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -401,10 +333,10 @@ func GetLiquidityPoolListByBaseAssetID(asset0ID *int) ([]LiquidityPoolWithTokens
 	return liquidityPoolsWithTokens, nil
 }
 
-func GetLiquidityPoolsByUUIDs(UUIDList []string) ([]LiquidityPool, error) {
+func GetLiquidityPoolsByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]LiquidityPool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -436,117 +368,26 @@ func GetLiquidityPoolsByUUIDs(UUIDList []string) ([]LiquidityPool, error) {
 		return nil, err
 	}
 	defer results.Close()
-	liquidityPools := make([]LiquidityPool, 0)
-	for results.Next() {
-		var liquidityPool LiquidityPool
-		results.Scan(
-			&liquidityPool.ID,
-			&liquidityPool.UUID,
-			&liquidityPool.Name,
-			&liquidityPool.AlternateName,
-			&liquidityPool.PairAddress,
-			&liquidityPool.ChainID,
-			&liquidityPool.ExchangeID,
-			&liquidityPool.LiquidityPoolTypeID,
-			&liquidityPool.Token0ID,
-			&liquidityPool.Token1ID,
-			&liquidityPool.Url,
-			&liquidityPool.StartBlock,
-			&liquidityPool.LatestBlockSynced,
-			&liquidityPool.CreatedTxnHash,
-			&liquidityPool.IsActive,
-			&liquidityPool.Description,
-			&liquidityPool.CreatedBy,
-			&liquidityPool.CreatedAt,
-			&liquidityPool.UpdatedBy,
-			&liquidityPool.UpdatedAt,
-			&liquidityPool.BaseAssetID,
-			&liquidityPool.QuoteAssetID,
-			&liquidityPool.QuoteAssetChainlinkAddress,
-		)
-
-		liquidityPools = append(liquidityPools, liquidityPool)
-	}
-	return liquidityPools, nil
-}
-
-func GetStartAndEndDateDiffLiquidityPools(diffInDate int) ([]LiquidityPool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-		id,
-		uuid,
-		name,
-		alternate_name,
-		pair_address,
-		chain_id,
-		exchange_id,
-		liquidity_pool_type_id,
-		token0_id,
-		token1_id,
-		url,
-		start_block,
-		latest_block_synced,
-		created_txn_hash,
-		IsActive,
-		description,
-		created_by, 
-		created_at, 
-		updated_by, 
-		updated_at,
-		base_asset_id,
-		quote_asset_id,
-		quote_asset_chainlink_address_usd
-	FROM liquidity_pools
-	WHERE DATE_PART('day', AGE(start_date, end_date)) =$1
-	`, diffInDate)
+	liquidityPools, err := pgx.CollectRows(results, pgx.RowToStructByName[LiquidityPool])
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
-	liquidityPools := make([]LiquidityPool, 0)
-	for results.Next() {
-		var liquidityPool LiquidityPool
-		results.Scan(
-			&liquidityPool.ID,
-			&liquidityPool.UUID,
-			&liquidityPool.Name,
-			&liquidityPool.AlternateName,
-			&liquidityPool.PairAddress,
-			&liquidityPool.ChainID,
-			&liquidityPool.ExchangeID,
-			&liquidityPool.LiquidityPoolTypeID,
-			&liquidityPool.Token0ID,
-			&liquidityPool.Token1ID,
-			&liquidityPool.Url,
-			&liquidityPool.StartBlock,
-			&liquidityPool.LatestBlockSynced,
-			&liquidityPool.CreatedTxnHash,
-			&liquidityPool.IsActive,
-			&liquidityPool.Description,
-			&liquidityPool.CreatedBy,
-			&liquidityPool.CreatedAt,
-			&liquidityPool.UpdatedBy,
-			&liquidityPool.UpdatedAt,
-			&liquidityPool.BaseAssetID,
-			&liquidityPool.QuoteAssetID,
-			&liquidityPool.QuoteAssetChainlinkAddress,
-		)
-
-		liquidityPools = append(liquidityPools, liquidityPool)
-	}
 	return liquidityPools, nil
 }
-
-func UpdateLiquidityPool(liquidityPool LiquidityPool) error {
+func UpdateLiquidityPool(dbConnPgx utils.PgxIface, liquidityPool *LiquidityPool) error {
 	// if the liquidityPool id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if liquidityPool.ID == nil || *liquidityPool.ID == 0 {
 		return errors.New("liquidityPool has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE liquidity_pools SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateLiquidityPool DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE liquidity_pools SET 
 		name=$1,
 		alternate_name=$2,
 		pair_address=$3,
@@ -566,7 +407,9 @@ func UpdateLiquidityPool(liquidityPool LiquidityPool) error {
 		base_asset_id=$16,
 		quote_asset_id=$17,
 		quote_asset_chainlink_address_usd=$18
-		WHERE id=$19`,
+		WHERE id=$19`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		liquidityPool.Name,                       //1
 		liquidityPool.AlternateName,              //2
 		liquidityPool.PairAddress,                //3
@@ -585,21 +428,25 @@ func UpdateLiquidityPool(liquidityPool LiquidityPool) error {
 		liquidityPool.BaseAssetID,                //16
 		liquidityPool.QuoteAssetID,               //17
 		liquidityPool.QuoteAssetChainlinkAddress, //18
-		liquidityPool.ID)                         //19
-
-	if err != nil {
-		log.Println(err.Error())
+		liquidityPool.ID,                         //19
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertLiquidityPool(liquidityPool LiquidityPool) (int, error) {
+func InsertLiquidityPool(dbConnPgx utils.PgxIface, liquidityPool *LiquidityPool) (int, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertLiquidityPool DbConn.Begin   %s", err.Error())
+		return -1, "", err
+	}
 	var insertID int
-	// layoutPostgres := utils.LayoutPostgres
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO liquidity_pools 
+	var insertUUID string
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO liquidity_pools 
 	(
 		uuid,
 		name,
@@ -647,34 +494,40 @@ func InsertLiquidityPool(liquidityPool LiquidityPool) (int, error) {
 			$17,
 			$18
 		)
-		RETURNING id`,
+		RETURNING id, uuid`,
 		liquidityPool.Name,                       //1
 		liquidityPool.AlternateName,              //2
-		&liquidityPool.PairAddress,               //3
-		&liquidityPool.ChainID,                   //4
-		&liquidityPool.ExchangeID,                //5
-		&liquidityPool.LiquidityPoolTypeID,       //6
-		&liquidityPool.Token0ID,                  //7
-		&liquidityPool.Token1ID,                  //8
-		&liquidityPool.Url,                       //9
-		&liquidityPool.StartBlock,                //10
-		&liquidityPool.LatestBlockSynced,         //11
-		&liquidityPool.CreatedTxnHash,            //12
-		&liquidityPool.IsActive,                  //13
+		liquidityPool.PairAddress,                //3
+		liquidityPool.ChainID,                    //4
+		liquidityPool.ExchangeID,                 //5
+		liquidityPool.LiquidityPoolTypeID,        //6
+		liquidityPool.Token0ID,                   //7
+		liquidityPool.Token1ID,                   //8
+		liquidityPool.Url,                        //9
+		liquidityPool.StartBlock,                 //10
+		liquidityPool.LatestBlockSynced,          //11
+		liquidityPool.CreatedTxnHash,             //12
+		liquidityPool.IsActive,                   //13
 		liquidityPool.Description,                //14
 		liquidityPool.CreatedBy,                  //15
 		liquidityPool.BaseAssetID,                //16
 		liquidityPool.QuoteAssetID,               //17
 		liquidityPool.QuoteAssetChainlinkAddress, //18
-	).Scan(&insertID)
-
+	).Scan(&insertID, &insertUUID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, "", err
 	}
-	return int(insertID), nil
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, "", err
+	}
+	return int(insertID), insertUUID, nil
 }
-func InsertLiquidityPools(liquidityPools []LiquidityPool) error {
+func InsertLiquidityPools(dbConnPgx utils.PgxIface, liquidityPools []LiquidityPool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -689,14 +542,14 @@ func InsertLiquidityPools(liquidityPools []LiquidityPool) error {
 			liquidityPool.Name,                       //2
 			liquidityPool.AlternateName,              //3
 			liquidityPool.PairAddress,                //4
-			*liquidityPool.ChainID,                   //5
-			*liquidityPool.ExchangeID,                //6
-			*liquidityPool.LiquidityPoolTypeID,       //7
-			*liquidityPool.Token0ID,                  //8
-			*liquidityPool.Token1ID,                  //9
+			liquidityPool.ChainID,                    //5
+			liquidityPool.ExchangeID,                 //6
+			liquidityPool.LiquidityPoolTypeID,        //7
+			liquidityPool.Token0ID,                   //8
+			liquidityPool.Token1ID,                   //9
 			liquidityPool.Url,                        //10
-			*liquidityPool.StartBlock,                //11
-			*liquidityPool.LatestBlockSynced,         //12
+			liquidityPool.StartBlock,                 //11
+			liquidityPool.LatestBlockSynced,          //12
 			liquidityPool.CreatedTxnHash,             //13
 			liquidityPool.IsActive,                   //14
 			liquidityPool.Description,                //15
@@ -704,13 +557,13 @@ func InsertLiquidityPools(liquidityPools []LiquidityPool) error {
 			&now,                                     //17
 			liquidityPool.CreatedBy,                  //18
 			&now,                                     //19
-			*liquidityPool.BaseAssetID,               //20
+			liquidityPool.BaseAssetID,                //20
 			liquidityPool.QuoteAssetID,               //21
 			liquidityPool.QuoteAssetChainlinkAddress, //22
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"liquidity_pools"},
 		[]string{
@@ -739,42 +592,7 @@ func InsertLiquidityPools(liquidityPools []LiquidityPool) error {
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
-	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
-	}
-	return nil
-}
-
-// liquidityPool chain methods
-
-func UpdateLiquidityPoolAssetByUUID(liquidityPoolAsset LiquidityPoolAsset) error {
-	// if the liquidityPool id is set, update, otherwise add
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	if liquidityPoolAsset.LiquidityPoolID == nil || *liquidityPoolAsset.LiquidityPoolID == 0 || liquidityPoolAsset.UUID == "" {
-		return errors.New("liquidityPoolAsset has invalid IDs")
-	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE liquidity_pool_assets SET 
-		liquidity_pool_id=$1,
-		asset_id=$2,
-		token_number=$3,
-		name=$4,
-		alternate_name=$5,
-		description=$6,
-		updated_by=$7, 
-		updated_at=current_timestamp at time zone 'UTC'
-		WHERE 
-		uuid=$8,`,
-		liquidityPoolAsset.LiquidityPoolID, //1
-		liquidityPoolAsset.AssetID,         //2
-		liquidityPoolAsset.TokenNumber,     //3
-		liquidityPoolAsset.Name,            //4
-		liquidityPoolAsset.AlternateName,   //5
-		liquidityPoolAsset.Description,     //6
-		liquidityPoolAsset.UpdatedBy,       //7
-		liquidityPoolAsset.UUID)            //8
+	log.Println(fmt.Printf("InsertLiquidityPools: copy count: %d", copyCount))
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -782,106 +600,8 @@ func UpdateLiquidityPoolAssetByUUID(liquidityPoolAsset LiquidityPoolAsset) error
 	return nil
 }
 
-func InsertLiquidityPoolAsset(liquidityPoolAsset LiquidityPoolAsset) (int, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	var insertID int
-	// layoutPostgres := utils.LayoutPostgres
-	_, err := database.DbConnPgx.Query(ctx, `INSERT INTO liquidity_pool_assets 
-	(
-		uuid,
-		liquidity_pool_id,
-		asset_id,
-		token_number,
-		name,
-		alternate_name,
-		description,
-		created_by, 
-		created_at, 
-		updated_by, 
-		updated_at
-		) VALUES (
-			uuid_generate_v4(),
-			$1, 
-			$2, 
-			$3, 
-			$4, 
-			$5, 
-			$6, 
-			$7, 
-			current_timestamp at time zone 'UTC',
-			$7,
-			current_timestamp at time zone 'UTC'
-		)
-		`,
-		liquidityPoolAsset.LiquidityPoolID, //1
-		liquidityPoolAsset.AssetID,         //2
-		liquidityPoolAsset.TokenNumber,     //3
-		liquidityPoolAsset.Name,            //4
-		liquidityPoolAsset.AlternateName,   //5
-		liquidityPoolAsset.Description,     //6
-		liquidityPoolAsset.CreatedBy,       //7
-	)
-
-	if err != nil {
-		log.Println(err.Error())
-		return 0, err
-	}
-	return int(insertID), nil
-}
-func InsertLiquidityPoolAssets(liquidityPoolAssets []LiquidityPoolAsset) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	loc, _ := time.LoadLocation("UTC")
-	now := time.Now().In(loc)
-	rows := [][]interface{}{}
-	for i, _ := range liquidityPoolAssets {
-		liquidityPoolAssets := liquidityPoolAssets[i]
-		uuidString := &pgtype.UUID{}
-		uuidString.Set(liquidityPoolAssets.UUID)
-		row := []interface{}{
-			uuidString,                          //1
-			liquidityPoolAssets.LiquidityPoolID, //2
-			liquidityPoolAssets.AssetID,         //3
-			liquidityPoolAssets.TokenNumber,     //4
-			liquidityPoolAssets.Name,            //5
-			liquidityPoolAssets.AlternateName,   //6
-			liquidityPoolAssets.Description,     //7
-			liquidityPoolAssets.CreatedBy,       //8
-			&now,                                //9
-			liquidityPoolAssets.CreatedBy,       //10
-			&now,                                //11
-		}
-		rows = append(rows, row)
-	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
-		ctx,
-		pgx.Identifier{"liquidity_pool_assets"},
-		[]string{
-			"uuid",              //1
-			"liquidity_pool_id", //2
-			"asset_id",          //3
-			"token_number",      //4
-			"name",              //5
-			"alternate_name",    //6
-			"description",       //7
-			"created_by",        //8
-			"created_at",        //9
-			"updated_by",        //10
-			"updated_at",        //11
-		},
-		pgx.CopyFromRows(rows),
-	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
-	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
-	}
-	return nil
-}
-
 // for refinedev
-func GetLiquidityPoolListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]LiquidityPool, error) {
+func GetLiquidityPoolListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]LiquidityPool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
@@ -927,51 +647,25 @@ func GetLiquidityPoolListByPagination(_start, _end *int, _order, _sort string, _
 		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
 	}
 
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	liquidityPools := make([]LiquidityPool, 0)
-	for results.Next() {
-		var liquidityPool LiquidityPool
-		results.Scan(
-			&liquidityPool.ID,
-			&liquidityPool.UUID,
-			&liquidityPool.Name,
-			&liquidityPool.AlternateName,
-			&liquidityPool.PairAddress,
-			&liquidityPool.ChainID,
-			&liquidityPool.ExchangeID,
-			&liquidityPool.LiquidityPoolTypeID,
-			&liquidityPool.Token0ID,
-			&liquidityPool.Token1ID,
-			&liquidityPool.Url,
-			&liquidityPool.StartBlock,
-			&liquidityPool.LatestBlockSynced,
-			&liquidityPool.CreatedTxnHash,
-			&liquidityPool.IsActive,
-			&liquidityPool.Description,
-			&liquidityPool.CreatedBy,
-			&liquidityPool.CreatedAt,
-			&liquidityPool.UpdatedBy,
-			&liquidityPool.UpdatedAt,
-			&liquidityPool.BaseAssetID,
-			&liquidityPool.QuoteAssetID,
-			&liquidityPool.QuoteAssetChainlinkAddress,
-		)
-
-		liquidityPools = append(liquidityPools, liquidityPool)
+	liquidityPools, err := pgx.CollectRows(results, pgx.RowToStructByName[LiquidityPool])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return liquidityPools, nil
 }
 
-func GetTotalLiquidityPoolCount() (*int, error) {
+func GetTotalLiquidityPoolCount(dbConnPgx utils.PgxIface) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
 	COUNT(*)
 	FROM liquidity_pools
 	`)
