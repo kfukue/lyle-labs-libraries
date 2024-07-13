@@ -174,7 +174,7 @@ func TestGetMarketDataJobForErrNoRows(t *testing.T) {
 	}
 }
 
-func TestGetMarketDataJobForErr(t *testing.T) {
+func TestGetMarketDataJobForCollectRowErr(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
@@ -203,7 +203,9 @@ func TestGetMarketDataJobForCollectRowsErr(t *testing.T) {
 	defer mock.Close()
 	marketDataID := -1
 	jobID := -1
-	mock.ExpectQuery("^SELECT (.+) FROM market_data_jobs").WithArgs(marketDataID, jobID).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM market_data_jobs").WithArgs(marketDataID, jobID).WillReturnRows(differentModelRows)
 	foundMarketDataJob, err := GetMarketDataJob(mock, &marketDataID, &jobID)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetMarketDataJob", err)
@@ -268,6 +270,27 @@ func TestGetMarketDataJobByMarketDataIDForErr(t *testing.T) {
 	defer mock.Close()
 	marketDataID := -1
 	mock.ExpectQuery("^SELECT (.+) FROM market_data_jobs").WithArgs(marketDataID).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
+	foundMarketDataJob, err := GetMarketDataJobByMarketDataID(mock, &marketDataID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetMarketDataJobByMarketDataID", err)
+	}
+	if foundMarketDataJob != nil {
+		t.Errorf("Expected MarketDataJob From Method GetMarketDataJobByMarketDataID: to be empty but got this: %v", foundMarketDataJob)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetMarketDataJobByMarketDataIDForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	marketDataID := -1
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM market_data_jobs").WithArgs(marketDataID).WillReturnRows(differentModelRows)
 	foundMarketDataJob, err := GetMarketDataJobByMarketDataID(mock, &marketDataID)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetMarketDataJobByMarketDataID", err)
@@ -384,6 +407,26 @@ func TestGetMarketDataJobListForErr(t *testing.T) {
 	}
 }
 
+func TestGetMarketDataJobListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM market_data_jobs").WillReturnRows(differentModelRows)
+	foundMarketDataJob, err := GetMarketDataJobList(mock)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetMarketDataJobList", err)
+	}
+	if foundMarketDataJob != nil {
+		t.Errorf("Expected MarketDataJob From Method GetMarketDataJobList: to be empty but got this: %v", foundMarketDataJob)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestUpdateMarketDataJob(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -412,6 +455,22 @@ func TestUpdateMarketDataJob(t *testing.T) {
 	err = UpdateMarketDataJob(mock, &targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in UpdateMarketDataJob", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+func TestUpdateMarketDataJobOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.MarketDataID = nil
+	err = UpdateMarketDataJob(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -658,11 +717,11 @@ func TestGetMarketDataJobListByPagination(t *testing.T) {
 	defer mock.Close()
 	dataList := TestAllData
 	mockRows := AddMarketDataJobToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"job_id = 1"}
+	filters := []string{"job_id = 1", "status_id = 1"}
 	mock.ExpectQuery("^SELECT (.+) FROM market_data_jobs").WillReturnRows(mockRows)
 	foundMarketDataJobList, err := GetMarketDataJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -690,6 +749,31 @@ func TestGetMarketDataJobListByPaginationForErr(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"job_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM market_data_jobs").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
+	foundMarketDataJobList, err := GetMarketDataJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetMarketDataJobListByPagination", err)
+	}
+	if len(foundMarketDataJobList) != 0 {
+		t.Errorf("Expected From Method GetMarketDataJobListByPagination: to be empty but got this: %v", foundMarketDataJobList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetMarketDataJobListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"job_id = -1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM market_data_jobs").WillReturnRows(differentModelRows)
 	foundMarketDataJobList, err := GetMarketDataJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetMarketDataJobListByPagination", err)
