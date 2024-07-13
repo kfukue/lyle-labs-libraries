@@ -1432,14 +1432,13 @@ func TestGetGethTransferListByPagination(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"chain_id = 1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WillReturnRows(mockRows)
-	foundChains, err := GetGethTransferListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethTransferList, err := GetGethTransferListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethTransferListByPagination", err)
 	}
-	testChains := dataList
-	for i, foundChain := range foundChains {
-		if cmp.Equal(foundChain, testChains[i]) == false {
-			t.Errorf("Expected Chain From Method GetGethTransferListByPagination: %v is different from actual %v", foundChain, testChains[i])
+	for i, sourceData := range dataList {
+		if cmp.Equal(sourceData, foundGethTransferList[i]) == false {
+			t.Errorf("Expected sourceData From Method GetGethTransferListByPagination: %v is different from actual %v", sourceData, foundGethTransferList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -1459,12 +1458,12 @@ func TestGetGethTransferListByPaginationForErr(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"chain_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundChains, err := GetGethTransferListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethTransferList, err := GetGethTransferListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethTransferListByPagination", err)
 	}
-	if len(foundChains) != 0 {
-		t.Errorf("Expected From Method GetGethTransferListByPagination: to be empty but got this: %v", foundChains)
+	if len(foundGethTransferList) != 0 {
+		t.Errorf("Expected From Method GetGethTransferListByPagination: to be empty but got this: %v", foundGethTransferList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)

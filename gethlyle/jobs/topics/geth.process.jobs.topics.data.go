@@ -284,12 +284,12 @@ func GetGethProcessJobTopicListByPagination(dbConnPgx utils.PgxIface, _start, _e
 		return nil, err
 	}
 	defer results.Close()
-	gethProcessJobList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethProcessJobTopic])
+	gethProcessJobTopicList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethProcessJobTopic])
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethProcessJobList, nil
+	return gethProcessJobTopicList, nil
 }
 
 func GetTotalGethProcessJobTopicCount(dbConnPgx utils.PgxIface) (*int, error) {

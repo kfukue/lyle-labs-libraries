@@ -586,14 +586,13 @@ func TestGetGethMinerListByPagination(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"import_type_id = 1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners").WillReturnRows(mockRows)
-	foundChains, err := GetGethMinerListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethMinerList, err := GetGethMinerListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethMinerListByPagination", err)
 	}
-	testChains := dataList
-	for i, foundChain := range foundChains {
-		if cmp.Equal(foundChain, testChains[i]) == false {
-			t.Errorf("Expected Chain From Method GetGethMinerListByPagination: %v is different from actual %v", foundChain, testChains[i])
+	for i, sourceData := range dataList {
+		if cmp.Equal(sourceData, foundGethMinerList[i]) == false {
+			t.Errorf("Expected sourceData From Method GetGethMinerListByPagination: %v is different from actual %v", sourceData, foundGethMinerList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -613,12 +612,12 @@ func TestGetGethMinerListByPaginationForErr(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"import_type_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundChains, err := GetGethMinerListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethMinerList, err := GetGethMinerListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethMinerListByPagination", err)
 	}
-	if len(foundChains) != 0 {
-		t.Errorf("Expected From Method GetGethMinerListByPagination: to be empty but got this: %v", foundChains)
+	if len(foundGethMinerList) != 0 {
+		t.Errorf("Expected From Method GetGethMinerListByPagination: to be empty but got this: %v", foundGethMinerList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)

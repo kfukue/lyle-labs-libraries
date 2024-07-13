@@ -868,14 +868,13 @@ func TestGetLiquidityPoolListByPagination(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"chain_id = 1"}
 	mock.ExpectQuery("^SELECT (.+) FROM liquidity_pools").WillReturnRows(mockRows)
-	foundChains, err := GetLiquidityPoolListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundLiquidityPoolList, err := GetLiquidityPoolListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetLiquidityPoolListByPagination", err)
 	}
-	testChains := dataList
-	for i, foundChain := range foundChains {
-		if cmp.Equal(foundChain, testChains[i]) == false {
-			t.Errorf("Expected Chain From Method GetLiquidityPoolListByPagination: %v is different from actual %v", foundChain, testChains[i])
+	for i, sourceData := range dataList {
+		if cmp.Equal(sourceData, foundLiquidityPoolList[i]) == false {
+			t.Errorf("Expected sourceData From Method GetLiquidityPoolListByPagination: %v is different from actual %v", sourceData, foundLiquidityPoolList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -895,12 +894,12 @@ func TestGetLiquidityPoolListByPaginationForErr(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"chain_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM liquidity_pools").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundChains, err := GetLiquidityPoolListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundLiquidityPoolList, err := GetLiquidityPoolListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetLiquidityPoolListByPagination", err)
 	}
-	if len(foundChains) != 0 {
-		t.Errorf("Expected From Method GetLiquidityPoolListByPagination: to be empty but got this: %v", foundChains)
+	if len(foundLiquidityPoolList) != 0 {
+		t.Errorf("Expected From Method GetLiquidityPoolListByPagination: to be empty but got this: %v", foundLiquidityPoolList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)

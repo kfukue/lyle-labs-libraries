@@ -515,14 +515,13 @@ func TestGetGethTradeTaxTransferListByPagination(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"tax_id = 1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_trade_transfers").WillReturnRows(mockRows)
-	foundChains, err := GetGethTradeTaxTransferListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethTradeTaxTransferList, err := GetGethTradeTaxTransferListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethTradeTaxTransferListByPagination", err)
 	}
-	testChains := dataList
-	for i, foundChain := range foundChains {
-		if cmp.Equal(foundChain, testChains[i]) == false {
-			t.Errorf("Expected Chain From Method GetGethTradeTaxTransferListByPagination: %v is different from actual %v", foundChain, testChains[i])
+	for i, sourceData := range dataList {
+		if cmp.Equal(sourceData, foundGethTradeTaxTransferList[i]) == false {
+			t.Errorf("Expected sourceData From Method GetGethTradeTaxTransferListByPagination: %v is different from actual %v", sourceData, foundGethTradeTaxTransferList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -542,12 +541,12 @@ func TestGetGethTradeTaxTransferListByPaginationForErr(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"import_type_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_trade_transfers").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundChains, err := GetGethTradeTaxTransferListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethTradeTaxTransferList, err := GetGethTradeTaxTransferListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethTradeTaxTransferListByPagination", err)
 	}
-	if len(foundChains) != 0 {
-		t.Errorf("Expected From Method GetGethTradeTaxTransferListByPagination: to be empty but got this: %v", foundChains)
+	if len(foundGethTradeTaxTransferList) != 0 {
+		t.Errorf("Expected From Method GetGethTradeTaxTransferListByPagination: to be empty but got this: %v", foundGethTradeTaxTransferList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)

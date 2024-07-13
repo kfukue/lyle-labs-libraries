@@ -631,14 +631,13 @@ func TestGetJobListByPagination(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"status_id = 1"}
 	mock.ExpectQuery("^SELECT (.+) FROM jobs").WillReturnRows(mockRows)
-	foundChains, err := GetJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundJobList, err := GetJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetJobListByPagination", err)
 	}
-	testChains := dataList
-	for i, foundChain := range foundChains {
-		if cmp.Equal(foundChain, testChains[i]) == false {
-			t.Errorf("Expected Chain From Method GetJobListByPagination: %v is different from actual %v", foundChain, testChains[i])
+	for i, sourceData := range dataList {
+		if cmp.Equal(sourceData, foundJobList[i]) == false {
+			t.Errorf("Expected sourceData From Method GetJobListByPagination: %v is different from actual %v", sourceData, foundJobList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -658,12 +657,12 @@ func TestGetJobListByPaginationForErr(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"status_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM jobs").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundChains, err := GetJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundJobList, err := GetJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetJobListByPagination", err)
 	}
-	if len(foundChains) != 0 {
-		t.Errorf("Expected From Method GetJobListByPagination: to be empty but got this: %v", foundChains)
+	if len(foundJobList) != 0 {
+		t.Errorf("Expected From Method GetJobListByPagination: to be empty but got this: %v", foundJobList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)

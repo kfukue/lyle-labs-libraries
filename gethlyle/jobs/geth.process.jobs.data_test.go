@@ -587,14 +587,13 @@ func TestGetGethProcessJobListByPagination(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"import_type_id = 1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_process_jobs").WillReturnRows(mockRows)
-	foundChains, err := GetGethProcessJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethProcessJobList, err := GetGethProcessJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethProcessJobListByPagination", err)
 	}
-	testChains := dataList
-	for i, foundChain := range foundChains {
-		if cmp.Equal(foundChain, testChains[i]) == false {
-			t.Errorf("Expected Chain From Method GetGethProcessJobListByPagination: %v is different from actual %v", foundChain, testChains[i])
+	for i, sourceData := range dataList {
+		if cmp.Equal(sourceData, foundGethProcessJobList[i]) == false {
+			t.Errorf("Expected sourceData From Method GetGethProcessJobListByPagination: %v is different from actual %v", sourceData, foundGethProcessJobList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -614,12 +613,12 @@ func TestGetGethProcessJobListByPaginationForErr(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"import_type_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_process_jobs").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundChains, err := GetGethProcessJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethProcessJobList, err := GetGethProcessJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethProcessJobListByPagination", err)
 	}
-	if len(foundChains) != 0 {
-		t.Errorf("Expected From Method GetGethProcessJobListByPagination: to be empty but got this: %v", foundChains)
+	if len(foundGethProcessJobList) != 0 {
+		t.Errorf("Expected From Method GetGethProcessJobListByPagination: to be empty but got this: %v", foundGethProcessJobList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)

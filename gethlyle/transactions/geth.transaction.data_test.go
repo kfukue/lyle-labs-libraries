@@ -993,14 +993,13 @@ func TestGetGethTransactionListByPagination(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"import_type_id = 1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WillReturnRows(mockRows)
-	foundChains, err := GetGethTransactionListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethTransactionList, err := GetGethTransactionListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethTransactionListByPagination", err)
 	}
-	testChains := dataList
-	for i, foundChain := range foundChains {
-		if cmp.Equal(foundChain, testChains[i]) == false {
-			t.Errorf("Expected Chain From Method GetGethTransactionListByPagination: %v is different from actual %v", foundChain, testChains[i])
+	for i, sourceData := range dataList {
+		if cmp.Equal(sourceData, foundGethTransactionList[i]) == false {
+			t.Errorf("Expected sourceData From Method GetGethTransactionListByPagination: %v is different from actual %v", sourceData, foundGethTransactionList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -1020,12 +1019,12 @@ func TestGetGethTransactionListByPaginationForErr(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"import_type_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundChains, err := GetGethTransactionListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethTransactionList, err := GetGethTransactionListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethTransactionListByPagination", err)
 	}
-	if len(foundChains) != 0 {
-		t.Errorf("Expected From Method GetGethTransactionListByPagination: to be empty but got this: %v", foundChains)
+	if len(foundGethTransactionList) != 0 {
+		t.Errorf("Expected From Method GetGethTransactionListByPagination: to be empty but got this: %v", foundGethTransactionList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)

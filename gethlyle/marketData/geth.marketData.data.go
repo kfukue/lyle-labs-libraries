@@ -655,12 +655,12 @@ func GetGethMarketDataListByPagination(dbConnPgx utils.PgxIface, _start, _end *i
 		return nil, err
 	}
 	defer results.Close()
-	gethProcessJobList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMarketData])
+	gethMarketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMarketData])
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethProcessJobList, nil
+	return gethMarketDataList, nil
 }
 
 func GetTotalGethMarketDataCount(dbConnPgx utils.PgxIface) (*int, error) {

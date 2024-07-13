@@ -1232,14 +1232,13 @@ func TestGetGethSwapListByPagination(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"import_type_id = 1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_swaps").WillReturnRows(mockRows)
-	foundChains, err := GetGethSwapListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethSwapList, err := GetGethSwapListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethSwapListByPagination", err)
 	}
-	testChains := dataList
-	for i, foundChain := range foundChains {
-		if cmp.Equal(foundChain, testChains[i]) == false {
-			t.Errorf("Expected Chain From Method GetGethSwapListByPagination: %v is different from actual %v", foundChain, testChains[i])
+	for i, sourceData := range dataList {
+		if cmp.Equal(sourceData, foundGethSwapList[i]) == false {
+			t.Errorf("Expected sourceData From Method GetGethSwapListByPagination: %v is different from actual %v", sourceData, foundGethSwapList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -1259,12 +1258,12 @@ func TestGetGethSwapListByPaginationForErr(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"import_type_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_swaps").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundChains, err := GetGethSwapListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethSwapList, err := GetGethSwapListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethSwapListByPagination", err)
 	}
-	if len(foundChains) != 0 {
-		t.Errorf("Expected From Method GetGethSwapListByPagination: to be empty but got this: %v", foundChains)
+	if len(foundGethSwapList) != 0 {
+		t.Errorf("Expected From Method GetGethSwapListByPagination: to be empty but got this: %v", foundGethSwapList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)

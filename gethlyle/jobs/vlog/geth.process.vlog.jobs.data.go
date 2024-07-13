@@ -382,12 +382,12 @@ func GetGethProcessVlogJobListByPagination(dbConnPgx utils.PgxIface, _start, _en
 		return nil, err
 	}
 	defer results.Close()
-	gethProcessJobList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethProcessVlogJob])
+	gethProcessVlogJobList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethProcessVlogJob])
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethProcessJobList, nil
+	return gethProcessVlogJobList, nil
 }
 
 func GetTotalGethProcessVlogJobCount(dbConnPgx utils.PgxIface) (*int, error) {

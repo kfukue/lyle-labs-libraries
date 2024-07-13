@@ -690,14 +690,13 @@ func TestGetGethTradeSwapListByPagination(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"import_type_id = 1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_trade_swaps").WillReturnRows(mockRows)
-	foundChains, err := GetGethTradeSwapListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethTradeSwapList, err := GetGethTradeSwapListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethTradeSwapListByPagination", err)
 	}
-	testChains := dataList
-	for i, foundChain := range foundChains {
-		if cmp.Equal(foundChain, testChains[i]) == false {
-			t.Errorf("Expected Chain From Method GetGethTradeSwapListByPagination: %v is different from actual %v", foundChain, testChains[i])
+	for i, sourceData := range dataList {
+		if cmp.Equal(sourceData, foundGethTradeSwapList[i]) == false {
+			t.Errorf("Expected sourceData From Method GetGethTradeSwapListByPagination: %v is different from actual %v", sourceData, foundGethTradeSwapList[i])
 		}
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -717,12 +716,12 @@ func TestGetGethTradeSwapListByPaginationForErr(t *testing.T) {
 	_order := "ASC"
 	filters := []string{"import_type_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_trade_swaps").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundChains, err := GetGethTradeSwapListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	foundGethTradeSwapList, err := GetGethTradeSwapListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethTradeSwapListByPagination", err)
 	}
-	if len(foundChains) != 0 {
-		t.Errorf("Expected From Method GetGethTradeSwapListByPagination: to be empty but got this: %v", foundChains)
+	if len(foundGethTradeSwapList) != 0 {
+		t.Errorf("Expected From Method GetGethTradeSwapListByPagination: to be empty but got this: %v", foundGethTradeSwapList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
