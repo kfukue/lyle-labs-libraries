@@ -797,7 +797,7 @@ func InsertGethSwap(dbConnPgx utils.PgxIface, gethSwap *GethSwap) (int, string, 
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in InsertGethMiner DbConn.Begin   %s", err.Error())
+		log.Printf("Error in InsertGethSwap DbConn.Begin   %s", err.Error())
 		return -1, "", err
 	}
 	var gethSwapID int

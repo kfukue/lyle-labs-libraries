@@ -252,7 +252,7 @@ func InsertJob(dbConnPgx utils.PgxIface, job *Job) (int, string, error) {
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in InsertGethMiner DbConn.Begin   %s", err.Error())
+		log.Printf("Error in InsertJob DbConn.Begin   %s", err.Error())
 		return -1, "", err
 	}
 	var insertID int
@@ -454,7 +454,7 @@ func GetJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order,
 	return jobs, nil
 }
 
-func GetTotalTransactionsCount(dbConnPgx utils.PgxIface) (*int, error) {
+func GetTotalJobsCount(dbConnPgx utils.PgxIface) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 

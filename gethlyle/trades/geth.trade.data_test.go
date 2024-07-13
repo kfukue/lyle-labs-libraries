@@ -1230,7 +1230,7 @@ func TestGetGethTradeListByPaginationForErr(t *testing.T) {
 	}
 }
 
-func TestGetTotalTransactionsCount(t *testing.T) {
+func TestGetTotalTradesCount(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
@@ -1238,12 +1238,12 @@ func TestGetTotalTransactionsCount(t *testing.T) {
 	defer mock.Close()
 	numOfChainsExpected := 10
 	mock.ExpectQuery("^SELECT COUNT(.*) FROM geth_trades").WillReturnRows(mock.NewRows([]string{"count"}).AddRow(numOfChainsExpected))
-	numOfChains, err := GetTotalTransactionsCount(mock)
+	numOfChains, err := GetTotalTradesCount(mock)
 	if err != nil {
-		t.Fatalf("an error '%s' in GetTotalTransactionsCount", err)
+		t.Fatalf("an error '%s' in GetTotalTradesCount", err)
 	}
 	if *numOfChains != numOfChainsExpected {
-		t.Errorf("Expected Chain From Method GetTotalTransactionsCount: %d is different from actual %d", numOfChainsExpected, *numOfChains)
+		t.Errorf("Expected Chain From Method GetTotalTradesCount: %d is different from actual %d", numOfChainsExpected, *numOfChains)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -1257,12 +1257,12 @@ func TestGetTotalMinersForErr(t *testing.T) {
 	}
 	defer mock.Close()
 	mock.ExpectQuery("^SELECT COUNT(.*) FROM geth_trades").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	numOfChains, err := GetTotalTransactionsCount(mock)
+	numOfChains, err := GetTotalTradesCount(mock)
 	if err == nil {
-		t.Fatalf("expected an error '%s' in GetTotalTransactionsCount", err)
+		t.Fatalf("expected an error '%s' in GetTotalTradesCount", err)
 	}
 	if numOfChains != nil {
-		t.Errorf("Expected numOfChains From Method GetTotalTransactionsCount to be empty but got this: %v", numOfChains)
+		t.Errorf("Expected numOfChains From Method GetTotalTradesCount to be empty but got this: %v", numOfChains)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)

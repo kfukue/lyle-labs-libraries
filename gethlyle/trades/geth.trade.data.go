@@ -897,7 +897,7 @@ func GetGethTradeListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _
 	return gethTrades, nil
 }
 
-func GetTotalTransactionsCount(dbConnPgx utils.PgxIface) (*int, error) {
+func GetTotalTradesCount(dbConnPgx utils.PgxIface) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
