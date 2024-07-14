@@ -9,21 +9,20 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
-func GetPool(poolID int) (*Pool, error) {
+func GetPool(dbConnPgx utils.PgxIface, poolID *int) (*Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		target_asset_id,
 		strategy_id,
 		account_id,
-		name,
 		uuid,
+		name,
 		alternate_name,
 		start_date,
 		end_date,
@@ -35,102 +34,39 @@ func GetPool(poolID int) (*Pool, error) {
 		updated_by, 
 		updated_at
 	FROM pools 
-	WHERE id = $1`, poolID)
-
-	pool := &Pool{}
-	err := row.Scan(
-		&pool.ID,
-		&pool.TargetAssetID,
-		&pool.StrategyID,
-		&pool.AccountID,
-		&pool.Name,
-		&pool.UUID,
-		&pool.AlternateName,
-		&pool.StartDate,
-		&pool.EndDate,
-		&pool.Description,
-		&pool.ChainID,
-		&pool.FrequencyID,
-		&pool.CreatedBy,
-		&pool.CreatedAt,
-		&pool.UpdatedBy,
-		&pool.UpdatedAt,
-	)
+	WHERE id = $1`, *poolID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	pool, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Pool])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return pool, nil
+	return &pool, nil
 }
 
-func GetTopTenStrategies() ([]Pool, error) {
+func RemovePool(dbConnPgx utils.PgxIface, poolID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	id,
-	target_asset_id,
-	strategy_id,
-	account_id,
-	name,
-	uuid,
-	alternate_name,
-	start_date,
-	end_date,
-	description,
-	chain_id ,
-	frequency_id,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
-	FROM pools 
-	`)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	pools := make([]Pool, 0)
-	for results.Next() {
-		var pool Pool
-		results.Scan(
-			&pool.ID,
-			&pool.TargetAssetID,
-			&pool.StrategyID,
-			&pool.AccountID,
-			&pool.Name,
-			&pool.UUID,
-			&pool.AlternateName,
-			&pool.StartDate,
-			&pool.EndDate,
-			&pool.Description,
-			&pool.ChainID,
-			&pool.FrequencyID,
-			&pool.CreatedBy,
-			&pool.CreatedAt,
-			&pool.UpdatedBy,
-			&pool.UpdatedAt,
-		)
-
-		pools = append(pools, pool)
-	}
-	return pools, nil
-}
-
-func RemovePool(poolID int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM pools WHERE id = $1`, poolID)
-	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveJob DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM pools WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *poolID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetPools(ids []int) ([]Pool, error) {
+func GetPools(dbConnPgx utils.PgxIface, ids []int) ([]Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
@@ -138,8 +74,8 @@ func GetPools(ids []int) ([]Pool, error) {
 		target_asset_id,
 		strategy_id,
 		account_id,
-		name,
 		uuid,
+		name,
 		alternate_name,
 		start_date,
 		end_date,
@@ -156,49 +92,30 @@ func GetPools(ids []int) ([]Pool, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	pools := make([]Pool, 0)
-	for results.Next() {
-		var pool Pool
-		results.Scan(
-			&pool.ID,
-			&pool.TargetAssetID,
-			&pool.StrategyID,
-			&pool.AccountID,
-			&pool.Name,
-			&pool.UUID,
-			&pool.AlternateName,
-			&pool.StartDate,
-			&pool.EndDate,
-			&pool.Description,
-			&pool.ChainID,
-			&pool.FrequencyID,
-			&pool.CreatedBy,
-			&pool.CreatedAt,
-			&pool.UpdatedBy,
-			&pool.UpdatedAt,
-		)
-
-		pools = append(pools, pool)
+	pools, err := pgx.CollectRows(results, pgx.RowToStructByName[Pool])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return pools, nil
 }
 
-func GetPoolsByStrategyID(strategyID *int) ([]Pool, error) {
+func GetPoolsByStrategyID(dbConnPgx utils.PgxIface, strategyID *int) ([]Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 		id,
 		target_asset_id,
 		strategy_id,
 		account_id,
-		name,
 		uuid,
+		name,
 		alternate_name,
 		start_date,
 		end_date,
@@ -216,43 +133,24 @@ func GetPoolsByStrategyID(strategyID *int) ([]Pool, error) {
 		return nil, err
 	}
 	defer results.Close()
-	pools := make([]Pool, 0)
-	for results.Next() {
-		var pool Pool
-		results.Scan(
-			&pool.ID,
-			&pool.TargetAssetID,
-			&pool.StrategyID,
-			&pool.AccountID,
-			&pool.Name,
-			&pool.UUID,
-			&pool.AlternateName,
-			&pool.StartDate,
-			&pool.EndDate,
-			&pool.Description,
-			&pool.ChainID,
-			&pool.FrequencyID,
-			&pool.CreatedBy,
-			&pool.CreatedAt,
-			&pool.UpdatedBy,
-			&pool.UpdatedAt,
-		)
-
-		pools = append(pools, pool)
+	pools, err := pgx.CollectRows(results, pgx.RowToStructByName[Pool])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return pools, nil
 }
 
-func GetPoolsByUUIDs(UUIDList []string) ([]Pool, error) {
+func GetPoolsByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 		id,
 		target_asset_id,
 		strategy_id,
 		account_id,
-		name,
 		uuid,
+		name,
 		alternate_name,
 		start_date,
 		end_date,
@@ -271,43 +169,24 @@ func GetPoolsByUUIDs(UUIDList []string) ([]Pool, error) {
 		return nil, err
 	}
 	defer results.Close()
-	pools := make([]Pool, 0)
-	for results.Next() {
-		var pool Pool
-		results.Scan(
-			&pool.ID,
-			&pool.TargetAssetID,
-			&pool.StrategyID,
-			&pool.AccountID,
-			&pool.Name,
-			&pool.UUID,
-			&pool.AlternateName,
-			&pool.StartDate,
-			&pool.EndDate,
-			&pool.Description,
-			&pool.ChainID,
-			&pool.FrequencyID,
-			&pool.CreatedBy,
-			&pool.CreatedAt,
-			&pool.UpdatedBy,
-			&pool.UpdatedAt,
-		)
-
-		pools = append(pools, pool)
+	pools, err := pgx.CollectRows(results, pgx.RowToStructByName[Pool])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return pools, nil
 }
 
-func GetStartAndEndDateDiffPools(diffInDate int) ([]Pool, error) {
+func GetStartAndEndDateDiffPools(dbConnPgx utils.PgxIface, diffInDate *int) ([]Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 		id,
 		target_asset_id,
 		strategy_id,
 		account_id,
-		name,
 		uuid,
+		name,
 		alternate_name,
 		start_date,
 		end_date,
@@ -320,52 +199,38 @@ func GetStartAndEndDateDiffPools(diffInDate int) ([]Pool, error) {
 		updated_at
 	FROM pools
 	WHERE DATE_PART('day', AGE(start_date, end_date)) =$1
-	`, diffInDate)
+	`, *diffInDate)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	pools := make([]Pool, 0)
-	for results.Next() {
-		var pool Pool
-		results.Scan(
-			&pool.ID,
-			&pool.TargetAssetID,
-			&pool.StrategyID,
-			&pool.AccountID,
-			&pool.Name,
-			&pool.UUID,
-			&pool.AlternateName,
-			&pool.StartDate,
-			&pool.EndDate,
-			&pool.Description,
-			&pool.ChainID,
-			&pool.FrequencyID,
-			&pool.CreatedBy,
-			&pool.CreatedAt,
-			&pool.UpdatedBy,
-			&pool.UpdatedAt,
-		)
-
-		pools = append(pools, pool)
+	pools, err := pgx.CollectRows(results, pgx.RowToStructByName[Pool])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return pools, nil
 }
 
-func UpdatePool(pool Pool) error {
+func UpdatePool(dbConnPgx utils.PgxIface, pool *Pool) error {
 	// if the pool id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if pool.ID == nil || *pool.ID == 0 {
 		return errors.New("pool has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE pools SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateMarketDataJob DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE pools SET 
 		target_asset_id=$1, 
 		strategy_id=$2, 
 		account_id=$3, 
-		name=$4, 
-		uuid=$5, 
+		uuid=$4, 
+		name=$5, 
 		alternate_name=$6, 
 		start_date=$7, 
 		end_date=$8, 
@@ -374,12 +239,14 @@ func UpdatePool(pool Pool) error {
 		frequency_id=$11, 
 		updated_by=$12, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$13`,
+		WHERE id=$13`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		pool.TargetAssetID, //1
 		pool.StrategyID,    //2
 		pool.AccountID,     //3
-		pool.Name,          //4
-		pool.UUID,          //5
+		pool.UUID,          //4
+		pool.Name,          //5
 		pool.AlternateName, //6
 		pool.StartDate,     //7
 		pool.EndDate,       //8
@@ -387,26 +254,31 @@ func UpdatePool(pool Pool) error {
 		pool.ChainID,       //10
 		pool.FrequencyID,   //11
 		pool.UpdatedBy,     //12
-		pool.ID)            //13
-	if err != nil {
-		log.Println(err.Error())
+		pool.ID,            //13
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertPool(pool Pool) (int, error) {
+func InsertPool(dbConnPgx utils.PgxIface, pool *Pool) (int, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertMarketDataJob DbConn.Begin   %s", err.Error())
+		return -1, "", err
+	}
 	var insertID int
-	// layoutPostgres := utils.LayoutPostgres
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO pools 
+	var uuid string
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO pools 
 	(
 		target_asset_id,
 		strategy_id,
 		account_id,
-		name,
 		uuid,
+		name,
 		alternate_name,
 		start_date,
 		end_date,
@@ -421,8 +293,8 @@ func InsertPool(pool Pool) (int, error) {
 			$1,
 			$2, 
 			$3, 
-			$4, 
 			uuid_generate_v4(), 
+			$4, 
 			$5, 
 			$6,
 			$7,
@@ -435,28 +307,35 @@ func InsertPool(pool Pool) (int, error) {
 			current_timestamp at time zone 'UTC'
 		)
 		RETURNING id`,
-		&pool.TargetAssetID, //1
-		&pool.StrategyID,    //2
-		&pool.AccountID,     //3
-		&pool.Name,          //4
+		pool.TargetAssetID, //1
+		pool.StrategyID,    //2
+		pool.AccountID,     //3
 		// &pool.UUID, //
-		&pool.AlternateName, //5
-		&pool.StartDate,     //6
-		&pool.EndDate,       //7
-		&pool.Description,   //8
-		&pool.ChainID,       //9
-		&pool.FrequencyID,   //10
-		&pool.CreatedBy,     //11
-	).Scan(&insertID)
-
+		pool.Name,          //4
+		pool.AlternateName, //5
+		pool.StartDate,     //6
+		pool.EndDate,       //7
+		pool.Description,   //8
+		pool.ChainID,       //9
+		pool.FrequencyID,   //10
+		pool.CreatedBy,     //11
+	).Scan(&insertID, &uuid)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, "", err
 	}
-	return int(insertID), nil
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, "", err
+	}
+	return int(insertID), uuid, nil
+
 }
 
-func InsertPools(pools []Pool) error {
+func InsertPools(dbConnPgx utils.PgxIface, pools []Pool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -467,33 +346,33 @@ func InsertPools(pools []Pool) error {
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(pool.UUID)
 		row := []interface{}{
-			*pool.TargetAssetID, //1
-			*pool.StrategyID,    //2
-			*pool.AccountID,     //3
-			pool.Name,           //4
-			uuidString,          //5
-			pool.AlternateName,  //6
-			&pool.StartDate,     //7
-			&pool.EndDate,       //8
-			pool.Description,    //9
-			*pool.ChainID,       //10
-			*pool.FrequencyID,   //11
-			pool.CreatedBy,      //12
-			&now,                //13
-			pool.CreatedBy,      //14
-			&now,                //15
+			pool.TargetAssetID, //1
+			pool.StrategyID,    //2
+			pool.AccountID,     //3
+			uuidString,         //4
+			pool.Name,          //5
+			pool.AlternateName, //6
+			pool.StartDate,     //7
+			pool.EndDate,       //8
+			pool.Description,   //9
+			pool.ChainID,       //10
+			pool.FrequencyID,   //11
+			pool.CreatedBy,     //12
+			&now,               //13
+			pool.CreatedBy,     //14
+			&now,               //15
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"pools"},
 		[]string{
 			"target_asset_id", //1
 			"strategy_id",     //2
 			"account_id",      //3
-			"name",            //4
-			"uuid",            //5
+			"uuid",            //4
+			"name",            //5
 			"alternate_name",  //6
 			"start_date",      //7
 			"end_date",        //8
@@ -507,11 +386,85 @@ func InsertPools(pools []Pool) error {
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertPools: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
 	}
 
 	return nil
+}
+
+// for refinedev
+func GetPoolListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]Pool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `
+	SELECT
+		id,
+		target_asset_id,
+		strategy_id,
+		account_id,
+		uuid,
+		name,
+		alternate_name,
+		start_date,
+		end_date,
+		description,
+		chain_id ,
+		frequency_id,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at
+	FROM pools 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	pools, err := pgx.CollectRows(results, pgx.RowToStructByName[Pool])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return pools, nil
+}
+
+func GetTotalPoolsCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM pools
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }
