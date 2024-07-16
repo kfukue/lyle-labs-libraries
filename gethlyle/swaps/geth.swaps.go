@@ -13,7 +13,7 @@ type GethSwap struct {
 	ExchangeID         *int             `json:"exchangeId" db:"exchange_id"`                   //4
 	BlockNumber        *uint64          `json:"blockNumber" db:"block_number"`                 //5
 	IndexNumber        *uint            `json:"indexNumber" db:"index_number"`                 //6
-	SwapDate           time.Time        `json:"swapDate" db:"swap_date"`                       //7
+	SwapDate           *time.Time       `json:"swapDate" db:"swap_date"`                       //7
 	TradeTypeID        *int             `json:"tradeTypeId" db:"trade_type_id"`                //8
 	TxnHash            string           `json:"txnHash" db:"txn_hash"`                         //9
 	MakerAddress       string           `json:"makerAddress" db:"maker_address"`               //10

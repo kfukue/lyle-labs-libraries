@@ -14,7 +14,7 @@ type GethTrade struct {
 	AlternateName          string           `json:"alternateName" db:"alternate_name"`                     //4
 	AddressStr             string           `json:"addressStr" db:"address_str"`                           //5
 	AddressID              *int             `json:"addressId" db:"address_id"`                             //6
-	TradeDate              time.Time        `json:"tradeDate" db:"trade_date"`                             //7
+	TradeDate              *time.Time       `json:"tradeDate" db:"trade_date"`                             //7
 	TxnHash                string           `json:"txnHash" db:"txn_hash"`                                 //8
 	Token0Amount           *decimal.Decimal `json:"token0Amount" db:"token0_amount"`                       //9
 	Token0AmountDecimalAdj *decimal.Decimal `json:"token0AmountDecimalAdj" db:"token0_amount_decimal_adj"` //10

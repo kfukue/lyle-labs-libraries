@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5"
@@ -72,7 +73,7 @@ var TestData1 = GethTransaction{
 	ExchangeID:                  utils.Ptr[int](2),
 	BlockNumber:                 utils.Ptr[uint64](20264466),
 	IndexNumber:                 utils.Ptr[uint](1),
-	TxnDate:                     utils.SampleCreatedAtTime,
+	TxnDate:                     utils.Ptr[time.Time](utils.SampleCreatedAtTime),
 	TxnHash:                     "0x6c695fdffb5063c3cb7ea3aef902cd1dbe9135cf14bdd5995c4a9698191fcc7c",
 	FromAddress:                 "0x1f9090aaE28b8a3dCeaDf281B0F12828e676c326",
 	FromAddressID:               utils.Ptr[int](1),
@@ -99,7 +100,7 @@ var TestData2 = GethTransaction{
 	ExchangeID:                  utils.Ptr[int](2),
 	BlockNumber:                 utils.Ptr[uint64](20272060),
 	IndexNumber:                 utils.Ptr[uint](0),
-	TxnDate:                     utils.SampleCreatedAtTime,
+	TxnDate:                     utils.Ptr[time.Time](utils.SampleCreatedAtTime),
 	TxnHash:                     "0xfefca32d87fc4175d203646359fdb00643b57b8948fb3777dffa79d138f0b2c5",
 	FromAddress:                 "0x93d8A622Fe3CC8477BBd22E205F3951f67FD64dE",
 	FromAddressID:               utils.Ptr[int](4),

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5"
@@ -57,7 +58,7 @@ var TestData1 = GethProcessJob{
 	Name:             "Asset ID : 535, Name : PEPE, Import All Swaps For ERC20",
 	AlternateName:    "Asset ID : 535, Name : PEPE, Import All Swaps For ERC20",
 	StartDate:        utils.SampleCreatedAtTime,
-	EndDate:          utils.SampleCreatedAtTime,
+	EndDate:          utils.Ptr[time.Time](utils.SampleCreatedAtTime),
 	Description:      "",
 	StatusID:         utils.Ptr[int](utils.SUCCESS_STRUCTURED_VALUE_ID),
 	JobCategoryID:    utils.Ptr[int](utils.EOD_JOB_CATEGORY_STRUCTURED_VALUE_ID),
@@ -78,7 +79,7 @@ var TestData2 = GethProcessJob{
 	Name:             "Calculate Cost Basis For ERC20; Asset ID : 539, Name : HAM",
 	AlternateName:    "Calculate Cost Basis For ERC20; Asset ID : 539, Name : HAM",
 	StartDate:        utils.SampleCreatedAtTime,
-	EndDate:          utils.SampleCreatedAtTime,
+	EndDate:          utils.Ptr[time.Time](utils.SampleCreatedAtTime),
 	Description:      "",
 	StatusID:         utils.Ptr[int](utils.SUCCESS_STRUCTURED_VALUE_ID),
 	JobCategoryID:    utils.Ptr[int](utils.EOD_JOB_CATEGORY_STRUCTURED_VALUE_ID),

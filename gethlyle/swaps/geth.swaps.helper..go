@@ -1,6 +1,8 @@
 package gethlyleswaps
 
 import (
+	"time"
+
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/shopspring/decimal"
@@ -83,7 +85,7 @@ var TestData1 = GethSwap{
 	ExchangeID:         utils.Ptr[int](2),                                                                                                              //4
 	BlockNumber:        utils.Ptr[uint64](17387265),                                                                                                    //5
 	IndexNumber:        utils.Ptr[uint](76),                                                                                                            //6
-	SwapDate:           utils.SampleCreatedAtTime,                                                                                                      //7
+	SwapDate:           utils.Ptr[time.Time](utils.SampleCreatedAtTime),                                                                                //7
 	TradeTypeID:        utils.Ptr[int](2),                                                                                                              //8
 	TxnHash:            "0x67775b7b31ff14d7a52c883e5ffe1a10cbdacb28c59728c5a78948863aa31b3b",                                                           //9
 	MakerAddress:       "0x00000000000124d994209fbB955E0217B5C2ECA1",                                                                                   //10
@@ -119,7 +121,7 @@ var TestData2 = GethSwap{
 	ExchangeID:         utils.Ptr[int](2),                                                                                                              //4
 	BlockNumber:        utils.Ptr[uint64](20267173),                                                                                                    //5
 	IndexNumber:        utils.Ptr[uint](19),                                                                                                            //6
-	SwapDate:           utils.SampleCreatedAtTime,                                                                                                      //7
+	SwapDate:           utils.Ptr[time.Time](utils.SampleCreatedAtTime),                                                                                //7
 	TradeTypeID:        utils.Ptr[int](2),                                                                                                              //8
 	TxnHash:            "0xcdae57cf75ad8f3b8051ba0d8a9bcfc247e1416910f4850238d0e956ab9b82d5",                                                           //9
 	MakerAddress:       "0xe75eD6F453c602Bd696cE27AF11565eDc9b46B0D",                                                                                   //10

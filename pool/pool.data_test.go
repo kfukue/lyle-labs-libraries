@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5"
@@ -56,8 +57,8 @@ var TestData1 = Pool{
 	UUID:          "01ef85e8-2c26-441e-8c7f-71d79518ad72",                //5
 	Name:          "VTX Staking ",                                        //6
 	AlternateName: "VTX",                                                 //7
-	StartDate:     utils.SampleCreatedAtTime,                             //8
-	EndDate:       utils.SampleCreatedAtTime,                             //9
+	StartDate:     utils.Ptr[time.Time](utils.SampleCreatedAtTime),       //8
+	EndDate:       utils.Ptr[time.Time](utils.SampleCreatedAtTime),       //9
 	Description:   "Vector staking. 1. Stake VTX 2. Lock VTX (16 weeks)", //10
 	ChainID:       utils.Ptr[int](65),                                    //11
 	FrequencyID:   utils.Ptr[int](13),                                    //12
@@ -69,22 +70,22 @@ var TestData1 = Pool{
 }
 
 var TestData2 = Pool{
-	ID:            utils.Ptr[int](2),                      //1
-	TargetAssetID: utils.Ptr[int](3),                      //2
-	StrategyID:    utils.Ptr[int](2),                      //3
-	AccountID:     utils.Ptr[int](2),                      //4
-	UUID:          "4f0d5402-7a7c-402d-a7fc-c56a02b13e03", //5
-	Name:          "VELO/OP LP",                           //6
-	AlternateName: "VELO/OP LP",                           //7
-	StartDate:     utils.SampleCreatedAtTime,              //8
-	EndDate:       utils.SampleCreatedAtTime,              //9
-	Description:   "VELO/OP LP",                           //10
-	ChainID:       utils.Ptr[int](12),                     //11
-	FrequencyID:   utils.Ptr[int](23),                     //12
-	CreatedBy:     "SYSTEM",                               //13
-	CreatedAt:     utils.SampleCreatedAtTime,              //14
-	UpdatedBy:     "SYSTEM",                               //15
-	UpdatedAt:     utils.SampleCreatedAtTime,              //16
+	ID:            utils.Ptr[int](2),                               //1
+	TargetAssetID: utils.Ptr[int](3),                               //2
+	StrategyID:    utils.Ptr[int](2),                               //3
+	AccountID:     utils.Ptr[int](2),                               //4
+	UUID:          "4f0d5402-7a7c-402d-a7fc-c56a02b13e03",          //5
+	Name:          "VELO/OP LP",                                    //6
+	AlternateName: "VELO/OP LP",                                    //7
+	StartDate:     utils.Ptr[time.Time](utils.SampleCreatedAtTime), //8
+	EndDate:       utils.Ptr[time.Time](utils.SampleCreatedAtTime), //9
+	Description:   "VELO/OP LP",                                    //10
+	ChainID:       utils.Ptr[int](12),                              //11
+	FrequencyID:   utils.Ptr[int](23),                              //12
+	CreatedBy:     "SYSTEM",                                        //13
+	CreatedAt:     utils.SampleCreatedAtTime,                       //14
+	UpdatedBy:     "SYSTEM",                                        //15
+	UpdatedAt:     utils.SampleCreatedAtTime,                       //16
 }
 var TestAllData = []Pool{TestData1, TestData2}
 

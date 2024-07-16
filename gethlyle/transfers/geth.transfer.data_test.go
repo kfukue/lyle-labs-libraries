@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5"
@@ -77,7 +78,7 @@ var TestData1 = GethTransfer{
 	AssetID:          utils.Ptr[int](1),                                                              //6
 	BlockNumber:      utils.Ptr[uint64](17471544),                                                    //7
 	IndexNumber:      utils.Ptr[uint](180),                                                           //8
-	TransferDate:     utils.SampleCreatedAtTime,                                                      //9
+	TransferDate:     utils.Ptr[time.Time](utils.SampleCreatedAtTime),                                //9
 	TxnHash:          "0xb16657fb1e468132f2cfcdb45bb53d1309097303d24b6446471bd802642a680f",           //10
 	SenderAddress:    "0xaA6aeB29D2c55C3090E782123dADbE61eDcb2489",                                   //11
 	SenderAddressID:  utils.Ptr[int](33911),                                                          //12
@@ -106,7 +107,7 @@ var TestData2 = GethTransfer{
 	AssetID:          utils.Ptr[int](3),                                                              //6
 	BlockNumber:      utils.Ptr[uint64](17662045),                                                    //7
 	IndexNumber:      utils.Ptr[uint](250),                                                           //8
-	TransferDate:     utils.SampleCreatedAtTime,                                                      //9
+	TransferDate:     utils.Ptr[time.Time](utils.SampleCreatedAtTime),                                //9
 	TxnHash:          "0x32d78b63a9a6e54f8078730b9d529cc2c6809a40f730e0bdf3339cb8704afb06",           //10
 	SenderAddress:    "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",                                   //11
 	SenderAddressID:  utils.Ptr[int](12237),                                                          //12

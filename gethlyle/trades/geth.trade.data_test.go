@@ -86,7 +86,7 @@ var TestData1 = GethTrade{
 	AlternateName:          "PEPE/WETH",                                                                         //4
 	AddressStr:             "0xd2203a02d4b1D070e9F194A1A88956209e7791B7",                                        //5
 	AddressID:              utils.Ptr[int](798584),                                                              //6
-	TradeDate:              utils.SampleCreatedAtTime,                                                           //7
+	TradeDate:              utils.Ptr[time.Time](utils.SampleCreatedAtTime),                                     //7
 	TxnHash:                "0xf5f20f10458168136a02a06534969c232da05e5cbe7b562fe807e74c0ae8c670",                //8
 	Token0Amount:           utils.Ptr[decimal.Decimal](decimal.NewFromFloat(6365181906890837627808795)),         //9
 	Token0AmountDecimalAdj: utils.Ptr[decimal.Decimal](decimal.NewFromFloat(6365181.9068908376278088)),          //10
@@ -119,7 +119,7 @@ var TestData2 = GethTrade{
 	AlternateName:          "Moon Tropica/USDT",                                                       //4
 	AddressStr:             "0x859bFc051c93dDD08163C1AAe645269F142c1841",                              //5
 	AddressID:              utils.Ptr[int](524975),                                                    //6
-	TradeDate:              utils.SampleCreatedAtTime,                                                 //7
+	TradeDate:              utils.Ptr[time.Time](utils.SampleCreatedAtTime),                           //7
 	TxnHash:                "0x8dad48e40a54b154d524e6b649787bcba5d1f57c3796a666787803acc1b28a6a",      //8
 	Token0Amount:           utils.Ptr[decimal.Decimal](decimal.NewFromFloat(-100741838000000000000)),  //9
 	Token0AmountDecimalAdj: utils.Ptr[decimal.Decimal](decimal.NewFromFloat(-100.741838)),             //10

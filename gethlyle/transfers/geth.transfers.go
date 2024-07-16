@@ -18,7 +18,7 @@ type GethTransfer struct {
 	AssetID          *int             `json:"assetId" db:"asset_id"`                     //6
 	BlockNumber      *uint64          `json:"blockNumber" db:"block_number"`             //7
 	IndexNumber      *uint            `json:"indexNumber" db:"index_number"`             //8
-	TransferDate     time.Time        `json:"transferDate" db:"transfer_date"`           //9
+	TransferDate     *time.Time       `json:"transferDate" db:"transfer_date"`           //9
 	TxnHash          string           `json:"txnHash" db:"txn_hash"`                     //10
 	SenderAddress    string           `json:"senderAddress" db:"sender_address"`         //11
 	SenderAddressID  *int             `json:"senderAddressID" db:"sender_address_id"`    //12

@@ -13,7 +13,7 @@ type GethTransaction struct {
 	ExchangeID                  *int             `json:"exchangeId" db:"exchange_id"`                                     //4
 	BlockNumber                 *uint64          `json:"blockNumber" db:"block_number"`                                   //5
 	IndexNumber                 *uint            `json:"indexNumber" db:"index_number"`                                   //6
-	TxnDate                     time.Time        `json:"txnDate" db:"txn_date"`                                           //7
+	TxnDate                     *time.Time       `json:"txnDate" db:"txn_date"`                                           //7
 	TxnHash                     string           `json:"txnHash" db:"txn_hash"`                                           //8
 	FromAddress                 string           `json:"senderAddress" db:"from_address"`                                 //9
 	FromAddressID               *int             `json:"senderAddressID" db:"from_address_id"`                            //10
