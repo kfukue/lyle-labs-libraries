@@ -282,21 +282,20 @@ func GetPortfolioListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _
 	sql := `
 	SELECT
 		id,
-		target_asset_id,
-		strategy_id,
-		account_id,
-		uuid,
-		name,
-		alternate_name,
+		uuid, 
+		name, 
+		alternate_name, 
 		start_date,
 		end_date,
+		user_email,
 		description,
-		chain_id ,
-		frequency_id,
+		base_asset_id,
+		portfolio_type_id,
+		parent_id,
 		created_by, 
 		created_at, 
 		updated_by, 
-		updated_at
+		updated_at 
 	FROM portfolios 
 	`
 	if len(_filters) > 0 {
