@@ -52,54 +52,6 @@ func GetPosition(dbConnPgx utils.PgxIface, positionID *int) (*Position, error) {
 	return &position, nil
 }
 
-func GetPositionByDates(dbConnPgx utils.PgxIface, startDate, endDate time.Time, frequencyID, baseAssetID, quoteAssetID *int) (*Position, error) {
-	layoutPostgres := utils.LayoutPostgres
-	// log.Println(fmt.Sprintf("using start : %s, end : %s", startDate.Format(layoutPostgres), endDate.Format(layoutPostgres)))
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	row, err := dbConnPgx.Query(ctx, `SELECT
-		id,
-		uuid, 
-		name, 
-		alternate_name, 
-		account_id,
-		portfolio_id,
-		frequency_id,
-		start_date,
-		end_date,
-		base_asset_id,
-		quote_asset_id,
-		quantity,
-		cost_basis,
-		profit,
-		total_amount,
-		description,
-		created_by, 
-		created_at, 
-		updated_by, 
-		updated_at 
-		FROM positions
-		WHERE 
-		start_date = $1
-		AND end_date = $2
-		AND frequency_id = $3
-		AND base_asset_id = $4
-		AND quote_asset_id = $5
-		`, startDate.Format(layoutPostgres), endDate.Format(layoutPostgres), *frequencyID, *baseAssetID, *quoteAssetID)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	position, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Position])
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	return &position, nil
-}
-
 func GetPositionByDatesAndAccount(dbConnPgx utils.PgxIface, startDate, endDate time.Time, frequencyID, baseAssetID, quoteAssetID, accountID *int) (*Position, error) {
 	layoutPostgres := utils.LayoutPostgres
 	// log.Println(fmt.Sprintf("using start : %s, end : %s", startDate.Format(layoutPostgres), endDate.Format(layoutPostgres)))
@@ -151,7 +103,6 @@ func GetPositionByDatesAndAccount(dbConnPgx utils.PgxIface, startDate, endDate t
 
 func GetPositionByDatesAccountsForAllTradeableAssets(dbConnPgx utils.PgxIface, startDate, endDate time.Time, frequencyID, quoteAssetID, accountID *int) ([]Position, error) {
 	layoutPostgres := utils.LayoutPostgres
-	// log.Println(fmt.Sprintf("using start : %s, end : %s", startDate.Format(layoutPostgres), endDate.Format(layoutPostgres)))
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := dbConnPgx.Query(ctx, `SELECT 
@@ -570,7 +521,7 @@ func InsertPosition(dbConnPgx utils.PgxIface, position *Position) (int, string, 
 	return int(insertID), insertUUID, nil
 }
 
-func InsertPortfolios(dbConnPgx utils.PgxIface, positions []Position) error {
+func InsertPositions(dbConnPgx utils.PgxIface, positions []Position) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
