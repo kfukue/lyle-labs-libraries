@@ -287,7 +287,7 @@ func GetStructuredValueListByPagination(dbConnPgx utils.PgxIface, _start, _end *
 	return structuredValues, nil
 }
 
-func GetTotalStructuredValuesCount(dbConnPgx utils.PgxIface) (*int, error) {
+func GetTotalStructuredValueCount(dbConnPgx utils.PgxIface) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 

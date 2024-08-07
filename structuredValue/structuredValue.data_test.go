@@ -653,7 +653,7 @@ func TestGetStructuredValueListByPaginationForCollectRowsErr(t *testing.T) {
 	}
 }
 
-func TestGetTotalStructuredValuesCount(t *testing.T) {
+func TestGetTotalStructuredValueCount(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
@@ -661,12 +661,12 @@ func TestGetTotalStructuredValuesCount(t *testing.T) {
 	defer mock.Close()
 	numOfChainsExpected := 10
 	mock.ExpectQuery("^SELECT COUNT(.*) FROM structured_values").WillReturnRows(mock.NewRows([]string{"count"}).AddRow(numOfChainsExpected))
-	numOfChains, err := GetTotalStructuredValuesCount(mock)
+	numOfChains, err := GetTotalStructuredValueCount(mock)
 	if err != nil {
-		t.Fatalf("an error '%s' in GetTotalStructuredValuesCount", err)
+		t.Fatalf("an error '%s' in GetTotalStructuredValueCount", err)
 	}
 	if *numOfChains != numOfChainsExpected {
-		t.Errorf("Expected Chain From Method GetTotalStructuredValuesCount: %d is different from actual %d", numOfChainsExpected, *numOfChains)
+		t.Errorf("Expected Chain From Method GetTotalStructuredValueCount: %d is different from actual %d", numOfChainsExpected, *numOfChains)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -680,12 +680,12 @@ func TestGetTotalMinersForErr(t *testing.T) {
 	}
 	defer mock.Close()
 	mock.ExpectQuery("^SELECT COUNT(.*) FROM structured_values").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	numOfChains, err := GetTotalStructuredValuesCount(mock)
+	numOfChains, err := GetTotalStructuredValueCount(mock)
 	if err == nil {
-		t.Fatalf("expected an error '%s' in GetTotalStructuredValuesCount", err)
+		t.Fatalf("expected an error '%s' in GetTotalStructuredValueCount", err)
 	}
 	if numOfChains != nil {
-		t.Errorf("Expected numOfChains From Method GetTotalStructuredValuesCount to be empty but got this: %v", numOfChains)
+		t.Errorf("Expected numOfChains From Method GetTotalStructuredValueCount to be empty but got this: %v", numOfChains)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
