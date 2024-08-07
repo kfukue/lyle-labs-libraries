@@ -399,7 +399,7 @@ func TestInsertSource(t *testing.T) {
 		targetData.Description,   //5
 		targetData.CreatedBy,     //6
 		targetData.CreatedBy,     //7
-	).WillReturnRows(pgxmock.NewRows([]string{"position_id", "job_id"}).AddRow(1, 1))
+	).WillReturnRows(pgxmock.NewRows([]string{"source_id"}).AddRow(1))
 	mock.ExpectCommit()
 	sourceID, err := InsertSource(mock, &targetData)
 	if sourceID < 0 {
@@ -478,7 +478,7 @@ func TestInsertSourceOnFailureOnCommit(t *testing.T) {
 		targetData.Description,   //5
 		targetData.CreatedBy,     //6
 		targetData.CreatedBy,     //7
-	).WillReturnRows(pgxmock.NewRows([]string{"position_id", "job_id"}).AddRow(-1, -1))
+	).WillReturnRows(pgxmock.NewRows([]string{"source_id"}).AddRow(-1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
 	sourceID, err := InsertSource(mock, &targetData)

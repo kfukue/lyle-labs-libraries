@@ -434,7 +434,7 @@ func TestInsertPortfolio(t *testing.T) {
 		targetData.PortfolioTypeID, //8
 		targetData.ParentID,        //9
 		targetData.CreatedBy,       //10
-	).WillReturnRows(pgxmock.NewRows([]string{"market_data_id", "job_id"}).AddRow(1, "return-uuid"))
+	).WillReturnRows(pgxmock.NewRows([]string{"portfolio_id", "job_id"}).AddRow(1, "return-uuid"))
 	mock.ExpectCommit()
 	portfolioID, uuid, err := InsertPortfolio(mock, &targetData)
 	if portfolioID < 0 {
@@ -525,7 +525,7 @@ func TestInsertPortfolioOnFailureOnCommit(t *testing.T) {
 		targetData.PortfolioTypeID, //8
 		targetData.ParentID,        //9
 		targetData.CreatedBy,       //10
-	).WillReturnRows(pgxmock.NewRows([]string{"market_data_id", "job_id"}).AddRow(1, "return-uuid"))
+	).WillReturnRows(pgxmock.NewRows([]string{"portfolio_id", "job_id"}).AddRow(1, "return-uuid"))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
 	portfolioID, uuid, err := InsertPortfolio(mock, &targetData)

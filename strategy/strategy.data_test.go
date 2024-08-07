@@ -542,7 +542,7 @@ func TestInsertStrategy(t *testing.T) {
 		targetData.Description,    //5
 		targetData.StrategyTypeID, //6
 		targetData.CreatedBy,      //7
-	).WillReturnRows(pgxmock.NewRows([]string{"market_data_id", "job_id"}).AddRow(1, "return-uuid"))
+	).WillReturnRows(pgxmock.NewRows([]string{"strategy_id"}).AddRow(1))
 	mock.ExpectCommit()
 	strategyID, err := InsertStrategy(mock, &targetData)
 	if strategyID < 0 {
@@ -621,7 +621,7 @@ func TestInsertStrategyOnFailureOnCommit(t *testing.T) {
 		targetData.Description,    //5
 		targetData.StrategyTypeID, //6
 		targetData.CreatedBy,      //7
-	).WillReturnRows(pgxmock.NewRows([]string{"market_data_id", "job_id"}).AddRow(1, "return-uuid"))
+	).WillReturnRows(pgxmock.NewRows([]string{"strategy_id"}).AddRow(1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
 	strategyID, err := InsertStrategy(mock, &targetData)

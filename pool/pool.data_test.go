@@ -642,7 +642,7 @@ func TestInsertPool(t *testing.T) {
 		targetData.ChainID,       //9
 		targetData.FrequencyID,   //10
 		targetData.CreatedBy,     //11
-	).WillReturnRows(pgxmock.NewRows([]string{"market_data_id", "job_id"}).AddRow(1, "return-uuid"))
+	).WillReturnRows(pgxmock.NewRows([]string{"pool_id", "pool_uuid"}).AddRow(1, "return-uuid"))
 	mock.ExpectCommit()
 	poolID, uuid, err := InsertPool(mock, &targetData)
 	if poolID < 0 {
@@ -737,7 +737,7 @@ func TestInsertPoolOnFailureOnCommit(t *testing.T) {
 		targetData.ChainID,       //9
 		targetData.FrequencyID,   //10
 		targetData.CreatedBy,     //11
-	).WillReturnRows(pgxmock.NewRows([]string{"market_data_id", "job_id"}).AddRow(1, "return-uuid"))
+	).WillReturnRows(pgxmock.NewRows([]string{"pool_id", "pool_uuid"}).AddRow(1, "return-uuid"))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
 	poolID, uuid, err := InsertPool(mock, &targetData)

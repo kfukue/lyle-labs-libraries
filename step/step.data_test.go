@@ -642,7 +642,7 @@ func TestInsertStep(t *testing.T) {
 		targetData.FunctionName,  //9
 		targetData.StepOrder,     //10
 		targetData.CreatedBy,     //11
-	).WillReturnRows(pgxmock.NewRows([]string{"market_data_id", "job_id"}).AddRow(1, "return-uuid"))
+	).WillReturnRows(pgxmock.NewRows([]string{"step_id"}).AddRow(1))
 	mock.ExpectCommit()
 	stepID, err := InsertStep(mock, &targetData)
 	if stepID < 0 {
@@ -729,7 +729,7 @@ func TestInsertStepOnFailureOnCommit(t *testing.T) {
 		targetData.FunctionName,  //9
 		targetData.StepOrder,     //10
 		targetData.CreatedBy,     //11
-	).WillReturnRows(pgxmock.NewRows([]string{"market_data_id", "job_id"}).AddRow(1, "return-uuid"))
+	).WillReturnRows(pgxmock.NewRows([]string{"step_id"}).AddRow(1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
 	stepID, err := InsertStep(mock, &targetData)

@@ -940,7 +940,7 @@ func TestInsertPosition(t *testing.T) {
 		targetData.TotalAmount,                            //13
 		targetData.Description,                            //14
 		targetData.CreatedBy,                              //15
-	).WillReturnRows(pgxmock.NewRows([]string{"market_data_id", "job_id"}).AddRow(1, "return-uuid"))
+	).WillReturnRows(pgxmock.NewRows([]string{"position_id", "job_id"}).AddRow(1, "return-uuid"))
 	mock.ExpectCommit()
 	positionID, uuid, err := InsertPosition(mock, &targetData)
 	if positionID < 0 {
@@ -1041,7 +1041,7 @@ func TestInsertPositionOnFailureOnCommit(t *testing.T) {
 		targetData.TotalAmount,                            //13
 		targetData.Description,                            //14
 		targetData.CreatedBy,                              //15
-	).WillReturnRows(pgxmock.NewRows([]string{"market_data_id", "job_id"}).AddRow(1, "return-uuid"))
+	).WillReturnRows(pgxmock.NewRows([]string{"position_id", "job_id"}).AddRow(1, "return-uuid"))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
 	positionID, uuid, err := InsertPosition(mock, &targetData)
