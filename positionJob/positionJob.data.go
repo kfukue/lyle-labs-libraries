@@ -311,7 +311,7 @@ func InsertPositionJob(dbConnPgx utils.PgxIface, positionJob *PositionJob) (int,
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in InsertMarketDataJob DbConn.Begin   %s", err.Error())
+		log.Printf("Error in InsertPositionJob DbConn.Begin   %s", err.Error())
 		return -1, -1, err
 	}
 	var PositionID int
