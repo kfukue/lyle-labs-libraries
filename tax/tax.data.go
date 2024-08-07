@@ -9,136 +9,66 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
-func GetTax(taxID int) (*Tax, error) {
+func GetTax(dbConnPgx utils.PgxIface, taxID *int) (*Tax, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	start_date,
-	end_date,
-	start_block,
-	end_block,
-	tax_rate,
-	tax_rate_type_id,
-	contract_address_str,
-	contract_address_id,
-	tax_type_id,
-	description,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at
+	row, err := dbConnPgx.Query(ctx, `SELECT
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		start_date,
+		end_date,
+		start_block,
+		end_block,
+		tax_rate,
+		tax_rate_type_id,
+		contract_address_str,
+		contract_address_id,
+		tax_type_id,
+		description,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at
 	FROM taxes 
-	WHERE id = $1`, taxID)
-
-	tax := &Tax{}
-	err := row.Scan(
-		&tax.ID,
-		&tax.UUID,
-		&tax.Name,
-		&tax.AlternateName,
-		&tax.StartDate,
-		&tax.EndDate,
-		&tax.StartBlock,
-		&tax.EndBlock,
-		&tax.TaxRate,
-		&tax.TaxRateTypeID,
-		&tax.ContractAddressStr,
-		&tax.ContractAddressID,
-		&tax.TaxTypeID,
-		&tax.Description,
-		&tax.CreatedBy,
-		&tax.CreatedAt,
-		&tax.UpdatedBy,
-		&tax.UpdatedAt,
-	)
+	WHERE id = $1`, *taxID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	tax, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Tax])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return tax, nil
+	return &tax, nil
 }
 
-func GetTopTenTaxes() ([]Tax, error) {
+func RemoveTax(dbConnPgx utils.PgxIface, taxID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	start_date,
-	end_date,
-	start_block,
-	end_block,
-	tax_rate,
-	tax_rate_type_id,
-	contract_address_str,
-	contract_address_id,
-	tax_type_id,
-	description,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
-	FROM taxes 
-	`)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	taxes := make([]Tax, 0)
-	for results.Next() {
-		var tax Tax
-		results.Scan(
-			&tax.ID,
-			&tax.UUID,
-			&tax.Name,
-			&tax.AlternateName,
-			&tax.StartDate,
-			&tax.EndDate,
-			&tax.StartBlock,
-			&tax.EndBlock,
-			&tax.TaxRate,
-			&tax.TaxRateTypeID,
-			&tax.ContractAddressStr,
-			&tax.ContractAddressID,
-			&tax.TaxTypeID,
-			&tax.Description,
-			&tax.CreatedBy,
-			&tax.CreatedAt,
-			&tax.UpdatedBy,
-			&tax.UpdatedAt,
-		)
-
-		taxes = append(taxes, tax)
-	}
-	return taxes, nil
-}
-
-func RemoveTax(taxID int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM taxes WHERE id = $1`, taxID)
-	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveTax DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM taxes WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *taxID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetTaxes(ids []int) ([]Tax, error) {
+func GetTaxes(dbConnPgx utils.PgxIface, ids []int) ([]Tax, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
@@ -166,45 +96,24 @@ func GetTaxes(ids []int) ([]Tax, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	taxes := make([]Tax, 0)
-	for results.Next() {
-		var tax Tax
-		results.Scan(
-			&tax.ID,
-			&tax.UUID,
-			&tax.Name,
-			&tax.AlternateName,
-			&tax.StartDate,
-			&tax.EndDate,
-			&tax.StartBlock,
-			&tax.EndBlock,
-			&tax.TaxRate,
-			&tax.TaxRateTypeID,
-			&tax.ContractAddressStr,
-			&tax.ContractAddressID,
-			&tax.TaxTypeID,
-			&tax.Description,
-			&tax.CreatedBy,
-			&tax.CreatedAt,
-			&tax.UpdatedBy,
-			&tax.UpdatedAt,
-		)
-
-		taxes = append(taxes, tax)
+	taxes, err := pgx.CollectRows(results, pgx.RowToStructByName[Tax])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return taxes, nil
 }
 
-func GetTaxesByAssetID(assetID *int) ([]Tax, error) {
+func GetTaxesByAssetID(dbConnPgx utils.PgxIface, assetID *int) ([]Tax, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	taxes.id,
 	taxes.uuid, 
 	taxes.name, 
@@ -226,44 +135,24 @@ func GetTaxesByAssetID(assetID *int) ([]Tax, error) {
 	FROM taxes 
 	JOIN asset_taxes ON taxes.id = asset_taxes.tax_id
 	WHERE asset_taxes.asset_id = $1
-	`, assetID)
+	`, *assetID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	taxes := make([]Tax, 0)
-	for results.Next() {
-		var tax Tax
-		results.Scan(
-			&tax.ID,
-			&tax.UUID,
-			&tax.Name,
-			&tax.AlternateName,
-			&tax.StartDate,
-			&tax.EndDate,
-			&tax.StartBlock,
-			&tax.EndBlock,
-			&tax.TaxRate,
-			&tax.TaxRateTypeID,
-			&tax.ContractAddressStr,
-			&tax.ContractAddressID,
-			&tax.TaxTypeID,
-			&tax.Description,
-			&tax.CreatedBy,
-			&tax.CreatedAt,
-			&tax.UpdatedBy,
-			&tax.UpdatedAt,
-		)
-		taxes = append(taxes, tax)
+	taxes, err := pgx.CollectRows(results, pgx.RowToStructByName[Tax])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return taxes, nil
 }
 
-func GetTaxesByUUIDs(UUIDList []string) ([]Tax, error) {
+func GetTaxesByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Tax, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -290,43 +179,27 @@ func GetTaxesByUUIDs(UUIDList []string) ([]Tax, error) {
 		return nil, err
 	}
 	defer results.Close()
-	taxes := make([]Tax, 0)
-	for results.Next() {
-		var tax Tax
-		results.Scan(
-			&tax.ID,
-			&tax.UUID,
-			&tax.Name,
-			&tax.AlternateName,
-			&tax.StartDate,
-			&tax.EndDate,
-			&tax.StartBlock,
-			&tax.EndBlock,
-			&tax.TaxRate,
-			&tax.TaxRateTypeID,
-			&tax.ContractAddressStr,
-			&tax.ContractAddressID,
-			&tax.TaxTypeID,
-			&tax.Description,
-			&tax.CreatedBy,
-			&tax.CreatedAt,
-			&tax.UpdatedBy,
-			&tax.UpdatedAt,
-		)
-
-		taxes = append(taxes, tax)
+	taxes, err := pgx.CollectRows(results, pgx.RowToStructByName[Tax])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return taxes, nil
 }
 
-func UpdateTax(tax Tax) error {
+func UpdateTax(dbConnPgx utils.PgxIface, tax *Tax) error {
 	// if the tax id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if tax.ID == nil || *tax.ID == 0 {
 		return errors.New("tax has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE taxes SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateTax DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE taxes SET 
 		name=$1,  
 		alternate_name=$2, 
 		start_date =$3,
@@ -341,7 +214,9 @@ func UpdateTax(tax Tax) error {
 		description=$12, 
 		updated_by=$13, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$14`,
+		WHERE id=$14`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		tax.Name,               //1
 		tax.AlternateName,      //2
 		tax.StartDate,          //3
@@ -355,22 +230,27 @@ func UpdateTax(tax Tax) error {
 		tax.TaxTypeID,          //11
 		tax.Description,        //12
 		tax.UpdatedBy,          //13
-		tax.ID)                 //14
-	if err != nil {
-		log.Println(err.Error())
+		tax.ID,                 //14
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertTax(tax Tax) (int, error) {
+func InsertTax(dbConnPgx utils.PgxIface, tax *Tax) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertTax DbConn.Begin   %s", err.Error())
+		return -1, err
+	}
 	var insertID int
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO taxes 
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO taxes 
 	(
-		name,  
 		uuid,
+		name,  
 		alternate_name, 
 		start_date,
 		end_date,
@@ -387,8 +267,8 @@ func InsertTax(tax Tax) (int, error) {
 		updated_by, 
 		updated_at 
 		) VALUES (
-			$1,
 			uuid_generate_v4(), 
+			$1,
 			$2, 
 			$3, 
 			$4, 
@@ -422,12 +302,19 @@ func InsertTax(tax Tax) (int, error) {
 	).Scan(&insertID)
 
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, err
 	}
 	return int(insertID), nil
 }
-func InsertTaxes(taxes []Tax) error {
+func InsertTaxes(dbConnPgx utils.PgxIface, taxes []Tax) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -438,8 +325,8 @@ func InsertTaxes(taxes []Tax) error {
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(tax.UUID)
 		row := []interface{}{
-			tax.Name,               //1
-			uuidString,             //2
+			uuidString,             //1
+			tax.Name,               //2
 			tax.AlternateName,      //3
 			tax.StartDate,          //4
 			tax.EndDate,            //5
@@ -458,12 +345,12 @@ func InsertTaxes(taxes []Tax) error {
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"taxes"},
 		[]string{
-			"name",                 //1
-			"uuid",                 //2
+			"uuid",                 //1
+			"name",                 //2
 			"alternate_name",       //3
 			"start_date",           //4
 			"end_date",             //5
@@ -482,11 +369,76 @@ func InsertTaxes(taxes []Tax) error {
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertTaxes: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
 	}
 
 	return nil
+}
+
+func GetTaxListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]Tax, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	sql := `SELECT 
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
+	FROM taxes
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " AND "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	taxes, err := pgx.CollectRows(results, pgx.RowToStructByName[Tax])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return taxes, nil
+}
+
+func GetTotalTaxCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM taxes
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }
