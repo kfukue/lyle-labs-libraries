@@ -203,7 +203,7 @@ func RemovePosition(dbConnPgx utils.PgxIface, positionID *int) error {
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in RemoveJob DbConn.Begin   %s", err.Error())
+		log.Printf("Error in RemovePosition DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `DELETE FROM positions WHERE id = $1`
@@ -221,7 +221,7 @@ func RemovePositionByDateRangeAndAccount(dbConnPgx utils.PgxIface, startDate, en
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in RemoveJob DbConn.Begin   %s", err.Error())
+		log.Printf("Error in RemovePositionByDateRangeAndAccount DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `DELETE FROM positions WHERE 
@@ -240,7 +240,7 @@ func RemoveAllPositionByAccount(dbConnPgx utils.PgxIface, accountID *int) error 
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in RemoveJob DbConn.Begin   %s", err.Error())
+		log.Printf("Error in RemoveAllPositionByAccount DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `DELETE FROM positions WHERE account_id = $1`
@@ -390,7 +390,7 @@ func UpdatePosition(dbConnPgx utils.PgxIface, position *Position) error {
 	}
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in UpdateMarketDataJob DbConn.Begin   %s", err.Error())
+		log.Printf("Error in UpdatePosition DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `UPDATE positions SET 
@@ -443,7 +443,7 @@ func InsertPosition(dbConnPgx utils.PgxIface, position *Position) (int, string, 
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in InsertMarketDataJob DbConn.Begin   %s", err.Error())
+		log.Printf("Error in InsertPosition DbConn.Begin   %s", err.Error())
 		return -1, "", err
 	}
 	var insertID int
