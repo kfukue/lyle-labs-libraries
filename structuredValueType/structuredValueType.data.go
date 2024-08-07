@@ -7,167 +7,129 @@ import (
 	"log"
 	"time"
 
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
-func GetStructuredValueType(structuredValueTypeID int) (*StructuredValueType, error) {
+func GetStructuredValueType(dbConnPgx utils.PgxIface, structuredValueTypeID *int) (*StructuredValueType, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
+	row, err := dbConnPgx.Query(ctx, `SELECT
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
 	FROM structured_value_types 
-	WHERE id = $1`, structuredValueTypeID)
-
-	structuredValueType := &StructuredValueType{}
-	err := row.Scan(
-		&structuredValueType.ID,
-		&structuredValueType.UUID,
-		&structuredValueType.Name,
-		&structuredValueType.AlternateName,
-		&structuredValueType.CreatedBy,
-		&structuredValueType.CreatedAt,
-		&structuredValueType.UpdatedBy,
-		&structuredValueType.UpdatedAt,
-	)
+	WHERE id = $1`, *structuredValueTypeID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	structuredValueType, err := pgx.CollectOneRow(row, pgx.RowToStructByName[StructuredValueType])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return structuredValueType, nil
+	return &structuredValueType, nil
 }
 
-func GetTopTenStructuredValueTypes() ([]StructuredValueType, error) {
+func RemoveStructuredValueType(dbConnPgx utils.PgxIface, structuredValueTypeID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
-	FROM structured_value_types
-	`)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	structuredValueTypes := make([]StructuredValueType, 0)
-	for results.Next() {
-		var structuredValueType StructuredValueType
-		results.Scan(
-			&structuredValueType.ID,
-			&structuredValueType.UUID,
-			&structuredValueType.Name,
-			&structuredValueType.AlternateName,
-			&structuredValueType.CreatedBy,
-			&structuredValueType.CreatedAt,
-			&structuredValueType.UpdatedBy,
-			&structuredValueType.UpdatedAt,
-		)
-
-		structuredValueTypes = append(structuredValueTypes, structuredValueType)
-	}
-	return structuredValueTypes, nil
-}
-
-func RemoveStructuredValueType(structuredValueTypeID int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM structured_value_types WHERE id = $1`, structuredValueTypeID)
-	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveStructuredValueType DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM structured_value_types WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *structuredValueTypeID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetStructuredValueTypeList(ids []int) ([]StructuredValueType, error) {
+func GetStructuredValueTypeList(dbConnPgx utils.PgxIface, ids []int) ([]StructuredValueType, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
 	FROM structured_value_types`
 	if len(ids) > 0 {
 		strIds := utils.SplitToString(ids, ",")
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	structuredValueTypes := make([]StructuredValueType, 0)
-	for results.Next() {
-		var structuredValueType StructuredValueType
-		results.Scan(
-			&structuredValueType.ID,
-			&structuredValueType.UUID,
-			&structuredValueType.Name,
-			&structuredValueType.AlternateName,
-			&structuredValueType.CreatedBy,
-			&structuredValueType.CreatedAt,
-			&structuredValueType.UpdatedBy,
-			&structuredValueType.UpdatedAt,
-		)
-
-		structuredValueTypes = append(structuredValueTypes, structuredValueType)
+	structuredValueTypes, err := pgx.CollectRows(results, pgx.RowToStructByName[StructuredValueType])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return structuredValueTypes, nil
 }
 
-func UpdateStructuredValueType(structuredValueType StructuredValueType) error {
+func UpdateStructuredValueType(dbConnPgx utils.PgxIface, structuredValueType *StructuredValueType) error {
 	// if the structuredValueType id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if structuredValueType.ID == nil || *structuredValueType.ID == 0 {
 		return errors.New("structuredValueType has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE structured_value_types SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateStructuredValueType DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE structured_value_types SET 
 		name=$1,  
 		alternate_name=$2, 
 		updated_by=$3, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$4`,
-		structuredValueType.Name,
-		structuredValueType.AlternateName,
-		structuredValueType.UpdatedBy,
-		structuredValueType.ID)
-	if err != nil {
-		log.Println(err.Error())
+		WHERE id=$4`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
+		structuredValueType.Name,          //1
+		structuredValueType.AlternateName, //2
+		structuredValueType.UpdatedBy,     //3
+		structuredValueType.ID,            //4
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertStructuredValueType(structuredValueType StructuredValueType) (int, error) {
+func InsertStructuredValueType(dbConnPgx utils.PgxIface, structuredValueType *StructuredValueType) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertStructuredValueType DbConn.Begin   %s", err.Error())
+		return -1, err
+	}
 	var insertID int
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO structured_value_types  
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO structured_value_types  
 	(
 		name, 
 		uuid,
@@ -178,30 +140,82 @@ func InsertStructuredValueType(structuredValueType StructuredValueType) (int, er
 		updated_at 
 		) VALUES ($1,uuid_generate_v4(), $2, $3, current_timestamp at time zone 'UTC', $4, current_timestamp at time zone 'UTC')
 		RETURNING id`,
-		structuredValueType.Name,
-		structuredValueType.AlternateName,
-		structuredValueType.CreatedBy,
-		structuredValueType.CreatedBy).Scan(&insertID)
+		structuredValueType.Name,          //1
+		structuredValueType.AlternateName, //2
+		structuredValueType.CreatedBy,     //3
+		structuredValueType.CreatedBy,     //4
+	).Scan(&insertID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, err
 	}
 	return int(insertID), nil
 }
 
-func GetStructuredValueTypeListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]StructuredValueType, error) {
+func InsertStructuredValueTypes(dbConnPgx utils.PgxIface, structuredValueTypes []StructuredValueType) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	loc, _ := time.LoadLocation("UTC")
+	now := time.Now().In(loc)
+	rows := [][]interface{}{}
+	for i, _ := range structuredValueTypes {
+		structuredValueType := structuredValueTypes[i]
+		uuidString := &pgtype.UUID{}
+		uuidString.Set(structuredValueType.UUID)
+		row := []interface{}{
+			uuidString,                        //1
+			structuredValueType.Name,          //2
+			structuredValueType.AlternateName, //3
+			structuredValueType.CreatedBy,     //4
+			&now,                              //5
+			structuredValueType.CreatedBy,     //6
+			&now,                              //7
+		}
+		rows = append(rows, row)
+	}
+	copyCount, err := dbConnPgx.CopyFrom(
+		ctx,
+		pgx.Identifier{"structured_value_types"},
+		[]string{
+			"uuid",           //1
+			"name",           //2
+			"alternate_name", //3
+			"created_by",     //4
+			"created_at",     //5
+			"updated_by",     //6
+			"updated_at",     //7
+		},
+		pgx.CopyFromRows(rows),
+	)
+	log.Println(fmt.Printf("InsertStructuredValues: copy count: %d", copyCount))
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func GetStructuredValueTypeListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]StructuredValueType, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
 	sql := `SELECT 
-	iid,
-	uuid, 
-	name, 
-	alternate_name, 
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
 	FROM structured_value_types
 	`
 	if len(_filters) > 0 {
@@ -221,36 +235,25 @@ func GetStructuredValueTypeListByPagination(_start, _end *int, _order, _sort str
 		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
 	}
 
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	structuredValueTypes := make([]StructuredValueType, 0)
-	for results.Next() {
-		var structuredValueType StructuredValueType
-		results.Scan(
-			&structuredValueType.ID,
-			&structuredValueType.UUID,
-			&structuredValueType.Name,
-			&structuredValueType.AlternateName,
-			&structuredValueType.CreatedBy,
-			&structuredValueType.CreatedAt,
-			&structuredValueType.UpdatedBy,
-			&structuredValueType.UpdatedAt,
-		)
-
-		structuredValueTypes = append(structuredValueTypes, structuredValueType)
+	structuredValueTypes, err := pgx.CollectRows(results, pgx.RowToStructByName[StructuredValueType])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return structuredValueTypes, nil
 }
 
-func GetTotalStructuredValueTypeCount() (*int, error) {
+func GetTotalStructuredValueTypeCount(dbConnPgx utils.PgxIface) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
 	COUNT(*)
 	FROM structured_value_types
 	`)
@@ -258,9 +261,7 @@ func GetTotalStructuredValueTypeCount() (*int, error) {
 	err := row.Scan(
 		&totalCount,
 	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
