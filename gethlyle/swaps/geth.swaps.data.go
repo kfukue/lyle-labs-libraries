@@ -556,24 +556,14 @@ func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(dbConnPgx utils.Pgx
 func GetHighestBlockFromBaseAssetId(dbConnPgx utils.PgxIface, assetID *int) (*uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row, err := dbConnPgx.Query(ctx, `SELECT COALESCE (MAX(block_number), 0) FROM geth_swaps
+	row := dbConnPgx.QueryRow(ctx, `SELECT COALESCE (MAX(block_number), 0) FROM geth_swaps
 	WHERE base_asset_id=$1
 		`,
 		*assetID)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer row.Close()
-
 	var maxBlockNumber uint64
-	for row.Next() {
-		err = row.Scan(
-			&maxBlockNumber)
-	}
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	err := row.Scan(
+		&maxBlockNumber)
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
@@ -1146,9 +1136,7 @@ func GetTotalGethSwapsCount(dbConnPgx utils.PgxIface) (*int, error) {
 	err := row.Scan(
 		&totalCount,
 	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}

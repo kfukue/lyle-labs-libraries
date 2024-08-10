@@ -41,7 +41,7 @@ func UpdateFailedGethProcessVlogJob(dbConnPgx utils.PgxIface, gethProcessVlogJob
 		err := UpdateGethProcessVlogJob(dbConnPgx, gethProcessVlogJob)
 		if err != nil {
 			msg = fmt.Sprintf("Failed in UpdateGethProcessVlogJob, err %v", err)
-			log.Fatal(msg)
+			log.Println(msg)
 			return err
 		}
 	}

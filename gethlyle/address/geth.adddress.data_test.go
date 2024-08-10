@@ -20,10 +20,10 @@ func TestGetGethAddress(t *testing.T) {
 	defer mock.Close()
 	targetData := TestData2
 	dataList := []GethAddress{targetData}
-	exchangeID := targetData.ID
+	gethAddressID := targetData.ID
 	mockRows := AddGethAddressToMockRows(mock, dataList)
-	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(*exchangeID).WillReturnRows(mockRows)
-	foundGethAddress, err := GetGethAddress(mock, exchangeID)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(*gethAddressID).WillReturnRows(mockRows)
+	foundGethAddress, err := GetGethAddress(mock, gethAddressID)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethAddress", err)
 	}
@@ -41,10 +41,10 @@ func TestGetGethAddressForErrNoRows(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	exchangeID := 999
+	gethAddressID := 999
 	noRows := pgxmock.NewRows(DBColumns)
-	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(exchangeID).WillReturnRows(noRows)
-	foundGethAddress, err := GetGethAddress(mock, &exchangeID)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(gethAddressID).WillReturnRows(noRows)
+	foundGethAddress, err := GetGethAddress(mock, &gethAddressID)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethAddress", err)
 	}
@@ -62,14 +62,36 @@ func TestGetGethAddressForErr(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	exchangeID := -1
-	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(exchangeID).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundGethAddress, err := GetGethAddress(mock, &exchangeID)
+	gethAddressID := -1
+	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(gethAddressID).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
+	foundGethAddress, err := GetGethAddress(mock, &gethAddressID)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethAddress", err)
 	}
 	if foundGethAddress != nil {
 		t.Errorf("Expected GethAddress From Method GetGethAddress: to be empty but got this: %v", foundGethAddress)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethAddressForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	gethAddressID := -1
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(gethAddressID).WillReturnRows(differentModelRows)
+	foundGethAddress, err := GetGethAddress(mock, &gethAddressID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethAddress", err)
+	}
+	if foundGethAddress != nil {
+		t.Errorf("Expected foundGethAddress From Method GetGethAddress: to be empty but got this: %v", foundGethAddress)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -126,7 +148,7 @@ func TestGetGethAddressByAddressStrForErr(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	addressStr := "0xInvalide"
+	addressStr := "0xInvalid"
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(addressStr).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
 	foundGethAddress, err := GetGethAddressByAddressStr(mock, addressStr)
 	if err == nil {
@@ -134,6 +156,28 @@ func TestGetGethAddressByAddressStrForErr(t *testing.T) {
 	}
 	if foundGethAddress != nil {
 		t.Errorf("Expected GethAddress From Method GetGethAddressByAddressStr: to be empty but got this: %v", foundGethAddress)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethAddressByAddressStrForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	addressStr := "0xInvalid"
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WithArgs(addressStr).WillReturnRows(differentModelRows)
+	foundGethAddress, err := GetGethAddressByAddressStr(mock, addressStr)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethAddressByAddressStr", err)
+	}
+	if foundGethAddress != nil {
+		t.Errorf("Expected foundGethAddress From Method GetGethAddressByAddressStr: to be empty but got this: %v", foundGethAddress)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -280,13 +324,30 @@ func TestRemoveGethAddress(t *testing.T) {
 	}
 	defer mock.Close()
 	targetData := TestData1
-	exchangeID := targetData.ID
+	gethAddressID := targetData.ID
 	mock.ExpectBegin()
-	mock.ExpectExec("^DELETE FROM geth_addresses").WithArgs(*exchangeID).WillReturnResult(pgxmock.NewResult("DELETE", 1))
+	mock.ExpectExec("^DELETE FROM geth_addresses").WithArgs(*gethAddressID).WillReturnResult(pgxmock.NewResult("DELETE", 1))
 	mock.ExpectCommit()
-	err = RemoveGethAddress(mock, exchangeID)
+	err = RemoveGethAddress(mock, gethAddressID)
 	if err != nil {
 		t.Fatalf("an error '%s' in RemoveGethAddress", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestRemoveGethAddressOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	gethAddressID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveGethAddress(mock, &gethAddressID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -299,11 +360,11 @@ func TestRemoveGethAddressOnFailure(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	exchangeID := -1
+	gethAddressID := -1
 	mock.ExpectBegin()
-	mock.ExpectExec("^DELETE FROM geth_addresses").WithArgs(exchangeID).WillReturnError(fmt.Errorf("Cannot have -1 as ID"))
+	mock.ExpectExec("^DELETE FROM geth_addresses").WithArgs(gethAddressID).WillReturnError(fmt.Errorf("Cannot have -1 as ID"))
 	mock.ExpectRollback()
-	err = RemoveGethAddress(mock, &exchangeID)
+	err = RemoveGethAddress(mock, &gethAddressID)
 	if err == nil {
 		t.Fatalf("was expecting an error, but there was none")
 	}
@@ -334,6 +395,23 @@ func TestUpdateGethAddress(t *testing.T) {
 	err = UpdateGethAddress(mock, &targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in UpdateGethAddress", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestUpdateGethAddressOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = nil
+	err = UpdateGethAddress(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -413,6 +491,25 @@ func TestInsertGethAddress(t *testing.T) {
 	}
 	if err != nil {
 		t.Fatalf("an error '%s' in InsertGethAddress", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertGethAddressOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, err = InsertGethAddress(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -524,11 +621,11 @@ func TestGetGethAddressListByPagination(t *testing.T) {
 	defer mock.Close()
 	dataList := TestAllData
 	mockRows := AddGethAddressToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"exchange_type_id = 1"}
+	filters := []string{"address_type_id = 1", "address_str='test'"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WillReturnRows(mockRows)
 	foundGethAddressList, err := GetGethAddressListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -554,13 +651,38 @@ func TestGetGethAddressListByPaginationForErr(t *testing.T) {
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"exchange_type_id = -1"}
+	filters := []string{"address_type_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
 	foundGethAddressList, err := GetGethAddressListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethAddressListByPagination", err)
 	}
 	if len(foundGethAddressList) != 0 {
+		t.Errorf("Expected From Method GetGethAddressListByPagination: to be empty but got this: %v", foundGethAddressList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethAddressListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"address_type_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_addresses").WillReturnRows(differentModelRows)
+	foundGethAddressList, err := GetGethAddressListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethAddressListByPagination", err)
+	}
+	if foundGethAddressList != nil {
 		t.Errorf("Expected From Method GetGethAddressListByPagination: to be empty but got this: %v", foundGethAddressList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {

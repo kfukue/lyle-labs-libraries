@@ -333,6 +333,28 @@ func TestGetGethTradeForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethTradeForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	gethTradeID := -1
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_trades").WithArgs(gethTradeID).WillReturnRows(differentModelRows)
+	foundGethTrade, err := GetGethTrade(mock, &gethTradeID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTrade", err)
+	}
+	if foundGethTrade != nil {
+		t.Errorf("Expected GethTrade From Method GetGethTrade: to be empty but got this: %v", foundGethTrade)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetGethTradeByStartAndEndDates(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -374,6 +396,28 @@ func TestGetGethTradeByStartAndEndDatesForErr(t *testing.T) {
 	}
 	if len(foundGethTradeList) != 0 {
 		t.Errorf("Expected From Method GetGethTradeByStartAndEndDates: to be empty but got this: %v", foundGethTradeList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethTradeByStartAndEndDatesForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	startDate := utils.SampleCreatedAtTime
+	endDate := startDate.Add(time.Hour * 24)
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_trades").WithArgs(startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)).WillReturnRows(differentModelRows)
+	foundGethTradeList, err := GetGethTradeByStartAndEndDates(mock, startDate, endDate)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTradeByStartAndEndDates", err)
+	}
+	if foundGethTradeList != nil {
+		t.Errorf("Expected foundGethTradeList From Method GetGethTradeByStartAndEndDates: to be empty but got this: %v", foundGethTradeList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -425,6 +469,27 @@ func TestGetGethTradeByFromAddressForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethTradeByFromAddressForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	addressStr := TestData1.AddressStr
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_trades").WithArgs(addressStr).WillReturnRows(differentModelRows)
+	foundGethTradeList, err := GetGethTradeByFromAddress(mock, addressStr)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTradeByFromAddress", err)
+	}
+	if foundGethTradeList != nil {
+		t.Errorf("Expected foundGethTradeList From Method GetGethTradeByFromAddress: to be empty but got this: %v", foundGethTradeList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetGethTradeByFromAddressId(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -464,6 +529,27 @@ func TestGetGethTradeByFromAddressIdForErr(t *testing.T) {
 	}
 	if len(foundGethTradeList) != 0 {
 		t.Errorf("Expected From Method GetGethTradeByFromAddressId: to be empty but got this: %v", foundGethTradeList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethTradeByFromAddressIdForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	addressID := -1
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_trades").WithArgs(addressID).WillReturnRows(differentModelRows)
+	foundGethTradeList, err := GetGethTradeByFromAddressId(mock, &addressID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTradeByFromAddressId", err)
+	}
+	if foundGethTradeList != nil {
+		t.Errorf("Expected foundGethTradeList From Method GetGethTradeByFromAddressId: to be empty but got this: %v", foundGethTradeList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -510,6 +596,27 @@ func TestGetGethTradeByUUIDsForErr(t *testing.T) {
 	}
 	if len(foundGethTradeList) != 0 {
 		t.Errorf("Expected From Method GetGethTradeByUUIDs: to be empty but got this: %v", foundGethTradeList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethTradeByUUIDsForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	uuids := []string{"uuid-invalid-1", "uuid-invalid-2"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_trades").WithArgs(pq.Array(uuids)).WillReturnRows(differentModelRows)
+	foundGethTradeList, err := GetGethTradeByUUIDs(mock, uuids)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTradeByUUIDs", err)
+	}
+	if foundGethTradeList != nil {
+		t.Errorf("Expected foundGethTradeList From Method GetGethTradeByUUIDs: to be empty but got this: %v", foundGethTradeList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -565,6 +672,29 @@ func TestGetNetTransfersByTxnHashAndAddressStrsForErr(t *testing.T) {
 	}
 }
 
+func TestGetNetTransfersByTxnHashAndAddressStrsForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	txnHash := TestData1.TxnHash
+	addressStr := TestData1.AddressStr
+	baseAssetID := -1
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^WITH to_address as").WithArgs(txnHash, addressStr, baseAssetID).WillReturnRows(differentModelRows)
+	foundGethTradeList, err := GetNetTransfersByTxnHashAndAddressStrs(mock, txnHash, addressStr, &baseAssetID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetNetTransfersByTxnHashAndAddressStrs", err)
+	}
+	if foundGethTradeList != nil {
+		t.Errorf("Expected foundGethTradeList From Method GetNetTransfersByTxnHashAndAddressStrs: to be empty but got this: %v", foundGethTradeList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetFromNetTransfersByTxnHashesAndAddressStrs(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -606,6 +736,28 @@ func TestGetFromNetTransfersByTxnHashesAndAddressStrsForErr(t *testing.T) {
 	}
 	if len(foundGethTradeList) != 0 {
 		t.Errorf("Expected From Method GetFromNetTransfersByTxnHashesAndAddressStrs: to be empty but got this: %v", foundGethTradeList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetFromNetTransfersByTxnHashesAndAddressStrsForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	txnHashes := []string{TestData1.TxnHash, TestData2.TxnHash}
+	baseAssetID := -1
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^WITH to_address as").WithArgs(pq.Array(txnHashes), baseAssetID).WillReturnRows(differentModelRows)
+	foundGethTradeList, err := GetFromNetTransfersByTxnHashesAndAddressStrs(mock, txnHashes, &baseAssetID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetFromNetTransfersByTxnHashesAndAddressStrs", err)
+	}
+	if foundGethTradeList != nil {
+		t.Errorf("Expected foundGethTradeList From Method GetFromNetTransfersByTxnHashesAndAddressStrs: to be empty but got this: %v", foundGethTradeList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -705,6 +857,23 @@ func TestRemoveGethTrade(t *testing.T) {
 	}
 }
 
+func TestRemoveGethTradeOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	gethTradeID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveGethTrade(mock, &gethTradeID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveGethTradeOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -738,6 +907,23 @@ func TestDeleteGethTradesByBaseAssetId(t *testing.T) {
 	err = DeleteGethTradesByBaseAssetId(mock, baseAssetID)
 	if err != nil {
 		t.Fatalf("an error '%s' in DeleteGethTradesByBaseAssetId", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestDeleteGethTradesByBaseAssetIdOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	baseAssetID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = DeleteGethTradesByBaseAssetId(mock, &baseAssetID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -807,6 +993,26 @@ func TestGetGethTradeListForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethTradeListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_trades").WillReturnRows(differentModelRows)
+	foundGethTradeList, err := GetGethTradeList(mock)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTradeList", err)
+	}
+	if foundGethTradeList != nil {
+		t.Errorf("Expected foundGethTradeList From Method GetGethTradeList: to be empty but got this: %v", foundGethTradeList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestUpdateGethTrade(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -852,6 +1058,24 @@ func TestUpdateGethTrade(t *testing.T) {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
 	}
 }
+
+func TestUpdateGethTradeOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = nil
+	err = UpdateGethTrade(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestUpdateGethTradeOnFailureAtBegin(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -970,6 +1194,24 @@ func TestInsertGethTrade(t *testing.T) {
 	}
 }
 
+func TestInsertGethTradesOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, _, err = InsertGethTrade(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
 func TestInsertGethTradeOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -1178,6 +1420,29 @@ func TestGetLatestGethTradeFromAssetIDAnDateForErr(t *testing.T) {
 	}
 }
 
+func TestGetLatestGethTradeFromAssetIDAnDateForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	assetID := 111111
+	asOfDate := utils.SampleCreatedAtTime
+	isBefore := false
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_trades").WithArgs(assetID, asOfDate.Format(utils.LayoutPostgres)).WillReturnRows(differentModelRows)
+	foundGethTrade, err := GetLatestGethTradeFromAssetIDAnDate(mock, &assetID, asOfDate, &isBefore)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetLatestGethTradeFromAssetIDAnDate", err)
+	}
+	if foundGethTrade != nil {
+		t.Errorf("Expected GethTrade From Method GetLatestGethTradeFromAssetIDAnDate: to be empty but got this: %v", foundGethTrade)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetGethTradeListByPagination(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -1186,11 +1451,11 @@ func TestGetGethTradeListByPagination(t *testing.T) {
 	defer mock.Close()
 	dataList := TestAllData
 	mockRows := AddGethTradeToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"import_type_id = 1"}
+	filters := []string{"import_type_id = 1", "status_id=1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_trades").WillReturnRows(mockRows)
 	foundGethTradeList, err := GetGethTradeListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -1230,6 +1495,31 @@ func TestGetGethTradeListByPaginationForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethTradeListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"import_type_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_trades").WillReturnRows(differentModelRows)
+	foundGethTradeList, err := GetGethTradeListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTradeListByPagination", err)
+	}
+	if len(foundGethTradeList) != 0 {
+		t.Errorf("Expected From Method GetGethTradeListByPagination: to be empty but got this: %v", foundGethTradeList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetTotalTradesCount(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -1250,7 +1540,7 @@ func TestGetTotalTradesCount(t *testing.T) {
 	}
 }
 
-func TestGetTotalMinersForErr(t *testing.T) {
+func TestGetTotalTradesForErr(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)

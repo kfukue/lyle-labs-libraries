@@ -74,10 +74,6 @@ func GetGethTransactionInputByFromToAddress(dbConnPgx utils.PgxIface, fromToAddr
 		return nil, err
 	}
 	defer results.Close()
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
 	gethTransactionInputs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransactionInput])
 	if err != nil {
 		log.Println(err)
@@ -348,9 +344,7 @@ func GetTotalTransactionInputsCount(dbConnPgx utils.PgxIface) (*int, error) {
 	err := row.Scan(
 		&totalCount,
 	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}

@@ -127,6 +127,27 @@ func TestGetAllGethMinerTransactionsByMinerIDForErr(t *testing.T) {
 	}
 }
 
+func TestGetAllGethMinerTransactionsByMinerIDForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	minerID := -999
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions").WithArgs(minerID).WillReturnRows(differentModelRows)
+	foundGethMinerTransactionList, err := GetAllGethMinerTransactionsByMinerID(mock, &minerID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAllGethMinerTransactionsByMinerID", err)
+	}
+	if foundGethMinerTransactionList != nil {
+		t.Errorf("Expected foundGethMinerTransactionList From Method GetAllGethMinerTransactionsByMinerID: to be empty but got this: %v", foundGethMinerTransactionList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetMinAndMaxDatesFromTransactionsByMinerID(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -296,6 +317,27 @@ func TestGetAllGethMinerTransactionsByTransactionIDForErr(t *testing.T) {
 	}
 }
 
+func TestGetAllGethMinerTransactionsByTransactionIDForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	transactionInputID := -999
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions").WithArgs(transactionInputID).WillReturnRows(differentModelRows)
+	foundGethMinerTransactionList, err := GetAllGethMinerTransactionsByTransactionID(mock, &transactionInputID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAllGethMinerTransactionsByTransactionID", err)
+	}
+	if foundGethMinerTransactionList != nil {
+		t.Errorf("Expected foundGethMinerTransactionList From Method GetAllGethMinerTransactionsByTransactionID: to be empty but got this: %v", foundGethMinerTransactionList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetGethMinerTransaction(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -363,6 +405,28 @@ func TestGetGethMinerTransactionForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethMinerTransactionForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	gethMinerID := -1
+	transactionInputID := -1
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions").WithArgs(gethMinerID, transactionInputID).WillReturnRows(differentModelRows)
+	foundGethMinerTransaction, err := GetGethMinerTransaction(mock, &gethMinerID, &transactionInputID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethMinerTransaction", err)
+	}
+	if foundGethMinerTransaction != nil {
+		t.Errorf("Expected foundGethMinerTransaction From Method GetGethMinerTransaction: to be empty but got this: %v", foundGethMinerTransaction)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveGethMinerTransaction(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -378,6 +442,24 @@ func TestRemoveGethMinerTransaction(t *testing.T) {
 	err = RemoveGethMinerTransaction(mock, gethMinerID, transactionInputID)
 	if err != nil {
 		t.Fatalf("an error '%s' in RemoveGethMinerTransaction", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestRemoveGethMinerTransactionOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	gethMinerID := -1
+	transactionInputID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveGethMinerTransaction(mock, &gethMinerID, &transactionInputID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -413,8 +495,8 @@ func TestGetGethMinerTransactionList(t *testing.T) {
 	dataList := []GethMinerTransaction{TestData1MinerTransaction, TestData2MinerTransaction}
 	mockRows := AddGethMinerTransactionToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions").WillReturnRows(mockRows)
-	minerIDs := []int{}
-	transactionInputIDs := []int{}
+	minerIDs := []int{1, 2}
+	transactionInputIDs := []int{1, 2}
 	foundGethMinerTransactionList, err := GetGethMinerTransactionList(mock, minerIDs, transactionInputIDs)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetGethMinerTransactionList", err)
@@ -451,6 +533,28 @@ func TestGetGethMinerTransactionListForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethMinerTransactionListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	minerIDs := []int{}
+	transactionInputIDs := []int{}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions").WillReturnRows(differentModelRows)
+	foundGethMinerTransactionList, err := GetGethMinerTransactionList(mock, minerIDs, transactionInputIDs)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethMinerTransactionList", err)
+	}
+	if foundGethMinerTransactionList != nil {
+		t.Errorf("Expected foundGethMinerTransactionList From Method GetGethMinerTransactionList: to be empty but got this: %v", foundGethMinerTransactionList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestUpdateGethMinerTransaction(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -471,6 +575,23 @@ func TestUpdateGethMinerTransaction(t *testing.T) {
 	err = UpdateGethMinerTransaction(mock, &targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in UpdateGethMinerTransaction", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestUpdateGethMinerTransactionOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1MinerTransaction
+	targetData.MinerID = nil
+	err = UpdateGethMinerTransaction(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -552,6 +673,25 @@ func TestInsertGethMinerTransaction(t *testing.T) {
 	}
 	if err != nil {
 		t.Fatalf("an error '%s' in InsertGethMinerTransaction", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertGethMinerTransactionOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1MinerTransaction
+	targetData.MinerID = utils.Ptr[int](-1)
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, _, err = InsertGethMinerTransaction(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -661,6 +801,58 @@ func TestInsertGethMinersTransactionsOnFailure(t *testing.T) {
 	}
 }
 
+func TestRemoveAllTransactionsAndTransactionInputs(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	mock.ExpectBegin()
+	mock.ExpectExec("^DELETE FROM geth_miners_transactions").WillReturnResult(pgxmock.NewResult("DELETE", 1))
+	mock.ExpectCommit()
+	err = RemoveAllTransactionsAndTransactionInputs(mock)
+	if err != nil {
+		t.Fatalf("an error '%s' in RemoveAllTransactionsAndTransactionInputs", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestRemoveAllTransactionsAndTransactionInputsOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveAllTransactionsAndTransactionInputs(mock)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestRemoveAllTransactionsAndTransactionInputsOnFailure(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	mock.ExpectBegin()
+	mock.ExpectExec("^DELETE FROM geth_miners_transactions").WillReturnError(fmt.Errorf("Cannot have -1 as ID"))
+	mock.ExpectRollback()
+	err = RemoveAllTransactionsAndTransactionInputs(mock)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetMinerTransactionListByPagination(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -669,11 +861,11 @@ func TestGetMinerTransactionListByPagination(t *testing.T) {
 	defer mock.Close()
 	dataList := TestAllDataMinerTransaction
 	mockRows := AddGethMinerTransactionToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"import_type_id = 1"}
+	filters := []string{"miner_id = 1", "transaction_id=1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions").WillReturnRows(mockRows)
 	foundGethMinerTransactionList, err := GetMinerTransactionListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -699,13 +891,38 @@ func TestGetMinerTransactionListByPaginationForErr(t *testing.T) {
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"import_type_id = -1"}
+	filters := []string{"miner_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
 	foundGethMinerTransactionList, err := GetMinerTransactionListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetMinerTransactionListByPagination", err)
 	}
 	if len(foundGethMinerTransactionList) != 0 {
+		t.Errorf("Expected From Method GetMinerTransactionListByPagination: to be empty but got this: %v", foundGethMinerTransactionList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetMinerTransactionListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"miner_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_miners_transactions").WillReturnRows(differentModelRows)
+	foundGethMinerTransactionList, err := GetMinerTransactionListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetMinerTransactionListByPagination", err)
+	}
+	if foundGethMinerTransactionList != nil {
 		t.Errorf("Expected From Method GetMinerTransactionListByPagination: to be empty but got this: %v", foundGethMinerTransactionList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {

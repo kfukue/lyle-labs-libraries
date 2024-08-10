@@ -199,6 +199,28 @@ func TestGetGethProcessVlogJobForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethProcessVlogJobForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	gethProcessVlogJobID := -1
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_process_vlog_jobs").WithArgs(gethProcessVlogJobID).WillReturnRows(differentModelRows)
+	foundGethProcessVlogJob, err := GetGethProcessVlogJob(mock, &gethProcessVlogJobID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethProcessVlogJob", err)
+	}
+	if foundGethProcessVlogJob != nil {
+		t.Errorf("Expected foundGethProcessVlogJob From Method GetGethProcessVlogJob: to be empty but got this: %v", foundGethProcessVlogJob)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetGethProcessVlogJobList(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -242,6 +264,26 @@ func TestGetGethProcessVlogJobListForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethProcessVlogJobListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_process_vlog_jobs").WillReturnRows(differentModelRows)
+	foundGethProcessVlogJobs, err := GetGethProcessVlogJobList(mock)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethProcessVlogJobList", err)
+	}
+	if foundGethProcessVlogJobs != nil {
+		t.Errorf("Expected foundGethProcessVlogJobs From Method GetGethProcessVlogJobList: to be empty but got this: %v", foundGethProcessVlogJobs)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveGethProcessVlogJob(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -262,6 +304,22 @@ func TestRemoveGethProcessVlogJob(t *testing.T) {
 	}
 }
 
+func TestRemoveGethProcessVlogJobOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	gethProcessVlogJobID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveGethProcessVlogJob(mock, &gethProcessVlogJobID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
 func TestRemoveGethProcessVlogJobOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -312,6 +370,23 @@ func TestUpdateGethProcessVlogJob(t *testing.T) {
 	err = UpdateGethProcessVlogJob(mock, &targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in UpdateGethProcessVlogJob", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestUpdateGethProcessVlogJobOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = nil
+	err = UpdateGethProcessVlogJob(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -411,6 +486,25 @@ func TestInsertGethProcessVlogJob(t *testing.T) {
 	}
 	if err != nil {
 		t.Fatalf("an error '%s' in InsertGethProcessVlogJob", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertGethProcessVlogJobOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, err = InsertGethProcessVlogJob(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -542,11 +636,11 @@ func TestGetGethProcessVlogJobListByPagination(t *testing.T) {
 	defer mock.Close()
 	dataList := TestAllData
 	mockRows := AddGethProcessVlogJobToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"import_type_id = 1"}
+	filters := []string{"job_category_id = 1", "asset_id=1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_process_vlog_jobs").WillReturnRows(mockRows)
 	foundGethProcessVlogJobList, err := GetGethProcessVlogJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -572,13 +666,38 @@ func TestGetGethProcessVlogJobListByPaginationForErr(t *testing.T) {
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"import_type_id = -1"}
+	filters := []string{"job_category_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_process_vlog_jobs").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
 	foundGethProcessVlogJobList, err := GetGethProcessVlogJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethProcessVlogJobListByPagination", err)
 	}
 	if len(foundGethProcessVlogJobList) != 0 {
+		t.Errorf("Expected From Method GetGethProcessVlogJobListByPagination: to be empty but got this: %v", foundGethProcessVlogJobList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethProcessVlogJobListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"job_category_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_process_vlog_jobs").WillReturnRows(differentModelRows)
+	foundGethProcessVlogJobList, err := GetGethProcessVlogJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethProcessVlogJobListByPagination", err)
+	}
+	if foundGethProcessVlogJobList != nil {
 		t.Errorf("Expected From Method GetGethProcessVlogJobListByPagination: to be empty but got this: %v", foundGethProcessVlogJobList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -619,6 +738,92 @@ func TestGetTotalGethProcessVlogJobCountForErr(t *testing.T) {
 	}
 	if numOfChains != nil {
 		t.Errorf("Expected numOfChains From Method GetTotalGethProcessVlogJobCount to be empty but got this: %v", numOfChains)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestUpdateFailedGethProcessVlogJob(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	msg := "test"
+	doUpdate := true
+	newStatusID := utils.FAILED_STRUCTURED_VALUE_ID
+	newDescription := fmt.Sprintf("%s \n %s", targetData.Description, msg)
+	mock.ExpectBegin()
+	mock.ExpectExec("^UPDATE geth_process_vlog_jobs").WithArgs(
+		targetData.GethProcessJobID,         //1
+		targetData.Name,                     //2
+		targetData.AlternateName,            //3
+		targetData.StartDate,                //4
+		targetData.EndDate,                  //5
+		newDescription,                      //6
+		&newStatusID,                        //7
+		targetData.JobCategoryID,            //8
+		targetData.AssetID,                  //9
+		targetData.ChainID,                  //10
+		targetData.TxnHash,                  //11
+		targetData.AddressID,                //12
+		targetData.BlockNumber,              //13
+		targetData.IndexNumber,              //14
+		pq.Array(targetData.TopicsStrArray), //15
+		targetData.UpdatedBy,                //16
+		targetData.ID,                       //17
+	).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	mock.ExpectCommit()
+	err = UpdateFailedGethProcessVlogJob(mock, &targetData, msg, doUpdate)
+	if err != nil {
+		t.Fatalf("an error '%s' in UpdateFailedGethProcessVlogJob", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestUpdateFailedGethProcessVlogJobOnFailure(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	// name can't be nil
+	targetData.Name = ""
+	targetData.ID = utils.Ptr[int](-1)
+	msg := "test"
+	doUpdate := true
+	newStatusID := utils.FAILED_STRUCTURED_VALUE_ID
+	newDescription := fmt.Sprintf("%s \n %s", targetData.Description, msg)
+	mock.ExpectBegin()
+	mock.ExpectExec("^UPDATE geth_process_vlog_jobs").WithArgs(
+		targetData.GethProcessJobID,         //1
+		targetData.Name,                     //2
+		targetData.AlternateName,            //3
+		targetData.StartDate,                //4
+		targetData.EndDate,                  //5
+		newDescription,                      //6
+		&newStatusID,                        //7
+		targetData.JobCategoryID,            //8
+		targetData.AssetID,                  //9
+		targetData.ChainID,                  //10
+		targetData.TxnHash,                  //11
+		targetData.AddressID,                //12
+		targetData.BlockNumber,              //13
+		targetData.IndexNumber,              //14
+		pq.Array(targetData.TopicsStrArray), //15
+		targetData.UpdatedBy,                //16
+		targetData.ID,                       //17
+	).WillReturnError(fmt.Errorf("Cannot have -1 as ID"))
+
+	mock.ExpectRollback()
+	err = UpdateFailedGethProcessVlogJob(mock, &targetData, msg, doUpdate)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)

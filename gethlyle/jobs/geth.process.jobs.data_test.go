@@ -186,6 +186,28 @@ func TestGetGethProcessJobForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethProcessJobForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	gethProcessJobID := -1
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_process_jobs").WithArgs(gethProcessJobID).WillReturnRows(differentModelRows)
+	foundGethProcessJob, err := GetGethProcessJob(mock, &gethProcessJobID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethProcessJob", err)
+	}
+	if foundGethProcessJob != nil {
+		t.Errorf("Expected foundGethProcessJob From Method GetGethProcessJob: to be empty but got this: %v", foundGethProcessJob)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetLatestGethProcessJobByImportTypeIDAndAssetID(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -253,6 +275,27 @@ func TestGetLatestGethProcessJobByImportTypeIDAndAssetIDForErr(t *testing.T) {
 	}
 }
 
+func TestGetLatestGethProcessJobByImportTypeIDAndAssetIDForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	importTypeID := -1
+	assetID := -1
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_process_jobs").WithArgs(importTypeID, assetID, utils.SUCCESS_STRUCTURED_VALUE_ID).WillReturnRows(differentModelRows)
+	foundGethProcessJob, err := GetLatestGethProcessJobByImportTypeIDAndAssetID(mock, &importTypeID, &assetID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetLatestGethProcessJobByImportTypeIDAndAssetID", err)
+	}
+	if foundGethProcessJob != nil {
+		t.Errorf("Expected foundGethProcessJob From Method GetLatestGethProcessJobByImportTypeIDAndAssetID: to be empty but got this: %v", foundGethProcessJob)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
 func TestGetGethProcessJobList(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -296,6 +339,26 @@ func TestGetGethProcessJobListForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethProcessJobListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_process_jobs").WillReturnRows(differentModelRows)
+	foundGethProcessJobs, err := GetGethProcessJobList(mock)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethProcessJobList", err)
+	}
+	if foundGethProcessJobs != nil {
+		t.Errorf("Expected foundGethProcessJobs From Method GetGethProcessJobList: to be empty but got this: %v", foundGethProcessJobs)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveGethProcessJob(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -310,6 +373,23 @@ func TestRemoveGethProcessJob(t *testing.T) {
 	err = RemoveGethProcessJob(mock, gethProcessJobID)
 	if err != nil {
 		t.Fatalf("an error '%s' in RemoveGethProcessJob", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestRemoveGethProcessJobOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	gethProcessJobID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveGethProcessJob(mock, &gethProcessJobID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -364,6 +444,23 @@ func TestUpdateGethProcessJob(t *testing.T) {
 	err = UpdateGethProcessJob(mock, &targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in UpdateGethProcessJob", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestUpdateTaxOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = nil
+	err = UpdateGethProcessJob(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -457,6 +554,25 @@ func TestInsertGethProcessJob(t *testing.T) {
 	}
 	if err != nil {
 		t.Fatalf("an error '%s' in InsertGethProcessJob", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertGethProcessJobOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, err = InsertGethProcessJob(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -582,11 +698,11 @@ func TestGetGethProcessJobListByPagination(t *testing.T) {
 	defer mock.Close()
 	dataList := TestAllData
 	mockRows := AddGethProcessJobToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"import_type_id = 1"}
+	filters := []string{"job_category_id = 1", "status_id = 1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_process_jobs").WillReturnRows(mockRows)
 	foundGethProcessJobList, err := GetGethProcessJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -612,13 +728,38 @@ func TestGetGethProcessJobListByPaginationForErr(t *testing.T) {
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"import_type_id = -1"}
+	filters := []string{"status_id = -1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_process_jobs").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
 	foundGethProcessJobList, err := GetGethProcessJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethProcessJobListByPagination", err)
 	}
 	if len(foundGethProcessJobList) != 0 {
+		t.Errorf("Expected From Method GetGethProcessJobListByPagination: to be empty but got this: %v", foundGethProcessJobList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethProcessJobListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"status_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_process_jobs").WillReturnRows(differentModelRows)
+	foundGethProcessJobList, err := GetGethProcessJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethProcessJobListByPagination", err)
+	}
+	if foundGethProcessJobList != nil {
 		t.Errorf("Expected From Method GetGethProcessJobListByPagination: to be empty but got this: %v", foundGethProcessJobList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {

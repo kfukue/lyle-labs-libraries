@@ -374,9 +374,7 @@ func GetTotalMinerTransactionInputCount(dbConnPgx utils.PgxIface) (*int, error) 
 	err := row.Scan(
 		&totalCount,
 	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}

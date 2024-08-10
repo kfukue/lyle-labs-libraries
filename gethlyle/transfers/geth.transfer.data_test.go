@@ -225,6 +225,28 @@ func TestGetGethTransferForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethTransferForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	gethTransferID := -1
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WithArgs(gethTransferID).WillReturnRows(differentModelRows)
+	foundGethTransfer, err := GetGethTransfer(mock, &gethTransferID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTransfer", err)
+	}
+	if foundGethTransfer != nil {
+		t.Errorf("Expected foundGethTransfer From Method GetGethTransfer: to be empty but got this: %v", foundGethTransfer)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetGethTransferByBlockChain(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -292,6 +314,30 @@ func TestGetGethTransferByBlockChainForErr(t *testing.T) {
 	}
 	if foundGethTransfer != nil {
 		t.Errorf("Expected GethTransfer From Method GetGethTransferByBlockChain: to be empty but got this: %v", foundGethTransfer)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethTransferByBlockChainForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData2
+	txnHash := "invalid-txn-hash"
+	blockNumber := targetData.BlockNumber
+	indexNumber := targetData.IndexNumber
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WithArgs(txnHash, *blockNumber, *indexNumber).WillReturnRows(differentModelRows)
+	foundGethTransfer, err := GetGethTransferByBlockChain(mock, txnHash, blockNumber, indexNumber)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTransferByBlockChain", err)
+	}
+	if foundGethTransfer != nil {
+		t.Errorf("Expected foundGethTransfer From Method GetGethTransferByBlockChain: to be empty but got this: %v", foundGethTransfer)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -392,6 +438,27 @@ func TestGetDistinctAddressesFromAssetIdForErr(t *testing.T) {
 	}
 }
 
+func TestGetDistinctAddressesFromAssetIdForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	assetID := -1
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^WITH sender_table as").WithArgs(assetID).WillReturnRows(differentModelRows)
+	foundGethTransferList, err := GetDistinctAddressesFromAssetId(mock, &assetID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetDistinctAddressesFromAssetId", err)
+	}
+	if foundGethTransferList != nil {
+		t.Errorf("Expected foundGethTransferList From Method GetDistinctAddressesFromAssetId: to be empty but got this: %v", foundGethTransferList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetDistinctTransactionHashesFromAssetIdAndStartingBlock(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -463,28 +530,6 @@ func TestGetHighestBlockFromBaseAssetId(t *testing.T) {
 	}
 }
 
-func TestGetHighestBlockFromBaseAssetIdForErrNoRows(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
-	}
-	defer mock.Close()
-	targetData := TestData2
-	baseAssetID := targetData.BaseAssetID
-	noRows := pgxmock.NewRows(DBColumns)
-	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WithArgs(*baseAssetID).WillReturnRows(noRows)
-	foundBlockNumber, err := GetHighestBlockFromBaseAssetId(mock, baseAssetID)
-	if err != nil {
-		t.Fatalf("an error '%s' in GetHighestBlockFromBaseAssetId", err)
-	}
-	if *foundBlockNumber != uint64(0) {
-		t.Errorf("Expected foundBlockNumber From Method GetHighestBlockFromBaseAssetId: to be 0 but got this: %v", foundBlockNumber)
-	}
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("There awere unfulfilled expectations: %s", err)
-	}
-}
-
 func TestGetHighestBlockFromBaseAssetIdForErr(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -549,6 +594,27 @@ func TestGetGethTransferByFromTokenAddressForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethTransferByFromTokenAddressForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	tokenAddressID := -999
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WithArgs(tokenAddressID).WillReturnRows(differentModelRows)
+	foundGethTransferList, err := GetGethTransferByFromTokenAddress(mock, &tokenAddressID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTransferByFromTokenAddress", err)
+	}
+	if foundGethTransferList != nil {
+		t.Errorf("Expected foundGethTransferList From Method GetGethTransferByFromTokenAddress: to be empty but got this: %v", foundGethTransferList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetGethTransferByFromMakerAddressAndTokenAddressID(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -589,6 +655,28 @@ func TestGetGethTransferByFromMakerAddressAndTokenAddressIDForErr(t *testing.T) 
 	}
 	if len(foundGethTransferList) != 0 {
 		t.Errorf("Expected From Method GetGethTransferByFromMakerAddressAndTokenAddressID: to be empty but got this: %v", foundGethTransferList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethTransferByFromMakerAddressAndTokenAddressIDForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	tokenAddressID := -999
+	makerAddressID := 1
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WithArgs(tokenAddressID, makerAddressID).WillReturnRows(differentModelRows)
+	foundGethTransferList, err := GetGethTransferByFromMakerAddressAndTokenAddressID(mock, &makerAddressID, &tokenAddressID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTransferByFromMakerAddressAndTokenAddressID", err)
+	}
+	if foundGethTransferList != nil {
+		t.Errorf("Expected foundGethTransferList From Method GetGethTransferByFromMakerAddressAndTokenAddressID: to be empty but got this: %v", foundGethTransferList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -643,6 +731,29 @@ func TestGetGethTransferByFromMakerAddressAndTokenAddressIDAndBeforeBlockNumberF
 	}
 }
 
+func TestGetGethTransferByFromMakerAddressAndTokenAddressIDAndBeforeBlockNumberForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	baseAssetID := -999
+	makerAddressID := 1
+	blockNumber := uint64(10000)
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WithArgs(baseAssetID, makerAddressID, blockNumber).WillReturnRows(differentModelRows)
+	foundGethTransferList, err := GetGethTransferByFromMakerAddressAndTokenAddressIDAndBeforeBlockNumber(mock, &makerAddressID, &baseAssetID, &blockNumber)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTransferByFromMakerAddressAndTokenAddressIDAndBeforeBlockNumber", err)
+	}
+	if foundGethTransferList != nil {
+		t.Errorf("Expected foundGethTransferList From Method GetGethTransferByFromMakerAddressAndTokenAddressIDAndBeforeBlockNumber: to be empty but got this: %v", foundGethTransferList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetGethTransferByFromBaseAssetIDAndBeforeBlockNumber(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -689,6 +800,28 @@ func TestGetGethTransferByFromBaseAssetIDAndBeforeBlockNumberForErr(t *testing.T
 	}
 }
 
+func TestGetGethTransferByFromBaseAssetIDAndBeforeBlockNumberForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	baseAssetID := 1
+	blockNumber := uint64(10000)
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WithArgs(baseAssetID, blockNumber).WillReturnRows(differentModelRows)
+	foundGethTransferList, err := GetGethTransferByFromBaseAssetIDAndBeforeBlockNumber(mock, &baseAssetID, &blockNumber)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTransferByFromBaseAssetIDAndBeforeBlockNumber", err)
+	}
+	if foundGethTransferList != nil {
+		t.Errorf("Expected foundGethTransferList From Method GetGethTransferByFromBaseAssetIDAndBeforeBlockNumber: to be empty but got this: %v", foundGethTransferList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetGethTransfersByTxnHash(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -729,6 +862,28 @@ func TestGetGethTransfersByTxnHashForErr(t *testing.T) {
 	}
 	if len(foundGethTransferList) != 0 {
 		t.Errorf("Expected From Method GetGethTransfersByTxnHash: to be empty but got this: %v", foundGethTransferList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethTransfersByTxnHashForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	txnHash := "test-txn-hash"
+	baseAssetID := 1
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WithArgs(txnHash, baseAssetID).WillReturnRows(differentModelRows)
+	foundGethTransferList, err := GetGethTransfersByTxnHash(mock, txnHash, &baseAssetID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTransfersByTxnHash", err)
+	}
+	if foundGethTransferList != nil {
+		t.Errorf("Expected foundGethTransferList From Method GetGethTransfersByTxnHash: to be empty but got this: %v", foundGethTransferList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -784,6 +939,29 @@ func TestGetGethTransfersByTxnHashesForErr(t *testing.T) {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
 	}
 }
+
+func TestGetGethTransfersByTxnHashesForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	txnHashes := []string{"0x-invalid-1", "0x-invalid-2"}
+	baseAssetID := -1
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WithArgs(pq.Array(txnHashes), baseAssetID).WillReturnRows(differentModelRows)
+	foundGethTransferList, err := GetGethTransfersByTxnHashes(mock, txnHashes, &baseAssetID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTransfersByTxnHashes", err)
+	}
+	if foundGethTransferList != nil {
+		t.Errorf("Expected foundGethTransferList From Method GetGethTransfersByTxnHashes: to be empty but got this: %v", foundGethTransferList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveGethTransfer(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -798,6 +976,23 @@ func TestRemoveGethTransfer(t *testing.T) {
 	err = RemoveGethTransfer(mock, gethTransferID)
 	if err != nil {
 		t.Fatalf("an error '%s' in RemoveGethTransfer", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestRemoveGethTransferOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	gethTransferID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveGethTransfer(mock, &gethTransferID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -844,6 +1039,24 @@ func TestRemoveGethTransfersFromBaseAssetIDAndStartBlockNumber(t *testing.T) {
 	}
 }
 
+func TestRemoveGethTransfersFromBaseAssetIDAndStartBlockNumberOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	baseAssetID := -1
+	startBlockNumber := uint64(10000)
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveGethTransfersFromBaseAssetIDAndStartBlockNumber(mock, &baseAssetID, &startBlockNumber)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveGethTransfersFromBaseAssetIDAndStartBlockNumberOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -884,6 +1097,22 @@ func TestRemoveGethTransfersFromBaseAssetID(t *testing.T) {
 	}
 }
 
+func TestRemoveGethTransfersFromBaseAssetIDOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	taxID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveGethTransfersFromBaseAssetID(mock, &taxID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
 func TestRemoveGethTransfersFromBaseAssetIDOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -947,6 +1176,26 @@ func TestGetGethTransferListForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethTransferListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WillReturnRows(differentModelRows)
+	foundGethTransferList, err := GetGethTransferList(mock)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTransferList", err)
+	}
+	if foundGethTransferList != nil {
+		t.Errorf("Expected foundGethTransferList From Method GetGethTransferList: to be empty but got this: %v", foundGethTransferList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestUpdateGethTransfer(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -982,6 +1231,23 @@ func TestUpdateGethTransfer(t *testing.T) {
 	err = UpdateGethTransfer(mock, &targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in UpdateGethTransfer", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestUpdateGethTransferOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = nil
+	err = UpdateGethTransfer(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -1089,6 +1355,25 @@ func TestInsertGethTransfer(t *testing.T) {
 	}
 	if err != nil {
 		t.Fatalf("an error '%s' in InsertGethTransfer", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertGethTransferOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, _, err = InsertGethTransfer(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -1427,11 +1712,11 @@ func TestGetGethTransferListByPagination(t *testing.T) {
 	defer mock.Close()
 	dataList := TestAllData
 	mockRows := AddGethTransferToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"chain_id = 1"}
+	filters := []string{"chain_id = 1", "asset_id=1"}
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WillReturnRows(mockRows)
 	foundGethTransferList, err := GetGethTransferListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -1464,6 +1749,31 @@ func TestGetGethTransferListByPaginationForErr(t *testing.T) {
 		t.Fatalf("expected an error '%s' in GetGethTransferListByPagination", err)
 	}
 	if len(foundGethTransferList) != 0 {
+		t.Errorf("Expected From Method GetGethTransferListByPagination: to be empty but got this: %v", foundGethTransferList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethTransferListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"chain_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_transfers").WillReturnRows(differentModelRows)
+	foundGethTransferList, err := GetGethTransferListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethTransferListByPagination", err)
+	}
+	if foundGethTransferList != nil {
 		t.Errorf("Expected From Method GetGethTransferListByPagination: to be empty but got this: %v", foundGethTransferList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
