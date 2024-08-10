@@ -168,7 +168,7 @@ func TestGetTaxForErrNoRows(t *testing.T) {
 	}
 }
 
-func TestGetTaxForCollectRowErr(t *testing.T) {
+func TestGetTaxForRowErr(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
@@ -236,8 +236,6 @@ func TestRemoveTaxOnFailureAtBegin(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := TestData1
-	targetData.ID = utils.Ptr[int](-1)
 	taxID := -1
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
 	err = RemoveTax(mock, &taxID)
