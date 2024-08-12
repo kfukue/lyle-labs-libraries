@@ -409,15 +409,15 @@ func InsertPositionJobs(dbConnPgx utils.PgxIface, positionJobs []PositionJob) er
 		uuidString.Set(positionJob.UUID)
 		row := []interface{}{
 
-			*positionJob.PositionID,    //1
-			*positionJob.JobID,         //2
+			positionJob.PositionID,     //1
+			positionJob.JobID,          //2
 			uuidString,                 //3
 			positionJob.Name,           //4
 			positionJob.AlternateName,  //5
 			&positionJob.StartDate,     //6
 			&positionJob.EndDate,       //7
 			positionJob.Description,    //8
-			*positionJob.StatusID,      //9
+			positionJob.StatusID,       //9
 			positionJob.ResponseStatus, //10
 			positionJob.RequestUrl,     //11
 			positionJob.RequestBody,    //12
