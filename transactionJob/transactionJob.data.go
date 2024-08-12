@@ -10,73 +10,55 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
-func GetTransactionJob(transactionID int, jobID int) (*TransactionJob, error) {
+func GetTransactionJob(dbConnPgx utils.PgxIface, transactionID, jobID *int) (*TransactionJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
-	transaction_id,  
-	job_id,
-	uuid, 
-	name,
-	alternate_name,
-	start_date,
-	end_date,
-	description,
-	status_id,
-	response_status,
-	request_url,
-	request_body,
-	request_method,
-	response_data,
-	response_data_json,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
+	row, err := dbConnPgx.Query(ctx, `SELECT
+		transaction_id,  
+		job_id,
+		uuid, 
+		name,
+		alternate_name,
+		start_date,
+		end_date,
+		description,
+		status_id,
+		response_status,
+		request_url,
+		request_body,
+		request_method,
+		response_data,
+		response_data_json,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
 	FROM transaction_jobs 
 	WHERE transaction_id = $1
 	AND job_id = $2
-	`, transactionID, jobID)
-
-	transactionJob := &TransactionJob{}
-	err := row.Scan(
-		&transactionJob.TransactionID,
-		&transactionJob.JobID,
-		&transactionJob.UUID,
-		&transactionJob.Name,
-		&transactionJob.AlternateName,
-		&transactionJob.StartDate,
-		&transactionJob.EndDate,
-		&transactionJob.Description,
-		&transactionJob.StatusID,
-		&transactionJob.ResponseStatus,
-		&transactionJob.RequestUrl,
-		&transactionJob.RequestBody,
-		&transactionJob.RequestMethod,
-		&transactionJob.ResponseData,
-		&transactionJob.ResponseDataJson,
-		&transactionJob.CreatedBy,
-		&transactionJob.CreatedAt,
-		&transactionJob.UpdatedBy,
-		&transactionJob.UpdatedAt,
-	)
+	`, *transactionID, *jobID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	transactionJob, err := pgx.CollectOneRow(row, pgx.RowToStructByName[TransactionJob])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return transactionJob, nil
+	return &transactionJob, nil
 }
 
-func GetTransactionJobByUUID(transactionJobUUID string) (*TransactionJob, error) {
+func GetTransactionJobByUUID(dbConnPgx utils.PgxIface, transactionJobUUID string) (*TransactionJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT
 	transaction_id,  
 	job_id,
 	uuid, 
@@ -99,42 +81,24 @@ func GetTransactionJobByUUID(transactionJobUUID string) (*TransactionJob, error)
 	FROM transaction_jobs 
 	WHERE text(uuid) = $1
 	`, transactionJobUUID)
-
-	transactionJob := &TransactionJob{}
-	err := row.Scan(
-		&transactionJob.TransactionID,
-		&transactionJob.JobID,
-		&transactionJob.UUID,
-		&transactionJob.Name,
-		&transactionJob.AlternateName,
-		&transactionJob.StartDate,
-		&transactionJob.EndDate,
-		&transactionJob.Description,
-		&transactionJob.StatusID,
-		&transactionJob.ResponseStatus,
-		&transactionJob.RequestUrl,
-		&transactionJob.RequestBody,
-		&transactionJob.RequestMethod,
-		&transactionJob.ResponseData,
-		&transactionJob.ResponseDataJson,
-		&transactionJob.CreatedBy,
-		&transactionJob.CreatedAt,
-		&transactionJob.UpdatedBy,
-		&transactionJob.UpdatedAt,
-	)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	transactionJob, err := pgx.CollectOneRow(row, pgx.RowToStructByName[TransactionJob])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return transactionJob, nil
+	return &transactionJob, nil
 }
 
-func GetTransactionJobsByUUIDs(UUIDList []string) ([]TransactionJob, error) {
+func GetTransactionJobsByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]TransactionJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	transaction_id,  
 	job_id,
 	uuid, 
@@ -162,188 +126,99 @@ func GetTransactionJobsByUUIDs(UUIDList []string) ([]TransactionJob, error) {
 		return nil, err
 	}
 	defer results.Close()
-	transactionJobList := make([]TransactionJob, 0)
-	for results.Next() {
-		var transactionJob TransactionJob
-		results.Scan(
-			&transactionJob.TransactionID,
-			&transactionJob.JobID,
-			&transactionJob.UUID,
-			&transactionJob.Name,
-			&transactionJob.AlternateName,
-			&transactionJob.StartDate,
-			&transactionJob.EndDate,
-			&transactionJob.Description,
-			&transactionJob.StatusID,
-			&transactionJob.ResponseStatus,
-			&transactionJob.RequestUrl,
-			&transactionJob.RequestBody,
-			&transactionJob.RequestMethod,
-			&transactionJob.ResponseData,
-			&transactionJob.ResponseDataJson,
-			&transactionJob.CreatedBy,
-			&transactionJob.CreatedAt,
-			&transactionJob.UpdatedBy,
-			&transactionJob.UpdatedAt,
-		)
-
-		transactionJobList = append(transactionJobList, transactionJob)
+	transactionJobList, err := pgx.CollectRows(results, pgx.RowToStructByName[TransactionJob])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return transactionJobList, nil
 }
 
-func GetTopTenTransactionJobs() ([]TransactionJob, error) {
+func RemoveTransactionJob(dbConnPgx utils.PgxIface, transactionID, jobID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	transaction_id,  
-	job_id,
-	uuid, 
-	name,
-	alternate_name,
-	start_date,
-	end_date,
-	description,
-	status_id,
-	response_status,
-	request_url,
-	request_body,
-	request_method,
-	response_data,
-	response_data_json,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
-	FROM transaction_jobs 
-	`)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	transactionJobs := make([]TransactionJob, 0)
-	for results.Next() {
-		var transactionJob TransactionJob
-		results.Scan(
-			&transactionJob.TransactionID,
-			&transactionJob.JobID,
-			&transactionJob.UUID,
-			&transactionJob.Name,
-			&transactionJob.AlternateName,
-			&transactionJob.StartDate,
-			&transactionJob.EndDate,
-			&transactionJob.Description,
-			&transactionJob.StatusID,
-			&transactionJob.ResponseStatus,
-			&transactionJob.RequestUrl,
-			&transactionJob.RequestBody,
-			&transactionJob.RequestMethod,
-			&transactionJob.ResponseData,
-			&transactionJob.ResponseDataJson,
-			&transactionJob.CreatedBy,
-			&transactionJob.CreatedAt,
-			&transactionJob.UpdatedBy,
-			&transactionJob.UpdatedAt,
-		)
-
-		transactionJobs = append(transactionJobs, transactionJob)
-	}
-	return transactionJobs, nil
-}
-
-func RemoveTransactionJob(transactionID int, jobID int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM transaction_jobs WHERE 
-	transaction_id = $1 AND job_id =$2`, transactionID, jobID)
-	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveTransactionJob DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
-}
-
-func RemoveTransactionJobByUUID(transactionJobUUID string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM transaction_jobs WHERE 
-		WHERE text(uuid) = $1`,
-		transactionJobUUID)
-	if err != nil {
-		log.Println(err.Error())
+	sql := `DELETE FROM transaction_jobs WHERE 
+		transaction_id = $1 AND job_id =$2`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *transactionID, *jobID); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func GetTransactionJobList() ([]TransactionJob, error) {
+func RemoveTransactionJobByUUID(dbConnPgx utils.PgxIface, transactionJobUUID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	transaction_id,  
-	job_id,
-	uuid, 
-	name,
-	alternate_name,
-	start_date,
-	end_date,
-	description,
-	status_id,
-	response_status,
-	request_url,
-	request_body,
-	request_method,
-	response_data,
-	response_data_json,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in RemoveTransactionJobByUUID DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `DELETE FROM transaction_jobs WHERE text(uuid) = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, transactionJobUUID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func GetTransactionJobList(dbConnPgx utils.PgxIface) ([]TransactionJob, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := dbConnPgx.Query(ctx, `SELECT 
+		transaction_id,  
+		job_id,
+		uuid, 
+		name,
+		alternate_name,
+		start_date,
+		end_date,
+		description,
+		status_id,
+		response_status,
+		request_url,
+		request_body,
+		request_method,
+		response_data,
+		response_data_json,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
 	FROM transaction_jobs`)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	transactionJobs := make([]TransactionJob, 0)
-	for results.Next() {
-		var transactionJob TransactionJob
-		results.Scan(
-			&transactionJob.TransactionID,
-			&transactionJob.JobID,
-			&transactionJob.UUID,
-			&transactionJob.Name,
-			&transactionJob.AlternateName,
-			&transactionJob.StartDate,
-			&transactionJob.EndDate,
-			&transactionJob.Description,
-			&transactionJob.StatusID,
-			&transactionJob.ResponseStatus,
-			&transactionJob.RequestUrl,
-			&transactionJob.RequestBody,
-			&transactionJob.RequestMethod,
-			&transactionJob.ResponseData,
-			&transactionJob.ResponseDataJson,
-			&transactionJob.CreatedBy,
-			&transactionJob.CreatedAt,
-			&transactionJob.UpdatedBy,
-			&transactionJob.UpdatedAt,
-		)
-
-		transactionJobs = append(transactionJobs, transactionJob)
+	transactionJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[TransactionJob])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return transactionJobs, nil
 }
 
-func UpdateTransactionJob(transactionJob TransactionJob) error {
+func UpdateTransactionJob(dbConnPgx utils.PgxIface, transactionJob *TransactionJob) error {
 	// if the transactionJob id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if (transactionJob.TransactionID == nil || *transactionJob.TransactionID == 0) || (transactionJob.JobID == nil || *transactionJob.JobID == 0) {
 		return errors.New("transactionJob has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE transaction_jobs SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateTransactionJob DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE transaction_jobs SET 
 		name=$1,
 		alternate_name=$2,
 		start_date=$3,
@@ -357,8 +232,9 @@ func UpdateTransactionJob(transactionJob TransactionJob) error {
 		response_data=$11,
 		updated_by=$12, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE transaction_id=$13 AND job_id=$14`,
-
+		WHERE transaction_id=$13 AND job_id=$14`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		transactionJob.Name,           //1
 		transactionJob.AlternateName,  //2
 		transactionJob.StartDate,      //3
@@ -374,22 +250,26 @@ func UpdateTransactionJob(transactionJob TransactionJob) error {
 		transactionJob.UpdatedBy,     //12
 		transactionJob.TransactionID, //13
 		transactionJob.JobID,         //14
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func UpdateTransactionJobByUUID(transactionJob TransactionJob) error {
+func UpdateTransactionJobByUUID(dbConnPgx utils.PgxIface, transactionJob *TransactionJob) error {
 	// if the transactionJob id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if (transactionJob.TransactionID == nil || *transactionJob.TransactionID == 0) || (transactionJob.JobID == nil || *transactionJob.JobID == 0) {
 		return errors.New("transactionJob has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE transaction_jobs SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateTransactionJob DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE transaction_jobs SET 
 		name=$1,
 		alternate_name=$2,
 		start_date=$3,
@@ -404,7 +284,9 @@ func UpdateTransactionJobByUUID(transactionJob TransactionJob) error {
 		updated_by=$12, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE text(uuid) = $13
-		`,
+		`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		transactionJob.Name,           //1
 		transactionJob.AlternateName,  //2
 		transactionJob.StartDate,      //3
@@ -419,17 +301,21 @@ func UpdateTransactionJobByUUID(transactionJob TransactionJob) error {
 		// transactionJob.ResponseDataJson,//
 		transactionJob.UpdatedBy, //12
 		transactionJob.UUID,      //13
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertTransactionJob(transactionJob TransactionJob) (int, int, error) {
+func InsertTransactionJob(dbConnPgx utils.PgxIface, transactionJob *TransactionJob) (int, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertTransactionJob DbConn.Begin   %s", err.Error())
+		return -1, -1, err
+	}
 	var TransactionID int
 	var JobID int
 	transactionJobUUID, err := uuid.NewV4()
@@ -439,7 +325,7 @@ func InsertTransactionJob(transactionJob TransactionJob) (int, int, error) {
 	if transactionJob.UUID == "" {
 		transactionJob.UUID = transactionJobUUID.String()
 	}
-	err = database.DbConnPgx.QueryRow(ctx, `INSERT INTO transaction_jobs  
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO transaction_jobs  
 	(
 		transaction_id,  
 		job_id,
@@ -499,13 +385,20 @@ func InsertTransactionJob(transactionJob TransactionJob) (int, int, error) {
 		transactionJob.CreatedBy,        //15
 	).Scan(&TransactionID, &JobID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, 0, err
+		return -1, -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, -1, err
 	}
 	return int(TransactionID), int(JobID), nil
 }
 
-func InsertTransactionJobs(transactionJobs []TransactionJob) error {
+func InsertTransactionJobs(dbConnPgx utils.PgxIface, transactionJobs []TransactionJob) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -518,62 +411,139 @@ func InsertTransactionJobs(transactionJobs []TransactionJob) error {
 		uuidString.Set(transactionJob.UUID)
 		row := []interface{}{
 
-			*transactionJob.TransactionID, //1
-			*transactionJob.JobID,         //2
+			transactionJob.TransactionID,  //1
+			transactionJob.JobID,          //2
 			uuidString,                    //3
 			transactionJob.Name,           //4
 			transactionJob.AlternateName,  //5
 			&transactionJob.StartDate,     //6
 			&transactionJob.EndDate,       //7
 			transactionJob.Description,    //8
-			*transactionJob.StatusID,      //9
+			transactionJob.StatusID,       //9
 			transactionJob.ResponseStatus, //10
 			transactionJob.RequestUrl,     //11
 			transactionJob.RequestBody,    //12
 			transactionJob.RequestMethod,  //13
 			transactionJob.ResponseData,   //14
 			// TODO: erroring out in json insert look into it later TAT-27
-			// transactionJob.ResponseDataJson //15
-			transactionJob.CreatedBy,  //16
-			&transactionJob.CreatedAt, //17
-			transactionJob.CreatedBy,  //18
-			&now,                      //19
+			transactionJob.ResponseDataJson, //15
+			transactionJob.CreatedBy,        //16
+			&transactionJob.CreatedAt,       //17
+			transactionJob.CreatedBy,        //18
+			&now,                            //19
 		}
 		rows = append(rows, row)
 	}
 	// Given db is a *sql.DB
 
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"transaction_jobs"},
 		[]string{
-			"transaction_id",  //1
-			"job_id",          //2
-			"uuid",            //3
-			"name",            //4
-			"alternate_name",  //5
-			"start_date",      //6
-			"end_date",        //7
-			"description",     //8
-			"status_id",       //9
-			"response_status", //10
-			"request_url",     //11
-			"request_body",    //12
-			"request_method",  //13
-			"response_data",   //14
-			// "response_data_json", //15
-			"created_by", //16
-			"created_at", //17
-			"updated_by", //18
-			"updated_at", //19
+			"transaction_id",     //1
+			"job_id",             //2
+			"uuid",               //3
+			"name",               //4
+			"alternate_name",     //5
+			"start_date",         //6
+			"end_date",           //7
+			"description",        //8
+			"status_id",          //9
+			"response_status",    //10
+			"request_url",        //11
+			"request_body",       //12
+			"request_method",     //13
+			"response_data",      //14
+			"response_data_json", //15
+			"created_by",         //16
+			"created_at",         //17
+			"updated_by",         //18
+			"updated_at",         //19
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertTransactionJobs: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
 	}
 
 	return nil
+}
+
+// for refinedev
+func GetTransactionJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]TransactionJob, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `
+	SELECT 
+		transaction_id,  
+		job_id,
+		uuid, 
+		name,
+		alternate_name,
+		start_date,
+		end_date,
+		description,
+		status_id,
+		response_status,
+		request_url,
+		request_body,
+		request_method,
+		response_data,
+		response_data_json,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
+	FROM transaction_jobs 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	transactionJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[TransactionJob])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return transactionJobs, nil
+}
+
+func GetTotalTransactionJobsCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM transaction_jobs
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }
