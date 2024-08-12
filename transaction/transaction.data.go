@@ -10,190 +10,107 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
-func GetTransaction(transactionID int) (*Transaction, error) {
+func GetTransaction(dbConnPgx utils.PgxIface, transactionID *int) (*Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	start_date,
-	end_date,
-	description,
-	tx_hash,
-	status_id,
-	from_account_id,
-	to_account_id,
-	chain_id,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at
+	row, err := dbConnPgx.Query(ctx, `SELECT
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		start_date,
+		end_date,
+		description,
+		tx_hash,
+		status_id,
+		from_account_id,
+		to_account_id,
+		chain_id,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at
 	FROM transactions 
-	WHERE id = $1`, transactionID)
-
-	transaction := &Transaction{}
-	err := row.Scan(
-		&transaction.ID,
-		&transaction.UUID,
-		&transaction.Name,
-		&transaction.AlternateName,
-		&transaction.StartDate,
-		&transaction.EndDate,
-		&transaction.Description,
-		&transaction.TxHash,
-		&transaction.StatusID,
-		&transaction.FromAccountID,
-		&transaction.ToAccountID,
-		&transaction.ChainID,
-		&transaction.CreatedBy,
-		&transaction.CreatedAt,
-		&transaction.UpdatedBy,
-		&transaction.UpdatedAt,
-	)
+	WHERE id = $1`, *transactionID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	transaction, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Transaction])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return transaction, nil
+	return &transaction, nil
 }
 
-func GetTopTenTransactions() ([]Transaction, error) {
+func RemoveTransaction(dbConnPgx utils.PgxIface, transactionID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	start_date,
-	end_date,
-	description,
-	tx_hash,
-	status_id,
-	from_account_id,
-	to_account_id,
-	chain_id,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at
-	FROM transactions 
-	`)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	transactionList := make([]Transaction, 0)
-	for results.Next() {
-		var transaction Transaction
-		results.Scan(
-			&transaction.ID,
-			&transaction.UUID,
-			&transaction.Name,
-			&transaction.AlternateName,
-			&transaction.StartDate,
-			&transaction.EndDate,
-			&transaction.Description,
-			&transaction.TxHash,
-			&transaction.StatusID,
-			&transaction.FromAccountID,
-			&transaction.ToAccountID,
-			&transaction.ChainID,
-			&transaction.CreatedBy,
-			&transaction.CreatedAt,
-			&transaction.UpdatedBy,
-			&transaction.UpdatedAt,
-		)
-
-		transactionList = append(transactionList, transaction)
-	}
-	return transactionList, nil
-}
-
-func RemoveTransaction(transactionID int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM transactions WHERE id = $1`, transactionID)
-	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveTransaction DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM transactions WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *transactionID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetTransactions(ids []int) ([]Transaction, error) {
+func GetTransactions(dbConnPgx utils.PgxIface, ids []int) ([]Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	start_date,
-	end_date,
-	description,
-	tx_hash,
-	status_id,
-	from_account_id,
-	to_account_id,
-	chain_id,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		start_date,
+		end_date,
+		description,
+		tx_hash,
+		status_id,
+		from_account_id,
+		to_account_id,
+		chain_id,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at
 	FROM transactions`
 	if len(ids) > 0 {
 		strIds := utils.SplitToString(ids, ",")
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	transactionList := make([]Transaction, 0)
-	for results.Next() {
-		var transaction Transaction
-		results.Scan(
-			&transaction.ID,
-			&transaction.UUID,
-			&transaction.Name,
-			&transaction.AlternateName,
-			&transaction.StartDate,
-			&transaction.EndDate,
-			&transaction.Description,
-			&transaction.TxHash,
-			&transaction.StatusID,
-			&transaction.FromAccountID,
-			&transaction.ToAccountID,
-			&transaction.ChainID,
-			&transaction.CreatedBy,
-			&transaction.CreatedAt,
-			&transaction.UpdatedBy,
-			&transaction.UpdatedAt,
-		)
-
-		transactionList = append(transactionList, transaction)
+	transactionList, err := pgx.CollectRows(results, pgx.RowToStructByName[Transaction])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return transactionList, nil
 }
 
-func GetTransactionsByUUIDs(UUIDList []string) ([]Transaction, error) {
+func GetTransactionsByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -218,37 +135,18 @@ func GetTransactionsByUUIDs(UUIDList []string) ([]Transaction, error) {
 		return nil, err
 	}
 	defer results.Close()
-	transactionList := make([]Transaction, 0)
-	for results.Next() {
-		var transaction Transaction
-		results.Scan(
-			&transaction.ID,
-			&transaction.UUID,
-			&transaction.Name,
-			&transaction.AlternateName,
-			&transaction.StartDate,
-			&transaction.EndDate,
-			&transaction.Description,
-			&transaction.TxHash,
-			&transaction.StatusID,
-			&transaction.FromAccountID,
-			&transaction.ToAccountID,
-			&transaction.ChainID,
-			&transaction.CreatedBy,
-			&transaction.CreatedAt,
-			&transaction.UpdatedBy,
-			&transaction.UpdatedAt,
-		)
-
-		transactionList = append(transactionList, transaction)
+	transactionList, err := pgx.CollectRows(results, pgx.RowToStructByName[Transaction])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return transactionList, nil
 }
 
-func GetStartAndEndDateDiffTransactions(diffInDate int) ([]Transaction, error) {
+func GetStartAndEndDateDiffTransactions(dbConnPgx utils.PgxIface, diffInDate *int) ([]Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -267,50 +165,36 @@ func GetStartAndEndDateDiffTransactions(diffInDate int) ([]Transaction, error) {
 	updated_at
 	FROM transactions
 	WHERE DATE_PART('day', AGE(start_date, end_date)) =$1
-	`, diffInDate)
+	`, *diffInDate)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	transactionList := make([]Transaction, 0)
-	for results.Next() {
-		var transaction Transaction
-		results.Scan(
-			&transaction.ID,
-			&transaction.UUID,
-			&transaction.Name,
-			&transaction.AlternateName,
-			&transaction.StartDate,
-			&transaction.EndDate,
-			&transaction.Description,
-			&transaction.TxHash,
-			&transaction.StatusID,
-			&transaction.FromAccountID,
-			&transaction.ToAccountID,
-			&transaction.ChainID,
-			&transaction.CreatedBy,
-			&transaction.CreatedAt,
-			&transaction.UpdatedBy,
-			&transaction.UpdatedAt,
-		)
-
-		transactionList = append(transactionList, transaction)
+	transactionList, err := pgx.CollectRows(results, pgx.RowToStructByName[Transaction])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return transactionList, nil
 }
 
-func UpdateTransaction(transaction Transaction) error {
+func UpdateTransaction(dbConnPgx utils.PgxIface, transaction *Transaction) error {
 	// if the transaction id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if transaction.ID == nil || *transaction.ID == 0 {
 		return errors.New("transaction has invalid ID")
 	}
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateTransaction DbConn.Begin   %s", err.Error())
+		return err
+	}
 	startDate := transaction.StartDate
 	endDate := transaction.EndDate
 	log.Println(fmt.Sprintf("Updating start: %s, end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE transactions SET 
+	sql := `UPDATE transactions SET 
 		name=$1,  
 		alternate_name=$2, 
 		start_date =$3,
@@ -323,7 +207,9 @@ func UpdateTransaction(transaction Transaction) error {
 		chain_id=$10,
 		updated_by=$11, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$12`,
+		WHERE id=$12`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		transaction.Name,          //1
 		transaction.AlternateName, //2
 		transaction.StartDate,     //3
@@ -335,17 +221,22 @@ func UpdateTransaction(transaction Transaction) error {
 		transaction.ToAccountID,   //9
 		transaction.ChainID,       //10
 		transaction.UpdatedBy,     //11
-		transaction.ID)            //12
-	if err != nil {
-		log.Println(err.Error())
+		transaction.ID,            //12
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertTransaction(transaction Transaction) (int, error) {
+func InsertTransaction(dbConnPgx utils.PgxIface, transaction *Transaction) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertTransaction DbConn.Begin   %s", err.Error())
+		return -1, err
+	}
 	var insertID int
 	transactionUUID, err := uuid.NewV4()
 	if err != nil {
@@ -354,7 +245,7 @@ func InsertTransaction(transaction Transaction) (int, error) {
 	if transaction.UUID == "" {
 		transaction.UUID = transactionUUID.String()
 	}
-	err = database.DbConnPgx.QueryRow(ctx, `INSERT INTO transactions 
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO transactions 
 	(
 		uuid, 
 		name, 
@@ -389,28 +280,34 @@ func InsertTransaction(transaction Transaction) (int, error) {
 			current_timestamp at time zone 'UTC'
 		)
 		RETURNING id`,
-		&transaction.UUID,          //1
-		&transaction.Name,          //2
-		&transaction.AlternateName, //3
-		&transaction.StartDate,     //4
-		&transaction.EndDate,       //5
-		&transaction.Description,   //6
-		&transaction.TxHash,        //7
-		&transaction.StatusID,      //8
-		&transaction.FromAccountID, //9
-		&transaction.ToAccountID,   //10
-		&transaction.ChainID,       //11
-		&transaction.CreatedBy,     //12
+		transaction.UUID,          //1
+		transaction.Name,          //2
+		transaction.AlternateName, //3
+		transaction.StartDate,     //4
+		transaction.EndDate,       //5
+		transaction.Description,   //6
+		transaction.TxHash,        //7
+		transaction.StatusID,      //8
+		transaction.FromAccountID, //9
+		transaction.ToAccountID,   //10
+		transaction.ChainID,       //11
+		transaction.CreatedBy,     //12
 	).Scan(&insertID)
-
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, err
 	}
 	return int(insertID), nil
 }
 
-func insertTransactions(transactions []Transaction) error {
+func InsertTransactions(dbConnPgx utils.PgxIface, transactions []Transaction) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -421,25 +318,25 @@ func insertTransactions(transactions []Transaction) error {
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(transaction.UUID)
 		row := []interface{}{
-			uuidString,                 //1
-			transaction.Name,           //2
-			transaction.AlternateName,  //3
-			&transaction.StartDate,     //4
-			&transaction.EndDate,       //5
-			transaction.Description,    //6
-			transaction.TxHash,         //7
-			*transaction.StatusID,      //8
-			*transaction.FromAccountID, //9
-			*transaction.ToAccountID,   //10
-			*transaction.ChainID,       //11
-			transaction.CreatedBy,      //12
-			&now,                       //13
-			transaction.CreatedBy,      //14
-			&now,                       //15
+			uuidString,                //1
+			transaction.Name,          //2
+			transaction.AlternateName, //3
+			&transaction.StartDate,    //4
+			&transaction.EndDate,      //5
+			transaction.Description,   //6
+			transaction.TxHash,        //7
+			transaction.StatusID,      //8
+			transaction.FromAccountID, //9
+			transaction.ToAccountID,   //10
+			transaction.ChainID,       //11
+			transaction.CreatedBy,     //12
+			&now,                      //13
+			transaction.CreatedBy,     //14
+			&now,                      //15
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"transactions"},
 		[]string{
@@ -461,11 +358,85 @@ func insertTransactions(transactions []Transaction) error {
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertTransactions: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
 	}
 
 	return nil
+}
+
+// for refinedev
+func GetTransactionsByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]Transaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `
+	SELECT
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		start_date,
+		end_date,
+		description,
+		tx_hash,
+		status_id,
+		from_account_id,
+		to_account_id,
+		chain_id,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at
+	FROM transactions 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	transactions, err := pgx.CollectRows(results, pgx.RowToStructByName[Transaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return transactions, nil
+}
+
+func GetTotalTransactionsCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM transactions
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }
