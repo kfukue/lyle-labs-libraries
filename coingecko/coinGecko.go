@@ -1,3 +1,6 @@
+//go:build !skip
+// +build !skip
+
 package coingecko
 
 // assets response struct from coinGecko pro api
