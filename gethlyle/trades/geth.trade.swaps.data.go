@@ -9,15 +9,14 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	gethlyleswaps "github.com/kfukue/lyle-labs-libraries/gethlyle/swaps"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
-func GetAllGethTradeSwapsByTradeID(gethTradeID int) ([]GethTradeSwap, error) {
+func GetAllGethTradeSwapsByTradeID(dbConnPgx utils.PgxIface, gethTradeID *int) ([]GethTradeSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT 
 		geth_trade_swaps.geth_trade_id,
 		geth_trade_swaps.geth_swap_id,
@@ -34,36 +33,23 @@ func GetAllGethTradeSwapsByTradeID(gethTradeID int) ([]GethTradeSwap, error) {
 	ON geth_trade_swaps.geth_trade_id = geth_trades.id 
 	WHERE 
 	geth_trades.id = $1
-	`, gethTradeID)
+	`, *gethTradeID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethTradeSwaps := make([]GethTradeSwap, 0)
-	for results.Next() {
-		var gethTradeSwap GethTradeSwap
-		results.Scan(
-			&gethTradeSwap.GethTradeID,
-			&gethTradeSwap.GethSwapID,
-			&gethTradeSwap.UUID,
-			&gethTradeSwap.Name,
-			&gethTradeSwap.AlternateName,
-			&gethTradeSwap.Description,
-			&gethTradeSwap.CreatedBy,
-			&gethTradeSwap.CreatedAt,
-			&gethTradeSwap.UpdatedBy,
-			&gethTradeSwap.UpdatedAt,
-		)
-
-		gethTradeSwaps = append(gethTradeSwaps, gethTradeSwap)
+	gethTradeSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeSwap])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTradeSwaps, nil
 }
-func GetGethTradeSwap(gethGethSwapID int, gethTradeID int) (*GethTradeSwap, error) {
+func GetGethTradeSwap(dbConnPgx utils.PgxIface, gethGethSwapID, gethTradeID *int) (*GethTradeSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `
+	row, err := dbConnPgx.Query(ctx, `
 	SELECT 
 		geth_trade_id,
 		geth_swap_id,
@@ -79,43 +65,39 @@ func GetGethTradeSwap(gethGethSwapID int, gethTradeID int) (*GethTradeSwap, erro
 	WHERE 
 	geth_trade_id = $1
 	AND geth_swap_id = $2
-	`, gethTradeID, gethGethSwapID)
-
-	gethTradeSwap := &GethTradeSwap{}
-	err := row.Scan(
-		&gethTradeSwap.GethTradeID,
-		&gethTradeSwap.GethSwapID,
-		&gethTradeSwap.UUID,
-		&gethTradeSwap.Name,
-		&gethTradeSwap.AlternateName,
-		&gethTradeSwap.Description,
-		&gethTradeSwap.CreatedBy,
-		&gethTradeSwap.CreatedAt,
-		&gethTradeSwap.UpdatedBy,
-		&gethTradeSwap.UpdatedAt,
-	)
+	`, *gethTradeID, *gethGethSwapID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	gethTradeSwap, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethTradeSwap])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethTradeSwap, nil
+	return &gethTradeSwap, nil
 }
 
-func RemoveGethTradeSwap(gethTradeID int, gethGethSwapID int) error {
+func RemoveGethTradeSwap(dbConnPgx utils.PgxIface, gethTradeID, gethGethSwapID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM geth_trade_swaps WHERE 
-	geth_trade_id =$1 AND geth_swap_id = $2`, gethTradeID, gethGethSwapID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethTradeSwap DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM geth_trade_swaps WHERE geth_trade_id =$1 AND geth_swap_id = $2`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *gethTradeID, *gethGethSwapID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetGethTradeSwapList(gethTradeIds []int, swapIds []int) ([]GethTradeSwap, error) {
+func GetGethTradeSwapList(dbConnPgx utils.PgxIface, gethTradeIds []int, swapIds []int) ([]GethTradeSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `
@@ -146,41 +128,33 @@ func GetGethTradeSwapList(gethTradeIds []int, swapIds []int) ([]GethTradeSwap, e
 		}
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethTradeSwaps := make([]GethTradeSwap, 0)
-	for results.Next() {
-		var gethTradeSwap GethTradeSwap
-		results.Scan(
-			&gethTradeSwap.GethTradeID,
-			&gethTradeSwap.GethSwapID,
-			&gethTradeSwap.UUID,
-			&gethTradeSwap.Name,
-			&gethTradeSwap.AlternateName,
-			&gethTradeSwap.Description,
-			&gethTradeSwap.CreatedBy,
-			&gethTradeSwap.CreatedAt,
-			&gethTradeSwap.UpdatedBy,
-			&gethTradeSwap.UpdatedAt,
-		)
-
-		gethTradeSwaps = append(gethTradeSwaps, gethTradeSwap)
+	gethTradeSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeSwap])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTradeSwaps, nil
 }
 
-func UpdateGethTradeSwap(gethTradeSwap GethTradeSwap) error {
+func UpdateGethTradeSwap(dbConnPgx utils.PgxIface, gethTradeSwap *GethTradeSwap) error {
 	// if the gethTradeSwap id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if (gethTradeSwap.GethSwapID == nil || *gethTradeSwap.GethSwapID == 0) || (gethTradeSwap.GethTradeID == nil || *gethTradeSwap.GethTradeID == 0) {
 		return errors.New("gethTradeSwap has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE geth_trade_swaps SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethTradeSwap DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_trade_swaps SET 
 		name=$1,  
 		alternate_name=$2, 
 		description=$3,
@@ -189,28 +163,32 @@ func UpdateGethTradeSwap(gethTradeSwap GethTradeSwap) error {
 		WHERE 
 			geth_trade_id=$5 AND
 			geth_swap_id=$6 
-		`,
-
+		`
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethTradeSwap.Name,          //1
 		gethTradeSwap.AlternateName, //2
 		gethTradeSwap.Description,   //3
 		gethTradeSwap.UpdatedBy,     //4
 		gethTradeSwap.GethTradeID,   //5
 		gethTradeSwap.GethSwapID,    //6
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertGethTradeSwap(gethTradeSwap GethTradeSwap) (int, int, error) {
+func InsertGethTradeSwap(dbConnPgx utils.PgxIface, gethTradeSwap *GethTradeSwap) (int, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertGethTradeSwap DbConn.Begin   %s", err.Error())
+		return -1, -1, err
+	}
 	var GethSwapID int
 	var GethTradeID int
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO geth_trade_swaps  
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO geth_trade_swaps  
 	(
 		geth_trade_id,
 		geth_swap_id,
@@ -242,13 +220,20 @@ func InsertGethTradeSwap(gethTradeSwap GethTradeSwap) (int, int, error) {
 		gethTradeSwap.CreatedBy,     //6
 	).Scan(&GethTradeID, &GethSwapID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, 0, err
+		return -1, -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, -1, err
 	}
 	return int(GethTradeID), int(GethSwapID), nil
 }
 
-func InsertGethTradeSwaps(gethTradeSwaps []*GethTradeSwap) error {
+func InsertGethTradeSwaps(dbConnPgx utils.PgxIface, gethTradeSwaps []GethTradeSwap) error {
 	// need to supply uuid
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -273,7 +258,7 @@ func InsertGethTradeSwaps(gethTradeSwaps []*GethTradeSwap) error {
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"geth_trade_swaps"},
 		[]string{
@@ -290,18 +275,18 @@ func InsertGethTradeSwaps(gethTradeSwaps []*GethTradeSwap) error {
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertGethTradeSwaps: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
 	}
 	return nil
 }
 
-func GetMissingTradesFromSwapsByBaseAssetID(baseAssetID *int) ([]gethlyleswaps.GethSwap, error) {
+func GetMissingTradesFromSwapsByBaseAssetID(dbConnPgx utils.PgxIface, baseAssetID *int) ([]gethlyleswaps.GethSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 		SELECT
 			gs.id,
 			gs.uuid,
@@ -345,61 +330,25 @@ func GetMissingTradesFromSwapsByBaseAssetID(baseAssetID *int) ([]gethlyleswaps.G
 		gs.base_asset_id = $1
 		ORDER BY gs.block_number asc
 		`,
-		baseAssetID,
+		*baseAssetID,
 	)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethSwaps := make([]gethlyleswaps.GethSwap, 0)
-	for results.Next() {
-		var gethSwap gethlyleswaps.GethSwap
-		results.Scan(
-			&gethSwap.ID,
-			&gethSwap.UUID,
-			&gethSwap.ChainID,
-			&gethSwap.ExchangeID,
-			&gethSwap.BlockNumber,
-			&gethSwap.IndexNumber,
-			&gethSwap.SwapDate,
-			&gethSwap.TradeTypeID,
-			&gethSwap.TxnHash,
-			&gethSwap.MakerAddress,
-			&gethSwap.MakerAddressID,
-			&gethSwap.IsBuy,
-			&gethSwap.Price,
-			&gethSwap.PriceUSD,
-			&gethSwap.Token1PriceUSD,
-			&gethSwap.TotalAmountUSD,
-			&gethSwap.PairAddress,
-			&gethSwap.LiquidityPoolID,
-			&gethSwap.Token0AssetId,
-			&gethSwap.Token1AssetId,
-			&gethSwap.Token0Amount,
-			&gethSwap.Token1Amount,
-			&gethSwap.Description,
-			&gethSwap.CreatedBy,
-			&gethSwap.CreatedAt,
-			&gethSwap.UpdatedBy,
-			&gethSwap.UpdatedAt,
-			&gethSwap.GethProcessJobID,
-			&gethSwap.TopicsStr,
-			&gethSwap.StatusID,
-			&gethSwap.BaseAssetID,
-			&gethSwap.OraclePriceUSD,
-			&gethSwap.OraclePriceAssetID,
-		)
-
-		gethSwaps = append(gethSwaps, gethSwap)
+	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[gethlyleswaps.GethSwap])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethSwaps, nil
 }
 
-func GetMissingTxnHashesFromSwapsByBaseAssetID(baseAssetID, maxBlockNumber *int) ([]string, error) {
+func GetMissingTxnHashesFromSwapsByBaseAssetID(dbConnPgx utils.PgxIface, baseAssetID *int, maxBlockNumber *uint64) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 		SELECT
 			DISTINCT gs.txn_hash
 		FROM geth_swaps gs
@@ -427,17 +376,16 @@ func GetMissingTxnHashesFromSwapsByBaseAssetID(baseAssetID, maxBlockNumber *int)
 		results.Scan(
 			&txnHash,
 		)
-
 		txnHashes = append(txnHashes, txnHash)
 	}
 	return txnHashes, nil
 }
 
-func GetMinMaxBlocksOfMissingSwapByBaseAssetID(baseAssetID *int) (int, int, error) {
+func GetMinMaxBlocksOfMissingSwapByBaseAssetID(dbConnPgx utils.PgxIface, baseAssetID *int) (*uint64, *uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	var minBlock, maxBlock int
-	err := database.DbConnPgx.QueryRow(ctx, `SELECT
+	var minBlock, maxBlock uint64
+	err := dbConnPgx.QueryRow(ctx, `SELECT
 			MIN(gs.block_number),
 			MAX(gs.block_number)
 		FROM geth_swaps gs
@@ -454,16 +402,16 @@ func GetMinMaxBlocksOfMissingSwapByBaseAssetID(baseAssetID *int) (int, int, erro
 	).Scan(&minBlock, &maxBlock)
 	if err != nil {
 		log.Println(err.Error())
-		return -1, -1, err
+		return nil, nil, err
 	}
-	return minBlock, maxBlock, nil
+	return &minBlock, &maxBlock, nil
 }
 
-func GetFirstNonProcessedSwapBlockNumberForTrades(baseAssetID *int) (int, error) {
+func GetFirstNonProcessedSwapBlockNumberForTrades(dbConnPgx utils.PgxIface, baseAssetID *int) (*uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	var startingBlock int
-	err := database.DbConnPgx.QueryRow(ctx, `
+	var startingBlock uint64
+	err := dbConnPgx.QueryRow(ctx, `
 	WITH max_existing_block_swaps as (
 		SELECT COALESCE(MAX(block_number),0) as min_block_number from  geth_swaps gs
 		LEFT JOIN geth_trade_swaps gts
@@ -496,7 +444,75 @@ func GetFirstNonProcessedSwapBlockNumberForTrades(baseAssetID *int) (int, error)
 	).Scan(&startingBlock)
 	if err != nil {
 		log.Println(err.Error())
-		return -1, err
+		return nil, err
 	}
-	return startingBlock, nil
+	return &startingBlock, nil
+}
+
+// for refinedev
+func GetGethTradeSwapListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]GethTradeSwap, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	sql := `SELECT 
+	geth_trade_id,
+		geth_swap_id,
+		uuid, 
+		name, 
+		alternate_name, 
+		description,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
+	FROM geth_trade_swaps 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTradeSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeSwap])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return gethTradeSwaps, nil
+}
+
+func GetTotalGethTradeSwapCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM geth_trade_swaps
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }

@@ -9,218 +9,127 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
-func GetGethSwapByBlockChain(txnHash string, blockNumber *uint64, indexNumber *uint, makerAddressID *int, liquidityPoolID *int) (*GethSwap, error) {
+func GetGethSwapByBlockChain(dbConnPgx utils.PgxIface, txnHash string, blockNumber *uint64, indexNumber *uint, makerAddressID, liquidityPoolID *int) (*GethSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT
-	id,
-	uuid,
-  	chain_id,
-	exchange_id,
-	block_number,
-	index_number,
-	swap_date,
-	trade_type_id,
-	txn_hash,
-	maker_address,
-	maker_address_id,
-	is_buy,
-	price,
-	price_usd,
-	token1_price_usd,
-	total_amount_usd,
-	pair_address,
-	liquidity_pool_id,
-	token0_asset_id,
-	token1_asset_id,
-	token0_amount,
-	token1_Amount,
-	description,
-	created_by,
-	created_at,
-	updated_by,
-	updated_at,
-	geth_process_job_id,
-	topics_str,
-	status_id,
-	base_asset_id,
-	oracle_price_usd,
-  	oracle_price_asset_id
+	row, err := dbConnPgx.Query(ctx, `SELECT
+		id,
+		uuid,
+		chain_id,
+		exchange_id,
+		block_number,
+		index_number,
+		swap_date,
+		trade_type_id,
+		txn_hash,
+		maker_address,
+		maker_address_id,
+		is_buy,
+		price,
+		price_usd,
+		token1_price_usd,
+		total_amount_usd,
+		pair_address,
+		liquidity_pool_id,
+		token0_asset_id,
+		token1_asset_id,
+		token0_amount,
+		token1_Amount,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at,
+		geth_process_job_id,
+		topics_str,
+		status_id,
+		base_asset_id,
+		oracle_price_usd,
+		oracle_price_asset_id
 	FROM geth_swaps
 	WHERE txn_hash= $1
-	AND block_number = $2
-	AND index_number = $3
-	AND maker_address_id = $4
-	AND liquidity_pool_id = $5
+		AND block_number = $2
+		AND index_number = $3
+		AND maker_address_id = $4
+		AND liquidity_pool_id = $5
 	`, txnHash, *blockNumber, *indexNumber, *makerAddressID, *liquidityPoolID)
 
-	gethSwap := &GethSwap{}
-	err := row.Scan(
-		&gethSwap.ID,
-		&gethSwap.UUID,
-		&gethSwap.ChainID,
-		&gethSwap.ExchangeID,
-		&gethSwap.BlockNumber,
-		&gethSwap.IndexNumber,
-		&gethSwap.SwapDate,
-		&gethSwap.TradeTypeID,
-		&gethSwap.TxnHash,
-		&gethSwap.MakerAddress,
-		&gethSwap.MakerAddressID,
-		&gethSwap.IsBuy,
-		&gethSwap.Price,
-		&gethSwap.PriceUSD,
-		&gethSwap.Token1PriceUSD,
-		&gethSwap.TotalAmountUSD,
-		&gethSwap.PairAddress,
-		&gethSwap.LiquidityPoolID,
-		&gethSwap.Token0AssetId,
-		&gethSwap.Token1AssetId,
-		&gethSwap.Token0Amount,
-		&gethSwap.Token1Amount,
-		&gethSwap.Description,
-		&gethSwap.CreatedBy,
-		&gethSwap.CreatedAt,
-		&gethSwap.UpdatedBy,
-		&gethSwap.UpdatedAt,
-		&gethSwap.GethProcessJobID,
-		&gethSwap.TopicsStr,
-		&gethSwap.StatusID,
-		&gethSwap.BaseAssetID,
-		&gethSwap.OraclePriceUSD,
-		&gethSwap.OraclePriceAssetID,
-	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	return gethSwap, nil
-}
-
-func GetGethSwap(gethSwapID int) (*GethSwap, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT
-	id,
-	uuid,
-  	chain_id,
-	exchange_id,
-	block_number,
-	index_number,
-	swap_date,
-	trade_type_id,
-	txn_hash,
-	maker_address,
-	maker_address_id,
-	is_buy,
-	price,
-	price_usd,
-	token1_price_usd,
-	total_amount_usd,
-	pair_address,
-	liquidity_pool_id,
-	token0_asset_id,
-	token1_asset_id,
-	token0_amount,
-	token1_Amount,
-	description,
-	created_by,
-	created_at,
-	updated_by,
-	updated_at,
-	geth_process_job_id,
-	topics_str,
-	status_id,
-	base_asset_id,
-	oracle_price_usd,
-  	oracle_price_asset_id
-	FROM geth_swaps
-	WHERE id = $1
-	`, gethSwapID)
-
-	gethSwap := &GethSwap{}
-	err := row.Scan(
-		&gethSwap.ID,
-		&gethSwap.UUID,
-		&gethSwap.ChainID,
-		&gethSwap.ExchangeID,
-		&gethSwap.BlockNumber,
-		&gethSwap.IndexNumber,
-		&gethSwap.SwapDate,
-		&gethSwap.TradeTypeID,
-		&gethSwap.TxnHash,
-		&gethSwap.MakerAddress,
-		&gethSwap.MakerAddressID,
-		&gethSwap.IsBuy,
-		&gethSwap.Description,
-		&gethSwap.Price,
-		&gethSwap.PriceUSD,
-		&gethSwap.Token1PriceUSD,
-		&gethSwap.TotalAmountUSD,
-		&gethSwap.PairAddress,
-		&gethSwap.LiquidityPoolID,
-		&gethSwap.Token0AssetId,
-		&gethSwap.Token1AssetId,
-		&gethSwap.Token0Amount,
-		&gethSwap.Token1Amount,
-		&gethSwap.CreatedBy,
-		&gethSwap.CreatedAt,
-		&gethSwap.UpdatedBy,
-		&gethSwap.UpdatedAt,
-		&gethSwap.GethProcessJobID,
-		&gethSwap.TopicsStr,
-		&gethSwap.StatusID,
-		&gethSwap.BaseAssetID,
-		&gethSwap.OraclePriceUSD,
-		&gethSwap.OraclePriceAssetID,
-	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	return gethSwap, nil
-}
-
-func GetHighestSwapBlockFromBaseAssetId(assetID *int) (*uint64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	row, err := database.DbConnPgx.Query(ctx, `SELECT coalesce(MAX(block_number),0) FROM geth_swaps
-	WHERE base_asset_id =$1
-		`,
-		*assetID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer row.Close()
-
-	var maxBlockNumber uint64
-	for row.Next() {
-		err = row.Scan(
-			&maxBlockNumber)
-	}
+	gethSwap, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethSwap])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return utils.Ptr[uint64](0), nil
+		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return &maxBlockNumber, nil
+	return &gethSwap, nil
 }
 
-func GetGethSwapByStartAndEndDates(startDate, endDate time.Time) ([]GethSwap, error) {
+func GetGethSwap(dbConnPgx utils.PgxIface, gethSwapID *int) (*GethSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	row, err := dbConnPgx.Query(ctx, `SELECT
+		id,
+		uuid,
+		chain_id,
+		exchange_id,
+		block_number,
+		index_number,
+		swap_date,
+		trade_type_id,
+		txn_hash,
+		maker_address,
+		maker_address_id,
+		is_buy,
+		price,
+		price_usd,
+		token1_price_usd,
+		total_amount_usd,
+		pair_address,
+		liquidity_pool_id,
+		token0_asset_id,
+		token1_asset_id,
+		token0_amount,
+		token1_Amount,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at,
+		geth_process_job_id,
+		topics_str,
+		status_id,
+		base_asset_id,
+		oracle_price_usd,
+		oracle_price_asset_id
+	FROM geth_swaps
+	WHERE id = $1
+	`, *gethSwapID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	gethSwap, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethSwap])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &gethSwap, nil
+}
+
+func GetGethSwapByStartAndEndDates(dbConnPgx utils.PgxIface, startDate, endDate time.Time) ([]GethSwap, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -263,54 +172,18 @@ func GetGethSwapByStartAndEndDates(startDate, endDate time.Time) ([]GethSwap, er
 		return nil, err
 	}
 	defer results.Close()
-	gethSwaps := make([]GethSwap, 0)
-	for results.Next() {
-		var gethSwap GethSwap
-		results.Scan(
-			&gethSwap.ID,
-			&gethSwap.UUID,
-			&gethSwap.ChainID,
-			&gethSwap.ExchangeID,
-			&gethSwap.BlockNumber,
-			&gethSwap.IndexNumber,
-			&gethSwap.SwapDate,
-			&gethSwap.TradeTypeID,
-			&gethSwap.TxnHash,
-			&gethSwap.MakerAddress,
-			&gethSwap.MakerAddressID,
-			&gethSwap.IsBuy,
-			&gethSwap.Price,
-			&gethSwap.PriceUSD,
-			&gethSwap.Token1PriceUSD,
-			&gethSwap.TotalAmountUSD,
-			&gethSwap.PairAddress,
-			&gethSwap.LiquidityPoolID,
-			&gethSwap.Token0AssetId,
-			&gethSwap.Token1AssetId,
-			&gethSwap.Token0Amount,
-			&gethSwap.Token1Amount,
-			&gethSwap.Description,
-			&gethSwap.CreatedBy,
-			&gethSwap.CreatedAt,
-			&gethSwap.UpdatedBy,
-			&gethSwap.UpdatedAt,
-			&gethSwap.GethProcessJobID,
-			&gethSwap.TopicsStr,
-			&gethSwap.StatusID,
-			&gethSwap.BaseAssetID,
-			&gethSwap.OraclePriceUSD,
-			&gethSwap.OraclePriceAssetID,
-		)
-
-		gethSwaps = append(gethSwaps, gethSwap)
+	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethSwaps, nil
 }
 
-func GetGethSwapByFromMakerAddress(makerAddress string) ([]GethSwap, error) {
+func GetGethSwapByFromMakerAddress(dbConnPgx utils.PgxIface, makerAddress string) ([]GethSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -355,53 +228,18 @@ func GetGethSwapByFromMakerAddress(makerAddress string) ([]GethSwap, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethSwaps := make([]GethSwap, 0)
-	for results.Next() {
-		var gethSwap GethSwap
-		results.Scan(
-			&gethSwap.ID,
-			&gethSwap.UUID,
-			&gethSwap.ChainID,
-			&gethSwap.ExchangeID,
-			&gethSwap.BlockNumber,
-			&gethSwap.IndexNumber,
-			&gethSwap.SwapDate,
-			&gethSwap.TradeTypeID,
-			&gethSwap.TxnHash,
-			&gethSwap.MakerAddress,
-			&gethSwap.MakerAddressID,
-			&gethSwap.IsBuy,
-			&gethSwap.Price,
-			&gethSwap.PriceUSD,
-			&gethSwap.Token1PriceUSD,
-			&gethSwap.TotalAmountUSD,
-			&gethSwap.PairAddress,
-			&gethSwap.LiquidityPoolID,
-			&gethSwap.Token0AssetId,
-			&gethSwap.Token1AssetId,
-			&gethSwap.Token0Amount,
-			&gethSwap.Token1Amount,
-			&gethSwap.Description,
-			&gethSwap.CreatedBy,
-			&gethSwap.CreatedAt,
-			&gethSwap.UpdatedBy,
-			&gethSwap.UpdatedAt,
-			&gethSwap.GethProcessJobID,
-			&gethSwap.TopicsStr,
-			&gethSwap.StatusID,
-			&gethSwap.BaseAssetID,
-			&gethSwap.OraclePriceUSD,
-			&gethSwap.OraclePriceAssetID,
-		)
-		gethSwaps = append(gethSwaps, gethSwap)
+	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethSwaps, nil
 }
 
-func GetGethSwapByFromMakerAddressId(makerAddressID *int) ([]*GethSwap, error) {
+func GetGethSwapByFromMakerAddressId(dbConnPgx utils.PgxIface, makerAddressID *int) ([]GethSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -446,53 +284,18 @@ func GetGethSwapByFromMakerAddressId(makerAddressID *int) ([]*GethSwap, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethSwaps := make([]*GethSwap, 0)
-	for results.Next() {
-		var gethSwap GethSwap
-		results.Scan(
-			&gethSwap.ID,
-			&gethSwap.UUID,
-			&gethSwap.ChainID,
-			&gethSwap.ExchangeID,
-			&gethSwap.BlockNumber,
-			&gethSwap.IndexNumber,
-			&gethSwap.SwapDate,
-			&gethSwap.TradeTypeID,
-			&gethSwap.TxnHash,
-			&gethSwap.MakerAddress,
-			&gethSwap.MakerAddressID,
-			&gethSwap.IsBuy,
-			&gethSwap.Price,
-			&gethSwap.PriceUSD,
-			&gethSwap.Token1PriceUSD,
-			&gethSwap.TotalAmountUSD,
-			&gethSwap.PairAddress,
-			&gethSwap.LiquidityPoolID,
-			&gethSwap.Token0AssetId,
-			&gethSwap.Token1AssetId,
-			&gethSwap.Token0Amount,
-			&gethSwap.Token1Amount,
-			&gethSwap.Description,
-			&gethSwap.CreatedBy,
-			&gethSwap.CreatedAt,
-			&gethSwap.UpdatedBy,
-			&gethSwap.UpdatedAt,
-			&gethSwap.GethProcessJobID,
-			&gethSwap.TopicsStr,
-			&gethSwap.StatusID,
-			&gethSwap.BaseAssetID,
-			&gethSwap.OraclePriceUSD,
-			&gethSwap.OraclePriceAssetID,
-		)
-		gethSwaps = append(gethSwaps, &gethSwap)
+	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethSwaps, nil
 }
 
-func GetGethSwapByFromMakerAddressIdAndBeforeBlockNumber(baseAssetID, makerAddressID, blockNumber *int) ([]*GethSwap, error) {
+func GetGethSwapByFromMakerAddressIdAndBeforeBlockNumber(dbConnPgx utils.PgxIface, baseAssetID, makerAddressID *int, blockNumber *uint64) ([]GethSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -539,53 +342,18 @@ func GetGethSwapByFromMakerAddressIdAndBeforeBlockNumber(baseAssetID, makerAddre
 		return nil, err
 	}
 	defer results.Close()
-	gethSwaps := make([]*GethSwap, 0)
-	for results.Next() {
-		var gethSwap GethSwap
-		results.Scan(
-			&gethSwap.ID,
-			&gethSwap.UUID,
-			&gethSwap.ChainID,
-			&gethSwap.ExchangeID,
-			&gethSwap.BlockNumber,
-			&gethSwap.IndexNumber,
-			&gethSwap.SwapDate,
-			&gethSwap.TradeTypeID,
-			&gethSwap.TxnHash,
-			&gethSwap.MakerAddress,
-			&gethSwap.MakerAddressID,
-			&gethSwap.IsBuy,
-			&gethSwap.Price,
-			&gethSwap.PriceUSD,
-			&gethSwap.Token1PriceUSD,
-			&gethSwap.TotalAmountUSD,
-			&gethSwap.PairAddress,
-			&gethSwap.LiquidityPoolID,
-			&gethSwap.Token0AssetId,
-			&gethSwap.Token1AssetId,
-			&gethSwap.Token0Amount,
-			&gethSwap.Token1Amount,
-			&gethSwap.Description,
-			&gethSwap.CreatedBy,
-			&gethSwap.CreatedAt,
-			&gethSwap.UpdatedBy,
-			&gethSwap.UpdatedAt,
-			&gethSwap.GethProcessJobID,
-			&gethSwap.TopicsStr,
-			&gethSwap.StatusID,
-			&gethSwap.BaseAssetID,
-			&gethSwap.OraclePriceUSD,
-			&gethSwap.OraclePriceAssetID,
-		)
-		gethSwaps = append(gethSwaps, &gethSwap)
+	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethSwaps, nil
 }
 
-func GetGethSwapByFromBaseAssetAndBeforeBlockNumber(baseAssetID, blockNumber *int) ([]*GethSwap, error) {
+func GetGethSwapByFromBaseAssetAndBeforeBlockNumber(dbConnPgx utils.PgxIface, baseAssetID *int, blockNumber *uint64) ([]GethSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -632,53 +400,18 @@ func GetGethSwapByFromBaseAssetAndBeforeBlockNumber(baseAssetID, blockNumber *in
 		return nil, err
 	}
 	defer results.Close()
-	gethSwaps := make([]*GethSwap, 0)
-	for results.Next() {
-		var gethSwap GethSwap
-		results.Scan(
-			&gethSwap.ID,
-			&gethSwap.UUID,
-			&gethSwap.ChainID,
-			&gethSwap.ExchangeID,
-			&gethSwap.BlockNumber,
-			&gethSwap.IndexNumber,
-			&gethSwap.SwapDate,
-			&gethSwap.TradeTypeID,
-			&gethSwap.TxnHash,
-			&gethSwap.MakerAddress,
-			&gethSwap.MakerAddressID,
-			&gethSwap.IsBuy,
-			&gethSwap.Price,
-			&gethSwap.PriceUSD,
-			&gethSwap.Token1PriceUSD,
-			&gethSwap.TotalAmountUSD,
-			&gethSwap.PairAddress,
-			&gethSwap.LiquidityPoolID,
-			&gethSwap.Token0AssetId,
-			&gethSwap.Token1AssetId,
-			&gethSwap.Token0Amount,
-			&gethSwap.Token1Amount,
-			&gethSwap.Description,
-			&gethSwap.CreatedBy,
-			&gethSwap.CreatedAt,
-			&gethSwap.UpdatedBy,
-			&gethSwap.UpdatedAt,
-			&gethSwap.GethProcessJobID,
-			&gethSwap.TopicsStr,
-			&gethSwap.StatusID,
-			&gethSwap.BaseAssetID,
-			&gethSwap.OraclePriceUSD,
-			&gethSwap.OraclePriceAssetID,
-		)
-		gethSwaps = append(gethSwaps, &gethSwap)
+	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethSwaps, nil
 }
 
-func GetGethSwapByTxnHash(txnHash string, baseAssetID *int) ([]GethSwap, error) {
+func GetGethSwapByTxnHash(dbConnPgx utils.PgxIface, txnHash string, baseAssetID *int) ([]GethSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		gs.id,
 		gs.uuid,
 		gs.chain_id,
@@ -726,54 +459,19 @@ func GetGethSwapByTxnHash(txnHash string, baseAssetID *int) ([]GethSwap, error) 
 		return nil, err
 	}
 	defer results.Close()
-	gethSwaps := make([]GethSwap, 0)
-	for results.Next() {
-		var gethSwap GethSwap
-		results.Scan(
-			&gethSwap.ID,
-			&gethSwap.UUID,
-			&gethSwap.ChainID,
-			&gethSwap.ExchangeID,
-			&gethSwap.BlockNumber,
-			&gethSwap.IndexNumber,
-			&gethSwap.SwapDate,
-			&gethSwap.TradeTypeID,
-			&gethSwap.TxnHash,
-			&gethSwap.MakerAddress,
-			&gethSwap.MakerAddressID,
-			&gethSwap.IsBuy,
-			&gethSwap.Price,
-			&gethSwap.PriceUSD,
-			&gethSwap.Token1PriceUSD,
-			&gethSwap.TotalAmountUSD,
-			&gethSwap.PairAddress,
-			&gethSwap.LiquidityPoolID,
-			&gethSwap.Token0AssetId,
-			&gethSwap.Token1AssetId,
-			&gethSwap.Token0Amount,
-			&gethSwap.Token1Amount,
-			&gethSwap.Description,
-			&gethSwap.CreatedBy,
-			&gethSwap.CreatedAt,
-			&gethSwap.UpdatedBy,
-			&gethSwap.UpdatedAt,
-			&gethSwap.GethProcessJobID,
-			&gethSwap.TopicsStr,
-			&gethSwap.StatusID,
-			&gethSwap.BaseAssetID,
-			&gethSwap.OraclePriceUSD,
-			&gethSwap.OraclePriceAssetID,
-		)
-		gethSwaps = append(gethSwaps, gethSwap)
+	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethSwaps, nil
 }
 
 // bulk swap methods
-func GetGethSwapsByTxnHashes(txnHashes []string, baseAssetID *int) ([]GethSwap, error) {
+func GetGethSwapsByTxnHashes(dbConnPgx utils.PgxIface, txnHashes []string, baseAssetID *int) ([]GethSwap, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		gs.id,
 		gs.uuid,
 		gs.chain_id,
@@ -821,53 +519,18 @@ func GetGethSwapsByTxnHashes(txnHashes []string, baseAssetID *int) ([]GethSwap, 
 		return nil, err
 	}
 	defer results.Close()
-	gethSwaps := make([]GethSwap, 0)
-	for results.Next() {
-		var gethSwap GethSwap
-		results.Scan(
-			&gethSwap.ID,
-			&gethSwap.UUID,
-			&gethSwap.ChainID,
-			&gethSwap.ExchangeID,
-			&gethSwap.BlockNumber,
-			&gethSwap.IndexNumber,
-			&gethSwap.SwapDate,
-			&gethSwap.TradeTypeID,
-			&gethSwap.TxnHash,
-			&gethSwap.MakerAddress,
-			&gethSwap.MakerAddressID,
-			&gethSwap.IsBuy,
-			&gethSwap.Price,
-			&gethSwap.PriceUSD,
-			&gethSwap.Token1PriceUSD,
-			&gethSwap.TotalAmountUSD,
-			&gethSwap.PairAddress,
-			&gethSwap.LiquidityPoolID,
-			&gethSwap.Token0AssetId,
-			&gethSwap.Token1AssetId,
-			&gethSwap.Token0Amount,
-			&gethSwap.Token1Amount,
-			&gethSwap.Description,
-			&gethSwap.CreatedBy,
-			&gethSwap.CreatedAt,
-			&gethSwap.UpdatedBy,
-			&gethSwap.UpdatedAt,
-			&gethSwap.GethProcessJobID,
-			&gethSwap.TopicsStr,
-			&gethSwap.StatusID,
-			&gethSwap.BaseAssetID,
-			&gethSwap.OraclePriceUSD,
-			&gethSwap.OraclePriceAssetID,
-		)
-		gethSwaps = append(gethSwaps, gethSwap)
+	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethSwaps, nil
 }
 
-func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(assetID *int, startingBlock *uint64) ([]string, error) {
+func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(dbConnPgx utils.PgxIface, assetID *int, startingBlock *uint64) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 		
 	SELECT DISTINCT txn_hash FROM geth_swaps
 	WHERE block_number >= $1
@@ -890,55 +553,43 @@ func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(assetID *int, start
 	return txnHashes, nil
 }
 
-func GetHighestBlockFromBaseAssetId(assetID *int) (*uint64, error) {
+func GetHighestBlockFromBaseAssetId(dbConnPgx utils.PgxIface, assetID *int) (*uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row, err := database.DbConnPgx.Query(ctx, `SELECT COALESCE (MAX(block_number), 0) FROM geth_swaps
+	row := dbConnPgx.QueryRow(ctx, `SELECT COALESCE (MAX(block_number), 0) FROM geth_swaps
 	WHERE base_asset_id=$1
 		`,
-		assetID)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer row.Close()
-
+		*assetID)
 	var maxBlockNumber uint64
-	for row.Next() {
-		err = row.Scan(
-			&maxBlockNumber)
-	}
-	if errors.Is(err, pgx.ErrNoRows) {
-		// no transfers
-		zeroHeight := uint64(0)
-		return &zeroHeight, nil
-	} else if err != nil {
+	err := row.Scan(
+		&maxBlockNumber)
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 	return &maxBlockNumber, nil
 }
 
-func GetDistinctMakerAddressesFromBaseTokenAssetID(baseAssetID *int) ([]*int, error) {
+func GetDistinctMakerAddressesFromBaseTokenAssetID(dbConnPgx utils.PgxIface, baseAssetID *int) ([]int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
+	results, err := dbConnPgx.Query(ctx, `SELECT
 		DISTINCT maker_address_id
 		FROM geth_swaps
 		WHERE
 		base_asset_id = $1
 		AND maker_address_id IS NOT NULL
 		`,
-		baseAssetID,
+		*baseAssetID,
 	)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	makerAddresses := make([]*int, 0)
+	makerAddresses := make([]int, 0)
 	for results.Next() {
-		var makerAddressID *int
+		var makerAddressID int
 		results.Scan(
 			&makerAddressID,
 		)
@@ -947,133 +598,122 @@ func GetDistinctMakerAddressesFromBaseTokenAssetID(baseAssetID *int) ([]*int, er
 	return makerAddresses, nil
 }
 
-func removeGethSwap(gethSwapID int) error {
+func RemoveGethSwap(dbConnPgx utils.PgxIface, gethSwapID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_swaps WHERE id = $1`, gethSwapID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethSwap DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
-}
-
-func RemoveGethSwapsFromAssetIDAndStartBlockNumber(baseAssetID *int, startBlockNumber *int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_swaps WHERE base_asset_id = $1 AND block_number >= $2`, *baseAssetID, *startBlockNumber)
-	if err != nil {
-		log.Println(err.Error())
+	sql := `DELETE FROM geth_swaps WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *gethSwapID); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func DeleteGethSwapsByBaseAssetId(baseAssetID *int) error {
+func RemoveGethSwapsFromAssetIDAndStartBlockNumber(dbConnPgx utils.PgxIface, baseAssetID *int, startBlockNumber *uint64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_swaps WHERE base_asset_id = $1`, *baseAssetID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethSwap DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM geth_swaps WHERE base_asset_id = $1 AND block_number >= $2`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID, *startBlockNumber); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func getGethSwapList() ([]GethSwap, error) {
+func DeleteGethSwapsByBaseAssetId(dbConnPgx utils.PgxIface, baseAssetID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT
-	id,
-	uuid,
-  	chain_id,
-	exchange_id,
-	block_number,
-	index_number,
-	swap_date,
-	trade_type_id,
-	txn_hash,
-	maker_address,
-	maker_address_id,
-	is_buy,
-	price,
-	price_usd,
-	token1_price_usd,
-	total_amount_usd,
-	pair_address,
-	liquidity_pool_id,
-	token0_asset_id,
-	token1_asset_id,
-	token0_amount,
-	token1_Amount,
-	description,
-	created_by,
-	created_at,
-	updated_by,
-	updated_at,
-	geth_process_job_id,
-	topics_str,
-	status_id,
-	base_asset_id,
-	oracle_price_usd,
-  	oracle_price_asset_id
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in RemoveGethSwap DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `DELETE FROM geth_swaps WHERE base_asset_id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func GetGethSwapList(dbConnPgx utils.PgxIface) ([]GethSwap, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := dbConnPgx.Query(ctx, `
+	SELECT
+		id,
+		uuid,
+		chain_id,
+		exchange_id,
+		block_number,
+		index_number,
+		swap_date,
+		trade_type_id,
+		txn_hash,
+		maker_address,
+		maker_address_id,
+		is_buy,
+		price,
+		price_usd,
+		token1_price_usd,
+		total_amount_usd,
+		pair_address,
+		liquidity_pool_id,
+		token0_asset_id,
+		token1_asset_id,
+		token0_amount,
+		token1_Amount,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at,
+		geth_process_job_id,
+		topics_str,
+		status_id,
+		base_asset_id,
+		oracle_price_usd,
+		oracle_price_asset_id
 	FROM geth_swaps `)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethSwaps := make([]GethSwap, 0)
-	for results.Next() {
-		var gethSwap GethSwap
-		results.Scan(
-			&gethSwap.ID,
-			&gethSwap.UUID,
-			&gethSwap.ChainID,
-			&gethSwap.ExchangeID,
-			&gethSwap.BlockNumber,
-			&gethSwap.IndexNumber,
-			&gethSwap.SwapDate,
-			&gethSwap.TradeTypeID,
-			&gethSwap.TxnHash,
-			&gethSwap.MakerAddress,
-			&gethSwap.MakerAddressID,
-			&gethSwap.IsBuy,
-			&gethSwap.Price,
-			&gethSwap.PriceUSD,
-			&gethSwap.Token1PriceUSD,
-			&gethSwap.TotalAmountUSD,
-			&gethSwap.PairAddress,
-			&gethSwap.LiquidityPoolID,
-			&gethSwap.Token0AssetId,
-			&gethSwap.Token1AssetId,
-			&gethSwap.Token0Amount,
-			&gethSwap.Token1Amount,
-			&gethSwap.Description,
-			&gethSwap.CreatedBy,
-			&gethSwap.CreatedAt,
-			&gethSwap.UpdatedBy,
-			&gethSwap.GethProcessJobID,
-			&gethSwap.TopicsStr,
-			&gethSwap.StatusID,
-			&gethSwap.BaseAssetID,
-			&gethSwap.OraclePriceUSD,
-			&gethSwap.OraclePriceAssetID,
-		)
-
-		gethSwaps = append(gethSwaps, gethSwap)
+	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return gethSwaps, nil
 }
 
-func UpdateGethSwap(gethSwap GethSwap) error {
+func UpdateGethSwap(dbConnPgx utils.PgxIface, gethSwap *GethSwap) error {
 	// if the gethSwap id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if gethSwap.ID == nil {
 		return errors.New("gethSwap has invalid ID")
 	}
-	_, err := database.DbConnPgx.Exec(ctx, `UPDATE geth_swaps SET
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethSwap DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_swaps SET 
 		chain_id = $1,
 		exchange_id = $2,
 		block_number= $3,
@@ -1103,7 +743,9 @@ func UpdateGethSwap(gethSwap GethSwap) error {
 		base_asset_id=$26,
 		oracle_price_usd$27,
   		oracle_price_asset_id$28
-		WHERE id=$29`,
+		WHERE id=$29`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethSwap.ChainID,             //1
 		gethSwap.ExchangeID,          //2
 		gethSwap.BlockNumber,         //3
@@ -1133,20 +775,24 @@ func UpdateGethSwap(gethSwap GethSwap) error {
 		gethSwap.OraclePriceUSD,      //27
 		gethSwap.OraclePriceAssetID,  //28
 		gethSwap.ID,                  //29
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertGethSwap(gethSwap *GethSwap) (int, string, error) {
+func InsertGethSwap(dbConnPgx utils.PgxIface, gethSwap *GethSwap) (int, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertGethSwap DbConn.Begin   %s", err.Error())
+		return -1, "", err
+	}
 	var gethSwapID int
 	var gethSwapUUID string
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO geth_swaps
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO geth_swaps
 	(
 		uuid,
 		chain_id,
@@ -1230,7 +876,7 @@ func InsertGethSwap(gethSwap *GethSwap) (int, string, error) {
 		gethSwap.Token1PriceUSD,      //13
 		gethSwap.TotalAmountUSD,      //14
 		gethSwap.PairAddress,         //15
-		&gethSwap.LiquidityPoolID,    //16
+		gethSwap.LiquidityPoolID,     //16
 		gethSwap.Token0AssetId,       //17
 		gethSwap.Token1AssetId,       //18
 		gethSwap.Token0Amount,        //19
@@ -1245,12 +891,19 @@ func InsertGethSwap(gethSwap *GethSwap) (int, string, error) {
 		gethSwap.OraclePriceAssetID,  //28
 	).Scan(&gethSwapID, &gethSwapUUID)
 	if err != nil {
-		log.Println(err)
-		return 0, "", err
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, "", err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, "", err
 	}
 	return int(gethSwapID), gethSwapUUID, nil
 }
-func InsertGethSwaps(gethSwaps []*GethSwap) error {
+func InsertGethSwaps(dbConnPgx utils.PgxIface, gethSwaps []GethSwap) error {
 	// need to supply uuid
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -1297,7 +950,7 @@ func InsertGethSwaps(gethSwaps []*GethSwap) error {
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"geth_swaps"},
 		[]string{
@@ -1336,18 +989,18 @@ func InsertGethSwaps(gethSwaps []*GethSwap) error {
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertGethSwaps: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
 	}
 	return nil
 }
 
-func GetNullAddressStrsFromSwaps(assetID *int) ([]string, error) {
+func GetNullAddressStrsFromSwaps(dbConnPgx utils.PgxIface, assetID *int) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 		SELECT DISTINCT gs.maker_address as address  
 		FROM geth_swaps gs
 		LEFT JOIN geth_addresses as ga
@@ -1373,21 +1026,119 @@ func GetNullAddressStrsFromSwaps(assetID *int) ([]string, error) {
 	return gethNullAddressStrs, nil
 }
 
-func UpdateGethSwapAddresses(baseAssetID *int) error {
+func UpdateGethSwapAddresses(dbConnPgx utils.PgxIface, baseAssetID *int) error {
 	// update address ids from existing addresses in geth_addresses
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethSwapAddresses DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `
 		UPDATE geth_swaps as gs SET
 		maker_address_id = ga.id from geth_addresses as ga
 			WHERE LOWER(gs.maker_address) = LOWER(ga.address_str)
 			AND gs.maker_address_id IS NULL
 			AND gs.base_asset_id = $1;
-	`, *baseAssetID,
-	)
-	if err != nil {
-		log.Println(err.Error())
+	`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
+}
+
+// for refinedev
+func GetGethSwapListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]GethSwap, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `
+	SELECT
+		id,
+		uuid,
+		chain_id,
+		exchange_id,
+		block_number,
+		index_number,
+		swap_date,
+		trade_type_id,
+		txn_hash,
+		maker_address,
+		maker_address_id,
+		is_buy,
+		price,
+		price_usd,
+		token1_price_usd,
+		total_amount_usd,
+		pair_address,
+		liquidity_pool_id,
+		token0_asset_id,
+		token1_asset_id,
+		token0_amount,
+		token1_Amount,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at,
+		geth_process_job_id,
+		topics_str,
+		status_id,
+		base_asset_id,
+		oracle_price_usd,
+		oracle_price_asset_id
+	FROM geth_swaps 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+
+	return gethSwaps, nil
+}
+
+func GetTotalGethSwapsCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM geth_swaps
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }

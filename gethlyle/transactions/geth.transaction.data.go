@@ -9,14 +9,14 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
-func GetGethTransaction(gethTransactionID int) (*GethTransaction, error) {
+func GetGethTransaction(dbConnPgx utils.PgxIface, gethTransactionID *int) (*GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT
+	row, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		chain_id,
@@ -43,35 +43,12 @@ func GetGethTransaction(gethTransactionID int) (*GethTransaction, error) {
 		updated_at
 	FROM geth_transactions
 	WHERE id = $1
-	`, gethTransactionID)
-
-	gethTransaction := GethTransaction{}
-	err := row.Scan(
-		&gethTransaction.ID,
-		&gethTransaction.UUID,
-		&gethTransaction.ChainID,
-		&gethTransaction.ExchangeID,
-		&gethTransaction.BlockNumber,
-		&gethTransaction.IndexNumber,
-		&gethTransaction.TxnDate,
-		&gethTransaction.TxnHash,
-		&gethTransaction.FromAddress,
-		&gethTransaction.FromAddressID,
-		&gethTransaction.ToAddress,
-		&gethTransaction.ToAddressID,
-		&gethTransaction.InteractedContractAddress,
-		&gethTransaction.InteractedContractAddressID,
-		&gethTransaction.NativeAssetID,
-		&gethTransaction.GethProcessJobID,
-		&gethTransaction.Value,
-		&gethTransaction.GethTransctionInputId,
-		&gethTransaction.StatusID,
-		&gethTransaction.Description,
-		&gethTransaction.CreatedBy,
-		&gethTransaction.CreatedAt,
-		&gethTransaction.UpdatedBy,
-		&gethTransaction.UpdatedAt,
-	)
+	`, *gethTransactionID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	gethTransaction, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethTransaction])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
@@ -81,10 +58,10 @@ func GetGethTransaction(gethTransactionID int) (*GethTransaction, error) {
 	return &gethTransaction, nil
 }
 
-func GetGethTransactionByFromToAddress(fromToAddressID *int) ([]*GethTransaction, error) {
+func GetGethTransactionByFromToAddress(dbConnPgx utils.PgxIface, fromToAddressID *int) ([]GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT
 		id,
 		uuid,
@@ -115,51 +92,25 @@ func GetGethTransactionByFromToAddress(fromToAddressID *int) ([]*GethTransaction
 		AND (from_address_id =$1 OR 
 			to_address_id = $1)
 		`,
-		fromToAddressID,
+		*fromToAddressID,
 	)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions := make([]*GethTransaction, 0)
-	for results.Next() {
-		var gethTransaction GethTransaction
-		results.Scan(
-			&gethTransaction.ID,
-			&gethTransaction.UUID,
-			&gethTransaction.ChainID,
-			&gethTransaction.ExchangeID,
-			&gethTransaction.BlockNumber,
-			&gethTransaction.IndexNumber,
-			&gethTransaction.TxnDate,
-			&gethTransaction.TxnHash,
-			&gethTransaction.FromAddress,
-			&gethTransaction.FromAddressID,
-			&gethTransaction.ToAddress,
-			&gethTransaction.ToAddressID,
-			&gethTransaction.InteractedContractAddress,
-			&gethTransaction.InteractedContractAddressID,
-			&gethTransaction.NativeAssetID,
-			&gethTransaction.GethProcessJobID,
-			&gethTransaction.Value,
-			&gethTransaction.GethTransctionInputId,
-			&gethTransaction.StatusID,
-			&gethTransaction.Description,
-			&gethTransaction.CreatedBy,
-			&gethTransaction.CreatedAt,
-			&gethTransaction.UpdatedBy,
-			&gethTransaction.UpdatedAt,
-		)
-		gethTransactions = append(gethTransactions, &gethTransaction)
+	gethTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTransactions, nil
 }
 
-func GetGethTransactionByFromAddressAndBeforeBlockNumber(fromAddressID, blockNumber *int) ([]*GethTransaction, error) {
+func GetGethTransactionByFromAddressAndBeforeBlockNumber(dbConnPgx utils.PgxIface, fromAddressID *int, blockNumber *uint64) ([]GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT
 		id,
 		uuid,
@@ -191,51 +142,25 @@ func GetGethTransactionByFromAddressAndBeforeBlockNumber(fromAddressID, blockNum
 			to_address_id = $1)
 		AND block_number <= $2
 		`,
-		fromAddressID, blockNumber,
+		*fromAddressID, *blockNumber,
 	)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions := make([]*GethTransaction, 0)
-	for results.Next() {
-		var gethTransaction GethTransaction
-		results.Scan(
-			&gethTransaction.ID,
-			&gethTransaction.UUID,
-			&gethTransaction.ChainID,
-			&gethTransaction.ExchangeID,
-			&gethTransaction.BlockNumber,
-			&gethTransaction.IndexNumber,
-			&gethTransaction.TxnDate,
-			&gethTransaction.TxnHash,
-			&gethTransaction.FromAddress,
-			&gethTransaction.FromAddressID,
-			&gethTransaction.ToAddress,
-			&gethTransaction.ToAddressID,
-			&gethTransaction.InteractedContractAddress,
-			&gethTransaction.InteractedContractAddressID,
-			&gethTransaction.NativeAssetID,
-			&gethTransaction.GethProcessJobID,
-			&gethTransaction.Value,
-			&gethTransaction.GethTransctionInputId,
-			&gethTransaction.StatusID,
-			&gethTransaction.Description,
-			&gethTransaction.CreatedBy,
-			&gethTransaction.CreatedAt,
-			&gethTransaction.UpdatedBy,
-			&gethTransaction.UpdatedAt,
-		)
-		gethTransactions = append(gethTransactions, &gethTransaction)
+	gethTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTransactions, nil
 }
 
-func GetGethTransactionsByTxnHash(txnHash string) ([]*GethTransaction, error) {
+func GetGethTransactionsByTxnHash(dbConnPgx utils.PgxIface, txnHash string) ([]GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT
 		id,
 		uuid,
@@ -272,44 +197,18 @@ func GetGethTransactionsByTxnHash(txnHash string) ([]*GethTransaction, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions := make([]*GethTransaction, 0)
-	for results.Next() {
-		var gethTransaction GethTransaction
-		results.Scan(
-			&gethTransaction.ID,
-			&gethTransaction.UUID,
-			&gethTransaction.ChainID,
-			&gethTransaction.ExchangeID,
-			&gethTransaction.BlockNumber,
-			&gethTransaction.IndexNumber,
-			&gethTransaction.TxnDate,
-			&gethTransaction.TxnHash,
-			&gethTransaction.FromAddress,
-			&gethTransaction.FromAddressID,
-			&gethTransaction.ToAddress,
-			&gethTransaction.ToAddressID,
-			&gethTransaction.InteractedContractAddress,
-			&gethTransaction.InteractedContractAddressID,
-			&gethTransaction.NativeAssetID,
-			&gethTransaction.GethProcessJobID,
-			&gethTransaction.Value,
-			&gethTransaction.GethTransctionInputId,
-			&gethTransaction.StatusID,
-			&gethTransaction.Description,
-			&gethTransaction.CreatedBy,
-			&gethTransaction.CreatedAt,
-			&gethTransaction.UpdatedBy,
-			&gethTransaction.UpdatedAt,
-		)
-		gethTransactions = append(gethTransactions, &gethTransaction)
+	gethTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTransactions, nil
 }
 
-func GetGethTransactionsByTxnHashes(txnHashes []string) ([]*GethTransaction, error) {
+func GetGethTransactionsByTxnHashes(dbConnPgx utils.PgxIface, txnHashes []string) ([]GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT
 		id,
 		uuid,
@@ -346,44 +245,18 @@ func GetGethTransactionsByTxnHashes(txnHashes []string) ([]*GethTransaction, err
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions := make([]*GethTransaction, 0)
-	for results.Next() {
-		var gethTransaction GethTransaction
-		results.Scan(
-			&gethTransaction.ID,
-			&gethTransaction.UUID,
-			&gethTransaction.ChainID,
-			&gethTransaction.ExchangeID,
-			&gethTransaction.BlockNumber,
-			&gethTransaction.IndexNumber,
-			&gethTransaction.TxnDate,
-			&gethTransaction.TxnHash,
-			&gethTransaction.FromAddress,
-			&gethTransaction.FromAddressID,
-			&gethTransaction.ToAddress,
-			&gethTransaction.ToAddressID,
-			&gethTransaction.InteractedContractAddress,
-			&gethTransaction.InteractedContractAddressID,
-			&gethTransaction.NativeAssetID,
-			&gethTransaction.GethProcessJobID,
-			&gethTransaction.Value,
-			&gethTransaction.GethTransctionInputId,
-			&gethTransaction.StatusID,
-			&gethTransaction.Description,
-			&gethTransaction.CreatedBy,
-			&gethTransaction.CreatedAt,
-			&gethTransaction.UpdatedBy,
-			&gethTransaction.UpdatedAt,
-		)
-		gethTransactions = append(gethTransactions, &gethTransaction)
+	gethTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTransactions, nil
 }
 
-func GetGethTransactionsByUUIDs(UUIDList []string) ([]*GethTransaction, error) {
+func GetGethTransactionsByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT
 		id,
 		uuid,
@@ -419,77 +292,69 @@ func GetGethTransactionsByUUIDs(UUIDList []string) ([]*GethTransaction, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions := make([]*GethTransaction, 0)
-	for results.Next() {
-		var gethTransaction GethTransaction
-		results.Scan(
-			&gethTransaction.ID,
-			&gethTransaction.UUID,
-			&gethTransaction.ChainID,
-			&gethTransaction.ExchangeID,
-			&gethTransaction.BlockNumber,
-			&gethTransaction.IndexNumber,
-			&gethTransaction.TxnDate,
-			&gethTransaction.TxnHash,
-			&gethTransaction.FromAddress,
-			&gethTransaction.FromAddressID,
-			&gethTransaction.ToAddress,
-			&gethTransaction.ToAddressID,
-			&gethTransaction.InteractedContractAddress,
-			&gethTransaction.InteractedContractAddressID,
-			&gethTransaction.NativeAssetID,
-			&gethTransaction.GethProcessJobID,
-			&gethTransaction.Value,
-			&gethTransaction.GethTransctionInputId,
-			&gethTransaction.StatusID,
-			&gethTransaction.Description,
-			&gethTransaction.CreatedBy,
-			&gethTransaction.CreatedAt,
-			&gethTransaction.UpdatedBy,
-			&gethTransaction.UpdatedAt,
-		)
-		gethTransactions = append(gethTransactions, &gethTransaction)
+	gethTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTransactions, nil
 }
 
-func RemoveGethTransaction(gethTransactionID int) error {
+func RemoveGethTransaction(dbConnPgx utils.PgxIface, gethTransactionID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_transactions WHERE id = $1`, gethTransactionID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethTransaction DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
-}
-
-func RemoveGethTransactionsFromChainIDAndStartBlockNumber(chainID, startBlockNumber *int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_transactions WHERE chain_id = $1 AND block_number >=  $2`, chainID, startBlockNumber)
-	if err != nil {
-		log.Println(err.Error())
+	sql := `DELETE FROM geth_transactions WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *gethTransactionID); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func RemoveGethTransactionsFromChainID(chainID *int) error {
+func RemoveGethTransactionsFromChainIDAndStartBlockNumber(dbConnPgx utils.PgxIface, chainID *int, startBlockNumber *uint64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_transactions WHERE chain_id = $1`, *chainID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethTransactionsFromChainIDAndStartBlockNumber DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM geth_transactions WHERE chain_id = $1 AND block_number >=  $2`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *chainID, *startBlockNumber); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetGethTransactionList() ([]*GethTransaction, error) {
+func RemoveGethTransactionsFromChainID(dbConnPgx utils.PgxIface, chainID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in RemoveGethTransactionsFromChainID DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `DELETE FROM geth_transactions WHERE chain_id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *chainID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func GetGethTransactionList(dbConnPgx utils.PgxIface) ([]GethTransaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT
 		id,
 		uuid,
@@ -521,49 +386,27 @@ func GetGethTransactionList() ([]*GethTransaction, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions := make([]*GethTransaction, 0)
-	for results.Next() {
-		var gethTransaction GethTransaction
-		results.Scan(
-			&gethTransaction.ID,
-			&gethTransaction.UUID,
-			&gethTransaction.ChainID,
-			&gethTransaction.ExchangeID,
-			&gethTransaction.BlockNumber,
-			&gethTransaction.IndexNumber,
-			&gethTransaction.TxnDate,
-			&gethTransaction.TxnHash,
-			&gethTransaction.FromAddress,
-			&gethTransaction.FromAddressID,
-			&gethTransaction.ToAddress,
-			&gethTransaction.ToAddressID,
-			&gethTransaction.InteractedContractAddress,
-			&gethTransaction.InteractedContractAddressID,
-			&gethTransaction.NativeAssetID,
-			&gethTransaction.GethProcessJobID,
-			&gethTransaction.Value,
-			&gethTransaction.GethTransctionInputId,
-			&gethTransaction.StatusID,
-			&gethTransaction.Description,
-			&gethTransaction.CreatedBy,
-			&gethTransaction.CreatedAt,
-			&gethTransaction.UpdatedBy,
-			&gethTransaction.UpdatedAt,
-		)
-
-		gethTransactions = append(gethTransactions, &gethTransaction)
+	gethTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTransactions, nil
 }
 
-func UpdateGethTransaction(gethTransaction GethTransaction) error {
+func UpdateGethTransaction(dbConnPgx utils.PgxIface, gethTransaction *GethTransaction) error {
 	// if the gethTransaction id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if gethTransaction.ID == nil {
 		return errors.New("gethTransaction has invalid ID")
 	}
-	_, err := database.DbConnPgx.Exec(ctx, `UPDATE geth_transactions SET
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethTransaction DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_transactions SET 
 		chain_id=$1,
 		exchange_id=$2,
 		block_number=$3,
@@ -584,7 +427,10 @@ func UpdateGethTransaction(gethTransaction GethTransaction) error {
 		description=$18,
 		updated_by=$19,
 		updated_at=current_timestamp at time zone 'UTC',
-		WHERE id=$20`,
+		WHERE id=$20`
+
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethTransaction.ChainID,                     //1
 		gethTransaction.ExchangeID,                  //2
 		gethTransaction.BlockNumber,                 //3
@@ -605,20 +451,24 @@ func UpdateGethTransaction(gethTransaction GethTransaction) error {
 		gethTransaction.Description,                 //18
 		gethTransaction.UpdatedBy,                   //19
 		gethTransaction.ID,                          //20
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertGethTransaction(gethTransaction GethTransaction) (int, string, error) {
+func InsertGethTransaction(dbConnPgx utils.PgxIface, gethTransaction *GethTransaction) (int, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertGethTransaction DbConn.Begin   %s", err.Error())
+		return -1, "", err
+	}
 	var gethTransactionID int
 	var gethTransactionUUID string
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO geth_transactions
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO geth_transactions
 	(
 		uuid,
 		chain_id,
@@ -690,12 +540,19 @@ func InsertGethTransaction(gethTransaction GethTransaction) (int, string, error)
 		gethTransaction.CreatedBy,                   //19
 	).Scan(&gethTransactionID, &gethTransactionUUID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, "", err
+		return -1, "", err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, "", err
 	}
 	return int(gethTransactionID), gethTransactionUUID, nil
 }
-func InsertGethTransactions(gethTransactions []*GethTransaction) error {
+func InsertGethTransactions(dbConnPgx utils.PgxIface, gethTransactions []GethTransaction) error {
 	// need to supply uuid
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -734,7 +591,7 @@ func InsertGethTransactions(gethTransactions []*GethTransaction) error {
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"geth_transactions"},
 		[]string{
@@ -764,51 +621,50 @@ func InsertGethTransactions(gethTransactions []*GethTransaction) error {
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("geth_transactions copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertGethTransactions: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
 	}
 	return nil
 }
 
-func UpdateGethTransactionAddresses() error {
+func UpdateGethTransactionAddresses(dbConnPgx utils.PgxIface) error {
 	// update address ids from existing addresses in geth_addresses
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `
-		UPDATE geth_transactions as gt SET
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethTransactionAddresses DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_transactions as gt SET
 			from_address_id = ga.id from geth_addresses as ga
 			WHERE LOWER(gt.from_address) = LOWER(ga.address_str)
 			AND gt.from_address_id IS NULL
-			`,
-	)
-	if err != nil {
-		log.Println(err.Error())
+			`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	_, err = database.DbConnPgx.Exec(ctx, `
-			UPDATE geth_transactions as gt SET
+
+	sql2 := `UPDATE geth_transactions as gt SET
 			to_address_id = ga.id from geth_addresses as ga
 			WHERE LOWER(gt.to_address) = LOWER(ga.address_str)
 			AND gt.to_address_id IS NULL
-			`,
-	)
-	if err != nil {
-		log.Println(err.Error())
+			`
+	if _, err := dbConnPgx.Exec(ctx, sql2); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	if err != nil {
-		log.Println(err.Error())
-		return err
-	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func GetNullAddressStrsFromTransactions() ([]string, error) {
+func GetNullAddressStrsFromTransactions(dbConnPgx utils.PgxIface) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 		WITH sender_table as(
 			SELECT DISTINCT LOWER(gt.from_address) as address  
 			FROM geth_transactions gt
@@ -847,7 +703,7 @@ func GetNullAddressStrsFromTransactions() ([]string, error) {
 }
 
 // for refinedev
-func GetTransactionListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]*GethTransaction, error) {
+func GetGethTransactionListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `
@@ -895,58 +751,25 @@ func GetTransactionListByPagination(_start, _end *int, _order, _sort string, _fi
 		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
 	}
 
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactions := make([]*GethTransaction, 0)
-	for results.Next() {
-		var gethTransaction GethTransaction
-		results.Scan(
-			&gethTransaction.ID,
-			&gethTransaction.UUID,
-			&gethTransaction.ChainID,
-			&gethTransaction.ExchangeID,
-			&gethTransaction.BlockNumber,
-			&gethTransaction.IndexNumber,
-			&gethTransaction.TxnDate,
-			&gethTransaction.TxnHash,
-			&gethTransaction.FromAddress,
-			&gethTransaction.FromAddressID,
-			&gethTransaction.ToAddress,
-			&gethTransaction.ToAddressID,
-			&gethTransaction.InteractedContractAddress,
-			&gethTransaction.InteractedContractAddressID,
-			&gethTransaction.NativeAssetID,
-			&gethTransaction.GethProcessJobID,
-			&gethTransaction.Value,
-			&gethTransaction.GethTransctionInputId,
-			&gethTransaction.StatusID,
-			&gethTransaction.Description,
-			&gethTransaction.CreatedBy,
-			&gethTransaction.CreatedAt,
-			&gethTransaction.UpdatedBy,
-			&gethTransaction.UpdatedAt,
-		)
-
-		gethTransactions = append(gethTransactions, &gethTransaction)
-	}
+	gethTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransaction])
 	if err != nil {
-		log.Println(err.Error())
+		log.Println(err)
 		return nil, err
 	}
-	defer results.Close()
-
 	return gethTransactions, nil
 }
 
-func GetTotalTransactionsCount() (*int, error) {
+func GetTotalTransactionsCount(dbConnPgx utils.PgxIface) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
 	COUNT(*)
 	FROM geth_transactions
 	`)
@@ -954,11 +777,166 @@ func GetTotalTransactionsCount() (*int, error) {
 	err := row.Scan(
 		&totalCount,
 	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 	return &totalCount, nil
+}
+
+func GetAllGethTransactionsByMinerIDAndFromAddress(dbConnPgx utils.PgxIface, minerID *int, fromAddress string) ([]GethTransaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := dbConnPgx.Query(ctx, `
+	SELECT 
+		gt.id,
+		gt.uuid,
+		gt.chain_id,
+		gt.exchange_id,
+		gt.block_number,
+		gt.index_number,
+		gt.txn_date,
+		gt.txn_hash,
+		gt.from_address,
+		gt.from_address_id,
+		gt.to_address,
+		gt.to_address_id,
+		gt.interacted_contract_address,
+		gt.interacted_contract_address_id,
+		gt.native_asset_id,
+		gt.geth_process_job_id,
+		gt.value,
+		gt.geth_transction_input_id,
+		gt.status_id,
+		gt.description,
+		gt.created_by,
+		gt.created_at,
+		gt.updated_by,
+		gt.updated_at
+	FROM geth_miners_transactions gmt
+	LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id
+	WHERE 
+	gmt.miner_id = $1
+	AND 
+	gt.from_address = $2
+	ORDER BY gt.txn_date asc
+	`, *minerID, fromAddress)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return gethTransactions, nil
+}
+
+func GetAllGethTransactionsByMinerIDAndFromAddressToDate(dbConnPgx utils.PgxIface, minerID *int, fromAddress string, toDate *time.Time) ([]GethTransaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := dbConnPgx.Query(ctx, `
+	SELECT 
+		gt.id,
+		gt.uuid,
+		gt.chain_id,
+		gt.exchange_id,
+		gt.block_number,
+		gt.index_number,
+		gt.txn_date,
+		gt.txn_hash,
+		gt.from_address,
+		gt.from_address_id,
+		gt.to_address,
+		gt.to_address_id,
+		gt.interacted_contract_address,
+		gt.interacted_contract_address_id,
+		gt.native_asset_id,
+		gt.geth_process_job_id,
+		gt.value,
+		gt.geth_transction_input_id,
+		gt.status_id,
+		gt.description,
+		gt.created_by,
+		gt.created_at,
+		gt.updated_by,
+		gt.updated_at
+	FROM geth_miners_transactions gmt
+	LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id
+	WHERE 
+		gmt.miner_id = $1
+			AND 
+		gt.from_address = $2
+			AND 
+		gt.txn_date <= $3
+	ORDER BY gt.txn_date asc
+	`, *minerID, fromAddress, toDate.Format(utils.LayoutPostgres))
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return gethTransactions, nil
+}
+
+// fromDate inclusive and toDate exclusive
+func GetAllGethTransactionsByMinerIDAndFromAddressFromToDate(dbConnPgx utils.PgxIface, minerID *int, fromAddress string, fromDate, toDate *time.Time) ([]GethTransaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := dbConnPgx.Query(ctx, `
+	SELECT 
+		gt.id,
+		gt.uuid,
+		gt.chain_id,
+		gt.exchange_id,
+		gt.block_number,
+		gt.index_number,
+		gt.txn_date,
+		gt.txn_hash,
+		gt.from_address,
+		gt.from_address_id,
+		gt.to_address,
+		gt.to_address_id,
+		gt.interacted_contract_address,
+		gt.interacted_contract_address_id,
+		gt.native_asset_id,
+		gt.geth_process_job_id,
+		gt.value,
+		gt.geth_transction_input_id,
+		gt.status_id,
+		gt.description,
+		gt.created_by,
+		gt.created_at,
+		gt.updated_by,
+		gt.updated_at
+	FROM geth_miners_transactions gmt
+	LEFT JOIN geth_transactions gt ON gmt.transaction_id = gt.id
+	WHERE 
+		gmt.miner_id = $1
+			AND 
+		gt.from_address = $2
+			AND 
+		gt.txn_date >= $3
+			AND 
+		gt.txn_date < $4
+	ORDER BY gt.txn_date asc
+	`, *minerID, fromAddress, fromDate.Format(utils.LayoutPostgres), toDate.Format(utils.LayoutPostgres))
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransaction])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return gethTransactions, nil
 }

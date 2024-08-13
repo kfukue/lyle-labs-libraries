@@ -7,15 +7,15 @@ import (
 	"log"
 	"time"
 
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
-func GetChain(chainID int) (*Chain, error) {
+func GetChain(dbConnPgx utils.PgxIface, chainID *int) (*Chain, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	base_asset_id,
@@ -36,42 +36,27 @@ func GetChain(chainID int) (*Chain, error) {
 	COALESCE(rpc_url_archive, '')
 	FROM chains 
 	WHERE id = $1
-	`, chainID)
-
-	chain := &Chain{}
-	err := row.Scan(
-		&chain.ID,
-		&chain.UUID,
-		&chain.BaseAssetID,
-		&chain.Name,
-		&chain.AlternateName,
-		&chain.Address,
-		&chain.ChainTypeID,
-		&chain.Description,
-		&chain.CreatedBy,
-		&chain.CreatedAt,
-		&chain.UpdatedBy,
-		&chain.UpdatedAt,
-		&chain.RpcURL,
-		&chain.ChainID,
-		&chain.BlockExplorerURL,
-		&chain.RpcURLDev,
-		&chain.RpcURLProd,
-		&chain.RpcURLArchive,
-	)
+	`, *chainID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
+	defer row.Close()
+	chain, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Chain])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return chain, nil
+	return &chain, nil
 }
 
-func GetChainByAddress(address string) (*Chain, error) {
+func GetChainByAddress(dbConnPgx utils.PgxIface, address string) (*Chain, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	base_asset_id,
@@ -93,41 +78,25 @@ func GetChainByAddress(address string) (*Chain, error) {
 	FROM chains 
 	WHERE address = $1
 	`, address)
-
-	chain := &Chain{}
-	err := row.Scan(
-		&chain.ID,
-		&chain.UUID,
-		&chain.BaseAssetID,
-		&chain.Name,
-		&chain.AlternateName,
-		&chain.Address,
-		&chain.ChainTypeID,
-		&chain.Description,
-		&chain.CreatedBy,
-		&chain.CreatedAt,
-		&chain.UpdatedBy,
-		&chain.UpdatedAt,
-		&chain.RpcURL,
-		&chain.ChainID,
-		&chain.BlockExplorerURL,
-		&chain.RpcURLDev,
-		&chain.RpcURLProd,
-		&chain.RpcURLArchive,
-	)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer row.Close()
+	chain, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Chain])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return chain, nil
+	return &chain, nil
 }
 
-func GetChainByAlternateName(altenateName string) (*Chain, error) {
+func GetChainByAlternateName(dbConnPgx utils.PgxIface, altenateName string) (*Chain, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	base_asset_id,
@@ -149,49 +118,39 @@ func GetChainByAlternateName(altenateName string) (*Chain, error) {
 	FROM chains 
 	WHERE alternate_name = $1
 	`, altenateName)
-
-	chain := &Chain{}
-	err := row.Scan(
-		&chain.ID,
-		&chain.UUID,
-		&chain.BaseAssetID,
-		&chain.Name,
-		&chain.AlternateName,
-		&chain.Address,
-		&chain.ChainTypeID,
-		&chain.Description,
-		&chain.CreatedBy,
-		&chain.CreatedAt,
-		&chain.UpdatedBy,
-		&chain.UpdatedAt,
-		&chain.RpcURL,
-		&chain.ChainID,
-		&chain.BlockExplorerURL,
-		&chain.RpcURLDev,
-		&chain.RpcURLProd,
-		&chain.RpcURLArchive,
-	)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer row.Close()
+	chain, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Chain])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return chain, nil
+	return &chain, nil
 }
 
-func RemoveChain(chainID int) error {
+func RemoveChain(dbConnPgx utils.PgxIface, chainID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM chains WHERE id = $1`, chainID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveChain DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM chains WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *chainID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetChainList(ids []int) ([]Chain, error) {
+func GetChainList(dbConnPgx utils.PgxIface, ids []int) ([]Chain, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
@@ -219,42 +178,21 @@ func GetChainList(ids []int) ([]Chain, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	chains := make([]Chain, 0)
-	for results.Next() {
-		var chain Chain
-		results.Scan(
-			&chain.ID,
-			&chain.UUID,
-			&chain.BaseAssetID,
-			&chain.Name,
-			&chain.AlternateName,
-			&chain.Address,
-			&chain.ChainTypeID,
-			&chain.Description,
-			&chain.CreatedBy,
-			&chain.CreatedAt,
-			&chain.UpdatedBy,
-			&chain.UpdatedAt,
-			&chain.RpcURL,
-			&chain.ChainID,
-			&chain.BlockExplorerURL,
-			&chain.RpcURLDev,
-			&chain.RpcURLProd,
-			&chain.RpcURLArchive,
-		)
-
-		chains = append(chains, chain)
+	chains, err := pgx.CollectRows(results, pgx.RowToStructByName[Chain])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return chains, nil
 }
 
-func GetChainListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]Chain, error) {
+func GetChainListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]Chain, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
@@ -296,70 +234,49 @@ func GetChainListByPagination(_start, _end *int, _order, _sort string, _filters 
 		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
 	}
 
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	chains := make([]Chain, 0)
-	for results.Next() {
-		var chain Chain
-		results.Scan(
-			&chain.ID,
-			&chain.UUID,
-			&chain.BaseAssetID,
-			&chain.Name,
-			&chain.AlternateName,
-			&chain.Address,
-			&chain.ChainTypeID,
-			&chain.Description,
-			&chain.CreatedBy,
-			&chain.CreatedAt,
-			&chain.UpdatedBy,
-			&chain.UpdatedAt,
-			&chain.RpcURL,
-			&chain.ChainID,
-			&chain.BlockExplorerURL,
-			&chain.RpcURLDev,
-			&chain.RpcURLProd,
-			&chain.RpcURLArchive,
-		)
-
-		chains = append(chains, chain)
+	chains, err := pgx.CollectRows(results, pgx.RowToStructByName[Chain])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return chains, nil
 }
 
-func GetTotalAssetCount() (*int, error) {
+func GetTotalChainCount(dbConnPgx utils.PgxIface) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
-	COUNT(*)
-	FROM chains
-	`)
+	row := dbConnPgx.QueryRow(ctx, `SELECT COUNT(*) FROM chains`)
 	totalCount := 0
 	err := row.Scan(
 		&totalCount,
 	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 	return &totalCount, nil
 }
 
-func UpdateChain(chain Chain) error {
+func UpdateChain(dbConnPgx utils.PgxIface, chain *Chain) error {
 	// if the chain id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if chain.ID == nil || *chain.ID == 0 {
 		return errors.New("chain has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE chains SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateAsset DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE chains SET 
 		name=$1,
 		alternate_name=$2, 
 		address=$3,
@@ -374,7 +291,9 @@ func UpdateChain(chain Chain) error {
 		rpc_url_dev=$11,
 		rpc_url_prod=$12,
 		rpc_url_archive=$13
-		WHERE id=$14`,
+		WHERE id=$14`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		chain.Name,             //1
 		chain.AlternateName,    //2
 		chain.Address,          //3
@@ -389,19 +308,23 @@ func UpdateChain(chain Chain) error {
 		chain.RpcURLProd,       //12
 		chain.RpcURLArchive,    //13
 		chain.ID,               //14
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertChain(chain Chain) (int, error) {
+func InsertChain(dbConnPgx utils.PgxIface, chain *Chain) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertAsset DbConn.Begin   %s", err.Error())
+		return -1, err
+	}
 	var ID int
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO chains  
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO chains  
 	(
 		uuid, 
 		name, 
@@ -455,8 +378,78 @@ func InsertChain(chain Chain) (int, error) {
 		chain.RpcURLArchive,    //13
 	).Scan(&ID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, err
 	}
 	return int(ID), nil
+}
+
+func InsertChains(dbConnPgx utils.PgxIface, chains []Chain) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	loc, _ := time.LoadLocation("UTC")
+	now := time.Now().In(loc)
+	rows := [][]interface{}{}
+	for _, chain := range chains {
+		uuidString := &pgtype.UUID{}
+		uuidString.Set(chain.UUID)
+		row := []interface{}{
+			uuidString,             //1
+			chain.BaseAssetID,      //2
+			chain.Name,             //3
+			chain.AlternateName,    //4
+			chain.Address,          //5
+			chain.ChainTypeID,      //6
+			chain.Description,      //7
+			chain.CreatedBy,        //8
+			&now,                   //9
+			chain.CreatedBy,        //10
+			&now,                   //11
+			chain.RpcURL,           //12
+			chain.ChainID,          //13
+			chain.BlockExplorerURL, //14
+			chain.RpcURLDev,        //15
+			chain.RpcURLProd,       //16
+			chain.RpcURLArchive,    //17
+		}
+		rows = append(rows, row)
+	}
+	copyCount, err := dbConnPgx.CopyFrom(
+		ctx,
+		pgx.Identifier{"chains"},
+		[]string{
+			"uuid",               //1
+			"base_asset_id",      //2
+			"name",               //3
+			"alternate_name",     //4
+			"address",            //5
+			"chain_type_id",      //6
+			"description",        //7
+			"created_by",         //8
+			"created_at",         //9
+			"updated_by",         //10
+			"updated_at",         //11
+			"rpc_url",            //12
+			"chain_id",           //13
+			"block_explorer_url", //14
+			"rpc_url_dev",        //15
+			"rpc_url_prod",       //16
+			"rpc_url_archive",    //17
+		},
+		pgx.CopyFromRows(rows),
+	)
+	log.Println(fmt.Printf("InsertChains: copy count: %d", copyCount))
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	return nil
 }

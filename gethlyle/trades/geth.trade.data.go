@@ -9,15 +9,14 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
-func GetGethTrade(gethTradeID int) (*GethTrade, error) {
+func GetGethTrade(dbConnPgx utils.PgxIface, gethTradeID *int) (*GethTrade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT
+	row, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		name,
@@ -50,54 +49,25 @@ func GetGethTrade(gethTradeID int) (*GethTrade, error) {
   		oracle_price_asset_id
 	FROM geth_trades
 	WHERE id = $1
-	`, gethTradeID)
-
-	gethTrade := &GethTrade{}
-	err := row.Scan(
-		&gethTrade.ID,
-		&gethTrade.UUID,
-		&gethTrade.Name,
-		&gethTrade.AlternateName,
-		&gethTrade.AddressStr,
-		&gethTrade.AddressID,
-		&gethTrade.TradeDate,
-		&gethTrade.TxnHash,
-		&gethTrade.Token0Amount,
-		&gethTrade.Token0AmountDecimalAdj,
-		&gethTrade.Token1Amount,
-		&gethTrade.Token1AmountDecimalAdj,
-		&gethTrade.IsBuy,
-		&gethTrade.Price,
-		&gethTrade.PriceUSD,
-		&gethTrade.LPToken1PriceUSD,
-		&gethTrade.TotalAmountUSD,
-		&gethTrade.Token0AssetId,
-		&gethTrade.Token1AssetId,
-		&gethTrade.GethProcessJobID,
-		&gethTrade.StatusID,
-		&gethTrade.TradeTypeID,
-		&gethTrade.Description,
-		&gethTrade.CreatedBy,
-		&gethTrade.CreatedAt,
-		&gethTrade.UpdatedBy,
-		&gethTrade.UpdatedAt,
-		&gethTrade.BaseAssetID,
-		&gethTrade.OraclePriceUSD,
-		&gethTrade.OraclePriceAssetID,
-	)
+	`, *gethTradeID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	gethTrade, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethTrade])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethTrade, nil
+	return &gethTrade, nil
 }
 
-func GetGethTradeByStartAndEndDates(startDate, endDate time.Time) ([]GethTrade, error) {
+func GetGethTradeByStartAndEndDates(dbConnPgx utils.PgxIface, startDate, endDate time.Time) ([]GethTrade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 		SELECT
 			id,
 			uuid,
@@ -138,51 +108,18 @@ func GetGethTradeByStartAndEndDates(startDate, endDate time.Time) ([]GethTrade, 
 		return nil, err
 	}
 	defer results.Close()
-	gethTrades := make([]GethTrade, 0)
-	for results.Next() {
-		var gethTrade GethTrade
-		results.Scan(
-			&gethTrade.ID,
-			&gethTrade.UUID,
-			&gethTrade.Name,
-			&gethTrade.AlternateName,
-			&gethTrade.AddressStr,
-			&gethTrade.AddressID,
-			&gethTrade.TradeDate,
-			&gethTrade.TxnHash,
-			&gethTrade.Token0Amount,
-			&gethTrade.Token0AmountDecimalAdj,
-			&gethTrade.Token1Amount,
-			&gethTrade.Token1AmountDecimalAdj,
-			&gethTrade.IsBuy,
-			&gethTrade.Price,
-			&gethTrade.PriceUSD,
-			&gethTrade.LPToken1PriceUSD,
-			&gethTrade.TotalAmountUSD,
-			&gethTrade.Token0AssetId,
-			&gethTrade.Token1AssetId,
-			&gethTrade.GethProcessJobID,
-			&gethTrade.StatusID,
-			&gethTrade.TradeTypeID,
-			&gethTrade.Description,
-			&gethTrade.CreatedBy,
-			&gethTrade.CreatedAt,
-			&gethTrade.UpdatedBy,
-			&gethTrade.UpdatedAt,
-			&gethTrade.BaseAssetID,
-			&gethTrade.OraclePriceUSD,
-			&gethTrade.OraclePriceAssetID,
-		)
-
-		gethTrades = append(gethTrades, gethTrade)
+	gethTrades, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTrades, nil
 }
 
-func GetGethTradeByFromAddress(addressStr string) ([]GethTrade, error) {
+func GetGethTradeByFromAddress(dbConnPgx utils.PgxIface, addressStr string) ([]GethTrade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 		SELECT
 			id,
 			uuid,
@@ -214,6 +151,7 @@ func GetGethTradeByFromAddress(addressStr string) ([]GethTrade, error) {
 			base_asset_id,
 			oracle_price_usd,
 			oracle_price_asset_id
+		FROM geth_trades
 		WHERE
 		address_str = $1
 		ORDER BY gethTrade_date asc`,
@@ -224,50 +162,18 @@ func GetGethTradeByFromAddress(addressStr string) ([]GethTrade, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethTrades := make([]GethTrade, 0)
-	for results.Next() {
-		var gethTrade GethTrade
-		results.Scan(
-			&gethTrade.ID,
-			&gethTrade.UUID,
-			&gethTrade.Name,
-			&gethTrade.AlternateName,
-			&gethTrade.AddressStr,
-			&gethTrade.AddressID,
-			&gethTrade.TradeDate,
-			&gethTrade.TxnHash,
-			&gethTrade.Token0Amount,
-			&gethTrade.Token0AmountDecimalAdj,
-			&gethTrade.Token1Amount,
-			&gethTrade.Token1AmountDecimalAdj,
-			&gethTrade.IsBuy,
-			&gethTrade.Price,
-			&gethTrade.PriceUSD,
-			&gethTrade.LPToken1PriceUSD,
-			&gethTrade.TotalAmountUSD,
-			&gethTrade.Token0AssetId,
-			&gethTrade.Token1AssetId,
-			&gethTrade.GethProcessJobID,
-			&gethTrade.StatusID,
-			&gethTrade.TradeTypeID,
-			&gethTrade.Description,
-			&gethTrade.CreatedBy,
-			&gethTrade.CreatedAt,
-			&gethTrade.UpdatedBy,
-			&gethTrade.UpdatedAt,
-			&gethTrade.BaseAssetID,
-			&gethTrade.OraclePriceUSD,
-			&gethTrade.OraclePriceAssetID,
-		)
-		gethTrades = append(gethTrades, gethTrade)
+	gethTrades, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTrades, nil
 }
 
-func GetGethTradeByFromAddressId(addressID *int) ([]*GethTrade, error) {
+func GetGethTradeByFromAddressId(dbConnPgx utils.PgxIface, addressID *int) ([]GethTrade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 		SELECT
 			id,
 			uuid,
@@ -310,50 +216,18 @@ func GetGethTradeByFromAddressId(addressID *int) ([]*GethTrade, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethTrades := make([]*GethTrade, 0)
-	for results.Next() {
-		var gethTrade GethTrade
-		results.Scan(
-			&gethTrade.ID,
-			&gethTrade.UUID,
-			&gethTrade.Name,
-			&gethTrade.AlternateName,
-			&gethTrade.AddressStr,
-			&gethTrade.AddressID,
-			&gethTrade.TradeDate,
-			&gethTrade.TxnHash,
-			&gethTrade.Token0Amount,
-			&gethTrade.Token0AmountDecimalAdj,
-			&gethTrade.Token1Amount,
-			&gethTrade.Token1AmountDecimalAdj,
-			&gethTrade.IsBuy,
-			&gethTrade.Price,
-			&gethTrade.PriceUSD,
-			&gethTrade.LPToken1PriceUSD,
-			&gethTrade.TotalAmountUSD,
-			&gethTrade.Token0AssetId,
-			&gethTrade.Token1AssetId,
-			&gethTrade.GethProcessJobID,
-			&gethTrade.StatusID,
-			&gethTrade.TradeTypeID,
-			&gethTrade.Description,
-			&gethTrade.CreatedBy,
-			&gethTrade.CreatedAt,
-			&gethTrade.UpdatedBy,
-			&gethTrade.UpdatedAt,
-			&gethTrade.BaseAssetID,
-			&gethTrade.OraclePriceUSD,
-			&gethTrade.OraclePriceAssetID,
-		)
-		gethTrades = append(gethTrades, &gethTrade)
+	gethTrades, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTrades, nil
 }
 
-func GetGethTradeByUUIDs(UUIDList []string) ([]*GethTrade, error) {
+func GetGethTradeByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]GethTrade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 		SELECT 
 			id,
 			uuid,
@@ -393,51 +267,18 @@ func GetGethTradeByUUIDs(UUIDList []string) ([]*GethTrade, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethTrades := make([]*GethTrade, 0)
-	for results.Next() {
-		var gethTrade GethTrade
-		results.Scan(
-			&gethTrade.ID,
-			&gethTrade.UUID,
-			&gethTrade.Name,
-			&gethTrade.AlternateName,
-			&gethTrade.AddressStr,
-			&gethTrade.AddressID,
-			&gethTrade.TradeDate,
-			&gethTrade.TxnHash,
-			&gethTrade.Token0Amount,
-			&gethTrade.Token0AmountDecimalAdj,
-			&gethTrade.Token1Amount,
-			&gethTrade.Token1AmountDecimalAdj,
-			&gethTrade.IsBuy,
-			&gethTrade.Price,
-			&gethTrade.PriceUSD,
-			&gethTrade.LPToken1PriceUSD,
-			&gethTrade.TotalAmountUSD,
-			&gethTrade.Token0AssetId,
-			&gethTrade.Token1AssetId,
-			&gethTrade.GethProcessJobID,
-			&gethTrade.StatusID,
-			&gethTrade.TradeTypeID,
-			&gethTrade.Description,
-			&gethTrade.CreatedBy,
-			&gethTrade.CreatedAt,
-			&gethTrade.UpdatedBy,
-			&gethTrade.UpdatedAt,
-			&gethTrade.BaseAssetID,
-			&gethTrade.OraclePriceUSD,
-			&gethTrade.OraclePriceAssetID,
-		)
-		gethTrades = append(gethTrades, &gethTrade)
+	gethTrades, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTrades, nil
 }
 
-func GetNetTransfersByTxnHashAndAddressStrs(txnHash, addressStr string, baseAssetID *int) ([]*NetTransferByAddress, error) {
+func GetNetTransfersByTxnHashAndAddressStrs(dbConnPgx utils.PgxIface, txnHash, addressStr string, baseAssetID *int) ([]NetTransferByAddress, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-		
+	results, err := dbConnPgx.Query(ctx, `
 	WITH to_address as (
 		SELECT to_address as receiving_address, asset_id as asset_id, SUM(amount) as in_amount FROM geth_transfers 
 		WHERE txn_hash = $1
@@ -464,54 +305,24 @@ func GetNetTransfersByTxnHashAndAddressStrs(txnHash, addressStr string, baseAsse
 		LEFT JOIN assets assets
 				ON addresses.asset_id = assets.id
 	WHERE address = $2
-	`, txnHash, addressStr, baseAssetID)
+	`, txnHash, addressStr, *baseAssetID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	netTransfersByAddress := make([]*NetTransferByAddress, 0)
-	for results.Next() {
-		var netTransferByAddress NetTransferByAddress
-		results.Scan(
-			&netTransferByAddress.TxnHash,
-			&netTransferByAddress.AddressStr,
-			&netTransferByAddress.AssetID,
-			&netTransferByAddress.NetAmount,
-			&netTransferByAddress.Asset.ID,
-			&netTransferByAddress.Asset.UUID,
-			&netTransferByAddress.Asset.Name,
-			&netTransferByAddress.Asset.AlternateName,
-			&netTransferByAddress.Asset.Cusip,
-			&netTransferByAddress.Asset.Ticker,
-			&netTransferByAddress.Asset.BaseAssetID,
-			&netTransferByAddress.Asset.QuoteAssetID,
-			&netTransferByAddress.Asset.Description,
-			&netTransferByAddress.Asset.AssetTypeID,
-			&netTransferByAddress.Asset.CreatedBy,
-			&netTransferByAddress.Asset.CreatedAt,
-			&netTransferByAddress.Asset.UpdatedBy,
-			&netTransferByAddress.Asset.UpdatedAt,
-			&netTransferByAddress.Asset.ChainID,
-			&netTransferByAddress.Asset.CategoryID,
-			&netTransferByAddress.Asset.SubCategoryID,
-			&netTransferByAddress.Asset.IsDefaultQuote,
-			&netTransferByAddress.Asset.IgnoreMarketData,
-			&netTransferByAddress.Asset.Decimals,
-			&netTransferByAddress.Asset.ContractAddress,
-			&netTransferByAddress.StartingBlockNumber,
-			&netTransferByAddress.ImportGeth,
-			&netTransferByAddress.ImportGethInitial,
-		)
-		netTransfersByAddress = append(netTransfersByAddress, &netTransferByAddress)
+	netTransfersByAddress, err := pgx.CollectRows(results, pgx.RowToStructByName[NetTransferByAddress])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return netTransfersByAddress, nil
 }
 
-func GetFromNetTransfersByTxnHashesAndAddressStrs(txnHashes []string, baseAssetID *int) ([]*NetTransferByAddress, error) {
+func GetFromNetTransfersByTxnHashesAndAddressStrs(dbConnPgx utils.PgxIface, txnHashes []string, baseAssetID *int) ([]NetTransferByAddress, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	WITH to_address as (
 		SELECT 
 			txn_hash as txn_hash,
@@ -555,64 +366,34 @@ func GetFromNetTransfersByTxnHashesAndAddressStrs(txnHashes []string, baseAssetI
 		) addresses 
 		LEFT JOIN assets assets
 			ON addresses.asset_id = assets.id
-	`, txnHashes, *baseAssetID)
+	`, pq.Array(txnHashes), *baseAssetID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	netTransfersByAddress := make([]*NetTransferByAddress, 0)
-	for results.Next() {
-		var netTransferByAddress NetTransferByAddress
-		results.Scan(
-			&netTransferByAddress.TxnHash,
-			&netTransferByAddress.AddressStr,
-			&netTransferByAddress.AssetID,
-			&netTransferByAddress.NetAmount,
-			&netTransferByAddress.Asset.ID,
-			&netTransferByAddress.Asset.UUID,
-			&netTransferByAddress.Asset.Name,
-			&netTransferByAddress.Asset.AlternateName,
-			&netTransferByAddress.Asset.Cusip,
-			&netTransferByAddress.Asset.Ticker,
-			&netTransferByAddress.Asset.BaseAssetID,
-			&netTransferByAddress.Asset.QuoteAssetID,
-			&netTransferByAddress.Asset.Description,
-			&netTransferByAddress.Asset.AssetTypeID,
-			&netTransferByAddress.Asset.CreatedBy,
-			&netTransferByAddress.Asset.CreatedAt,
-			&netTransferByAddress.Asset.UpdatedBy,
-			&netTransferByAddress.Asset.UpdatedAt,
-			&netTransferByAddress.Asset.ChainID,
-			&netTransferByAddress.Asset.CategoryID,
-			&netTransferByAddress.Asset.SubCategoryID,
-			&netTransferByAddress.Asset.IsDefaultQuote,
-			&netTransferByAddress.Asset.IgnoreMarketData,
-			&netTransferByAddress.Asset.Decimals,
-			&netTransferByAddress.Asset.ContractAddress,
-			&netTransferByAddress.StartingBlockNumber,
-			&netTransferByAddress.ImportGeth,
-			&netTransferByAddress.ImportGethInitial,
-		)
-		netTransfersByAddress = append(netTransfersByAddress, &netTransferByAddress)
+	netTransfersByAddress, err := pgx.CollectRows(results, pgx.RowToStructByName[NetTransferByAddress])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return netTransfersByAddress, nil
 }
 
-func GetStartAndEndBlockForNewTradesByBaseAssetID(baseAssetID *int) (*uint64, *uint64, error) {
+func GetStartAndEndBlockForNewTradesByBaseAssetID(dbConnPgx utils.PgxIface, baseAssetID *int) (*uint64, *uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	// TODO: Need to relook at this logic
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT
-		MIN(geth_swaps.BlockNumber),
-		MAX(geth_swaps.BlockNumber),
+	row := dbConnPgx.QueryRow(ctx, `SELECT
+		MIN(geth_swaps.BlockNumber) as start_block_number,
+		MAX(geth_swaps.BlockNumber) as end_block_number
 	FROM geth_trade_swaps
 	LEFT JOIN geth_swaps ON geth_trade_swaps.get_swap_id = geth_swaps.id
 	WHERE geth_swaps.base_asset_id = $1
 	AND geth_swaps.get_swap_id = NULL
-	`, baseAssetID)
+	`, *baseAssetID)
 
-	var startBlockNumber, endBlockNumber *uint64
+	var startBlockNumber, endBlockNumber uint64
 	err := row.Scan(
 		&startBlockNumber,
 		&endBlockNumber,
@@ -624,36 +405,48 @@ func GetStartAndEndBlockForNewTradesByBaseAssetID(baseAssetID *int) (*uint64, *u
 		return nil, nil, err
 	}
 
-	return startBlockNumber, endBlockNumber, nil
+	return &startBlockNumber, &endBlockNumber, nil
 
 }
 
-func RemoveGethTrade(gethTradeID int) error {
+func RemoveGethTrade(dbConnPgx utils.PgxIface, gethTradeID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_trades WHERE id = $1`, gethTradeID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethTrade DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
-}
-
-func DeleteGethTradesByBaseAssetId(baseAssetID *int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_trades WHERE base_asset_id = $1`, *baseAssetID)
-	if err != nil {
-		log.Println(err.Error())
+	sql := `DELETE FROM geth_trades WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *gethTradeID); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func GetGethTradeList() ([]GethTrade, error) {
+func DeleteGethTradesByBaseAssetId(dbConnPgx utils.PgxIface, baseAssetID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in RemoveGethTrade DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `DELETE FROM geth_trades WHERE base_asset_id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func GetGethTradeList(dbConnPgx utils.PgxIface) ([]GethTrade, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT
 	id,
 		uuid,
@@ -691,55 +484,27 @@ func GetGethTradeList() ([]GethTrade, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethTrades := make([]GethTrade, 0)
-	for results.Next() {
-		var gethTrade GethTrade
-		results.Scan(
-			&gethTrade.ID,
-			&gethTrade.UUID,
-			&gethTrade.Name,
-			&gethTrade.AlternateName,
-			&gethTrade.AddressStr,
-			&gethTrade.AddressID,
-			&gethTrade.TradeDate,
-			&gethTrade.TxnHash,
-			&gethTrade.Token0Amount,
-			&gethTrade.Token0AmountDecimalAdj,
-			&gethTrade.Token1Amount,
-			&gethTrade.Token1AmountDecimalAdj,
-			&gethTrade.IsBuy,
-			&gethTrade.Price,
-			&gethTrade.PriceUSD,
-			&gethTrade.LPToken1PriceUSD,
-			&gethTrade.TotalAmountUSD,
-			&gethTrade.Token0AssetId,
-			&gethTrade.Token1AssetId,
-			&gethTrade.GethProcessJobID,
-			&gethTrade.StatusID,
-			&gethTrade.TradeTypeID,
-			&gethTrade.Description,
-			&gethTrade.CreatedBy,
-			&gethTrade.CreatedAt,
-			&gethTrade.UpdatedBy,
-			&gethTrade.UpdatedAt,
-			&gethTrade.BaseAssetID,
-			&gethTrade.OraclePriceUSD,
-			&gethTrade.OraclePriceAssetID,
-		)
-
-		gethTrades = append(gethTrades, gethTrade)
+	gethTrades, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTrades, nil
 }
 
-func UpdateGethTrade(gethTrade GethTrade) error {
+func UpdateGethTrade(dbConnPgx utils.PgxIface, gethTrade *GethTrade) error {
 	// if the gethTrade id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if gethTrade.ID == nil {
 		return errors.New("gethTrade has invalid ID")
 	}
-	_, err := database.DbConnPgx.Exec(ctx, `UPDATE geth_trades SET
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethTrade DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_trades SET 
 		name=$1,
 		alternate_name=$2,
 		address_str=$3,
@@ -766,7 +531,9 @@ func UpdateGethTrade(gethTrade GethTrade) error {
 		base_asset_id=$23,
 		oracle_price_usd=$24,
 		oracle_price_asset_id=$25
-		WHERE id=$26`,
+		WHERE id=$26`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 
 		gethTrade.Name,                   //1
 		gethTrade.AlternateName,          //2
@@ -794,20 +561,24 @@ func UpdateGethTrade(gethTrade GethTrade) error {
 		gethTrade.OraclePriceUSD,         //24
 		gethTrade.OraclePriceAssetID,     //25
 		gethTrade.ID,                     //26
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertGethTrade(gethTrade *GethTrade) (int, string, error) {
+func InsertGethTrade(dbConnPgx utils.PgxIface, gethTrade *GethTrade) (int, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertGethTrade DbConn.Begin   %s", err.Error())
+		return -1, "", err
+	}
 	var gethTradeID int
 	var gethTradeUUID string
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO geth_trades
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO geth_trades
 	(
 		uuid,
 		name,
@@ -897,13 +668,20 @@ func InsertGethTrade(gethTrade *GethTrade) (int, string, error) {
 		gethTrade.OraclePriceAssetID,     //25
 	).Scan(&gethTradeID, &gethTradeUUID)
 	if err != nil {
-		log.Println(err)
-		return 0, "", err
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, "", err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, "", err
 	}
 	return int(gethTradeID), gethTradeUUID, nil
 }
 
-func InsertGethTrades(gethTrades []*GethTrade) error {
+func InsertGethTrades(dbConnPgx utils.PgxIface, gethTrades []GethTrade) error {
 	// need to supply uuid
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -947,7 +725,7 @@ func InsertGethTrades(gethTrades []*GethTrade) error {
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"geth_trades"},
 		[]string{
@@ -983,15 +761,15 @@ func InsertGethTrades(gethTrades []*GethTrade) error {
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertGethTrades: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
 	}
 	return nil
 }
 
-func GetLatestGethTradeFromAssetIDAnDate(assetID *int, asOfDate *time.Time, isBefore *bool) (*GethTrade, error) {
+func GetLatestGethTradeFromAssetIDAnDate(dbConnPgx utils.PgxIface, assetID *int, asOfDate time.Time, isBefore *bool) (*GethTrade, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
@@ -1035,46 +813,105 @@ func GetLatestGethTradeFromAssetIDAnDate(assetID *int, asOfDate *time.Time, isBe
 		tradeDateSQL = ` AND trade_date >= $2 ORDER BY trade_date asc`
 	}
 	sql := selectSQL + tradeDateSQL + ` LIMIT 1`
-	row := database.DbConnPgx.QueryRow(ctx, sql, assetID, asOfDate.Format(utils.LayoutPostgres))
-
-	gethTrade := &GethTrade{}
-	err := row.Scan(
-		&gethTrade.ID,
-		&gethTrade.UUID,
-		&gethTrade.Name,
-		&gethTrade.AlternateName,
-		&gethTrade.AddressStr,
-		&gethTrade.AddressID,
-		&gethTrade.TradeDate,
-		&gethTrade.TxnHash,
-		&gethTrade.Token0Amount,
-		&gethTrade.Token0AmountDecimalAdj,
-		&gethTrade.Token1Amount,
-		&gethTrade.Token1AmountDecimalAdj,
-		&gethTrade.IsBuy,
-		&gethTrade.Price,
-		&gethTrade.PriceUSD,
-		&gethTrade.LPToken1PriceUSD,
-		&gethTrade.TotalAmountUSD,
-		&gethTrade.Token0AssetId,
-		&gethTrade.Token1AssetId,
-		&gethTrade.GethProcessJobID,
-		&gethTrade.StatusID,
-		&gethTrade.TradeTypeID,
-		&gethTrade.Description,
-		&gethTrade.CreatedBy,
-		&gethTrade.CreatedAt,
-		&gethTrade.UpdatedBy,
-		&gethTrade.UpdatedAt,
-		&gethTrade.BaseAssetID,
-		&gethTrade.OraclePriceUSD,
-		&gethTrade.OraclePriceAssetID,
-	)
+	row, err := dbConnPgx.Query(ctx, sql, *assetID, asOfDate.Format(utils.LayoutPostgres))
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	gethTrade, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethTrade])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethTrade, nil
+	return &gethTrade, nil
+}
+
+// for refinedev
+func GetGethTradeListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]GethTrade, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `
+	SELECT
+		id,
+		uuid,
+		name,
+		alternate_name,
+		address_str,
+		address_id,
+		trade_date,
+		txn_hash,
+		token0_amount,
+		token0_amount_decimal_adj,
+	  	token1_amount,
+  		token1_amount_decimal_adj,
+		is_buy,
+		price,
+		price_usd,
+		lp_token1_price_usd,
+		total_amount_usd,
+		token0_asset_id,
+		token1_asset_id,
+		geth_process_job_id,
+		status_id,
+		trade_type_id,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at,
+		base_asset_id,
+		oracle_price_usd,
+  		oracle_price_asset_id
+	FROM geth_trades 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTrades, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return gethTrades, nil
+}
+
+func GetTotalTradesCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM geth_trades
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }

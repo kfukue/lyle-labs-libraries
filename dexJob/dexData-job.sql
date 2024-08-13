@@ -5,8 +5,6 @@ CREATE TABLE dex_txn_jobs
   uuid uuid NOT NULL DEFAULT uuid_generate_v4(),
   name VARCHAR(255) NOT NULL,
   alternate_name VARCHAR(255) NULL,
-  start_block_number INT NOT NULL,
-  end_block_number INT NOT NULL,
   start_date timestamp NOT NULL,
   end_date timestamp NOT NULL,
   description TEXT NULL,

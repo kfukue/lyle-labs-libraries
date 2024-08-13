@@ -9,142 +9,67 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
-func GetJob(jobID int) (*Job, error) {
+func GetJob(dbConnPgx utils.PgxIface, jobID *int) (*Job, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	start_date,
-	end_date,
-	description,
-	status_id,
-	response_status,
-	request_url,
-	request_body,
-	request_method,
-	response_data,
-	response_data_json,
-	job_category_id,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at,
+	row, err := dbConnPgx.Query(ctx, `SELECT
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		start_date,
+		end_date,
+		description,
+		status_id,
+		response_status,
+		request_url,
+		request_body,
+		request_method,
+		response_data,
+		response_data_json,
+		job_category_id,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at,
 	FROM jobs 
-	WHERE id = $1`, jobID)
-
-	job := &Job{}
-	err := row.Scan(
-		&job.ID,
-		&job.UUID,
-		&job.Name,
-		&job.AlternateName,
-		&job.StartDate,
-		&job.EndDate,
-		&job.Description,
-		&job.StatusID,
-		&job.ResponseStatus,
-		&job.RequestUrl,
-		&job.RequestBody,
-		&job.RequestMethod,
-		&job.ResponseData,
-		&job.ResponseDataJson,
-		&job.JobCategoryID,
-		&job.CreatedBy,
-		&job.CreatedAt,
-		&job.UpdatedBy,
-		&job.UpdatedAt,
-		&job.ResponseDataJson,
-	)
+	WHERE id = $1`, *jobID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	job, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Job])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return job, nil
+	return &job, nil
 }
 
-func GetTopTenJobs() ([]Job, error) {
+func RemoveJob(dbConnPgx utils.PgxIface, jobID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	start_date,
-	end_date,
-	description,
-	status_id,
-	response_status,
-	request_url,
-	request_body,
-	request_method,
-	response_data,
-	response_data_json,
-	job_category_id,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at,
-	FROM jobs 
-	`)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	jobList := make([]Job, 0)
-	for results.Next() {
-		var job Job
-		results.Scan(
-			&job.ID,
-			&job.UUID,
-			&job.Name,
-			&job.AlternateName,
-			&job.StartDate,
-			&job.EndDate,
-			&job.Description,
-			&job.StatusID,
-			&job.ResponseStatus,
-			&job.RequestUrl,
-			&job.RequestBody,
-			&job.RequestMethod,
-			&job.ResponseData,
-			&job.ResponseDataJson,
-			&job.JobCategoryID,
-			&job.CreatedBy,
-			&job.CreatedAt,
-			&job.UpdatedBy,
-			&job.UpdatedAt,
-			&job.ResponseDataJson,
-		)
-
-		jobList = append(jobList, job)
-	}
-	return jobList, nil
-}
-
-func RemoveJob(jobID int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM jobs WHERE id = $1`, jobID)
-	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveJob DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM jobs WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *jobID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetJobList(ids []int) ([]Job, error) {
+func GetJobList(dbConnPgx utils.PgxIface, ids []int) ([]Job, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
@@ -173,47 +98,24 @@ func GetJobList(ids []int) ([]Job, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	jobList := make([]Job, 0)
-	for results.Next() {
-		var job Job
-		results.Scan(
-			&job.ID,
-			&job.UUID,
-			&job.Name,
-			&job.AlternateName,
-			&job.StartDate,
-			&job.EndDate,
-			&job.Description,
-			&job.StatusID,
-			&job.ResponseStatus,
-			&job.RequestUrl,
-			&job.RequestBody,
-			&job.RequestMethod,
-			&job.ResponseData,
-			&job.ResponseDataJson,
-			&job.JobCategoryID,
-			&job.CreatedBy,
-			&job.CreatedAt,
-			&job.UpdatedBy,
-			&job.UpdatedAt,
-			&job.ResponseDataJson,
-		)
-
-		jobList = append(jobList, job)
+	jobList, err := pgx.CollectRows(results, pgx.RowToStructByName[Job])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return jobList, nil
 }
 
-func GetJobListByUUIDs(UUIDList []string) ([]Job, error) {
+func GetJobListByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Job, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -241,41 +143,18 @@ func GetJobListByUUIDs(UUIDList []string) ([]Job, error) {
 		return nil, err
 	}
 	defer results.Close()
-	jobList := make([]Job, 0)
-	for results.Next() {
-		var job Job
-		results.Scan(
-			&job.ID,
-			&job.UUID,
-			&job.Name,
-			&job.AlternateName,
-			&job.StartDate,
-			&job.EndDate,
-			&job.Description,
-			&job.StatusID,
-			&job.ResponseStatus,
-			&job.RequestUrl,
-			&job.RequestBody,
-			&job.RequestMethod,
-			&job.ResponseData,
-			&job.ResponseDataJson,
-			&job.JobCategoryID,
-			&job.CreatedBy,
-			&job.CreatedAt,
-			&job.UpdatedBy,
-			&job.UpdatedAt,
-			&job.ResponseDataJson,
-		)
-
-		jobList = append(jobList, job)
+	jobList, err := pgx.CollectRows(results, pgx.RowToStructByName[Job])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return jobList, nil
 }
 
-func GetStartAndEndDateDiffJobList(diffInDate int) ([]Job, error) {
+func GetStartAndEndDateDiffJobList(dbConnPgx utils.PgxIface, diffInDate *int) ([]Job, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	id,
 	uuid, 
 	name, 
@@ -297,55 +176,37 @@ func GetStartAndEndDateDiffJobList(diffInDate int) ([]Job, error) {
 	updated_at
 	FROM jobs
 	WHERE DATE_PART('day', AGE(start_date, end_date)) =$1
-	`, diffInDate)
+	`, *diffInDate)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	jobList := make([]Job, 0)
-	for results.Next() {
-		var job Job
-		results.Scan(
-			&job.ID,
-			&job.UUID,
-			&job.Name,
-			&job.AlternateName,
-			&job.StartDate,
-			&job.EndDate,
-			&job.Description,
-			&job.StatusID,
-			&job.ResponseStatus,
-			&job.RequestUrl,
-			&job.RequestBody,
-			&job.RequestMethod,
-			&job.ResponseData,
-			&job.ResponseDataJson,
-			&job.JobCategoryID,
-			&job.CreatedBy,
-			&job.CreatedAt,
-			&job.UpdatedBy,
-			&job.UpdatedAt,
-			&job.ResponseDataJson,
-		)
-
-		jobList = append(jobList, job)
+	jobList, err := pgx.CollectRows(results, pgx.RowToStructByName[Job])
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
 	}
 	return jobList, nil
 }
 
-func UpdateJob(job Job) error {
+func UpdateJob(dbConnPgx utils.PgxIface, job *Job) error {
 	// if the job id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if job.ID == nil || *job.ID == 0 {
 		return errors.New("job has invalid ID")
 	}
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateJob DbConn.Begin   %s", err.Error())
+		return err
+	}
 	layoutPostgres := utils.LayoutPostgres
 	startDate := job.StartDate
 	endDate := job.EndDate
 	log.Println(fmt.Sprintf("Updating start: %s, end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE jobs SET 
+	sql := `UPDATE jobs SET 
 		name=$1,  
 		alternate_name=$2, 
 		start_date =$3,
@@ -361,7 +222,9 @@ func UpdateJob(job Job) error {
 		job_category_id=$13,
 		updated_by=$14, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$15`,
+		WHERE id=$15`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		job.Name,                             //1
 		job.AlternateName,                    //2
 		job.StartDate.Format(layoutPostgres), //3
@@ -376,20 +239,26 @@ func UpdateJob(job Job) error {
 		job.ResponseDataJson,                 //12
 		job.JobCategoryID,                    //13
 		job.UpdatedBy,                        //14
-		job.ID)                               //15
-	if err != nil {
-		log.Println(err.Error())
+		job.ID,                               //15
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertJob(job Job) (int, error) {
+func InsertJob(dbConnPgx utils.PgxIface, job *Job) (int, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertJob DbConn.Begin   %s", err.Error())
+		return -1, "", err
+	}
 	var insertID int
+	var jobUUID string
 	layoutPostgres := utils.LayoutPostgres
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO jobs 
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO jobs 
 	(
 		uuid, 
 		name, 
@@ -429,7 +298,7 @@ func InsertJob(job Job) (int, error) {
 			$15,
 			current_timestamp at time zone 'UTC'
 		)
-		RETURNING id`,
+		RETURNING id, uuid`,
 		job.UUID,                             //1
 		job.Name,                             //2
 		job.AlternateName,                    //3
@@ -445,16 +314,22 @@ func InsertJob(job Job) (int, error) {
 		job.ResponseDataJson,                 //13
 		job.JobCategoryID,                    //14
 		job.CreatedBy,                        //15
-	).Scan(&insertID)
-
+	).Scan(&insertID, &jobUUID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, "", err
 	}
-	return int(insertID), nil
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, "", err
+	}
+	return int(insertID), jobUUID, nil
 }
 
-func InsertJobListManual(jobList []Job) error {
+func InsertJobList(dbConnPgx utils.PgxIface, jobList []Job) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -462,17 +337,16 @@ func InsertJobListManual(jobList []Job) error {
 	rows := [][]interface{}{}
 	for i, _ := range jobList {
 		job := jobList[i]
-
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(job.UUID)
 		row := []interface{}{
-			job.Name,           //1
-			uuidString,         //2
+			uuidString,         //1
+			job.Name,           //2
 			job.AlternateName,  //3
-			&job.StartDate,     //4
-			&job.EndDate,       //5
+			job.StartDate,      //4
+			job.EndDate,        //5
 			job.Description,    //6
-			*job.StatusID,      //7
+			job.StatusID,       //7
 			job.ResponseStatus, //8
 			job.RequestUrl,     //9
 			job.RequestBody,    //10
@@ -480,125 +354,121 @@ func InsertJobListManual(jobList []Job) error {
 			job.ResponseData,   //12
 			// TODO: erroring out in json insert look into it later TAT-27
 			// job.ResponseDataJson                 //13
-			*job.JobCategoryID, //14
-			job.CreatedBy,      //15
-			&now,               //16
-			job.CreatedBy,      //17
-			&now,               //18
+			nil,               //13
+			job.JobCategoryID, //14
+			job.CreatedBy,     //15
+			&now,              //16
+			job.CreatedBy,     //17
+			&now,              //18
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"jobs"},
 		[]string{
-			"name",            //1
-			"uuid",            //2
-			"alternate_name",  //3
-			"start_date",      //4
-			"end_date",        //5
-			"description",     //6
-			"status_id",       //7
-			"response_status", //8
-			"request_url",     //9
-			"request_body",    //10
-			"request_method",  //11
-			"response_data",   //12
-			// "response_data_json", //13
-			"job_category_id", //14
-			"created_by",      //15
-			"created_at",      //16
-			"updated_by",      //17
-			"updated_at",      //18
+			"uuid",               //1
+			"name",               //2
+			"alternate_name",     //3
+			"start_date",         //4
+			"end_date",           //5
+			"description",        //6
+			"status_id",          //7
+			"response_status",    //8
+			"request_url",        //9
+			"request_body",       //10
+			"request_method",     //11
+			"response_data",      //12
+			"response_data_json", //13
+			"job_category_id",    //14
+			"created_by",         //15
+			"created_at",         //16
+			"updated_by",         //17
+			"updated_at",         //18
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertJobList: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
 	}
-
 	return nil
 }
 
-func InsertJobList(jobList []Job) error {
-	txn, err := database.DbConn.Begin()
+// for refinedev
+func GetJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]Job, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `
+	SELECT
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		start_date,
+		end_date,
+		description,
+		status_id,
+		response_status,
+		request_url,
+		request_body,
+		request_method,
+		response_data,
+		response_data_json,
+		job_category_id,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at,
+	FROM jobs 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	jobs, err := pgx.CollectRows(results, pgx.RowToStructByName[Job])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return jobs, nil
+}
+
+func GetTotalJobsCount(dbConnPgx utils.PgxIface) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
-	layoutPostgres := utils.LayoutPostgres
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM jobs
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return nil, err
 	}
-
-	stmt, err := txn.Prepare(pq.CopyIn(
-		"jobs",
-		"name",            //1
-		"uuid",            //2
-		"alternate_name",  //3
-		"start_date",      //4
-		"end_date",        //5
-		"description",     //6
-		"status_id",       //7
-		"response_status", //8
-		"request_url",     //9
-		"request_body",    //10
-		"request_method",  //11
-		"response_data",   //12
-		// "response_data_json", //13
-		"job_category_id", //14
-		"created_by",      //15
-		"created_at",      //16
-		"updated_by",      //17
-		"updated_at",      //18
-	))
-	if err != nil {
-		log.Fatal(err)
-	}
-	loc, _ := time.LoadLocation("UTC")
-	now := time.Now().In(loc)
-
-	for _, job := range jobList {
-		_, err = stmt.Exec(
-			job.Name,                             //1
-			job.UUID,                             //2
-			job.AlternateName,                    //3
-			job.StartDate.Format(layoutPostgres), //4
-			job.EndDate.Format(layoutPostgres),   //5
-			job.Description,                      //6
-			job.StatusID,                         //7
-			job.ResponseStatus,                   //8
-			job.RequestUrl,                       //9
-			job.RequestBody,                      //10
-			job.RequestMethod,                    //11
-			job.ResponseData,                     //12
-			// TODO: erroring out in json insert look into it later TAT-27
-			// job.ResponseDataJson,                 //13
-			job.JobCategoryID,          //14
-			job.CreatedBy,              //15
-			now.Format(layoutPostgres), //16
-			job.CreatedBy,              //17
-			now.Format(layoutPostgres), //18
-		)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	_, err = stmt.ExecContext(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = stmt.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = txn.Commit()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return nil
+	return &totalCount, nil
 }

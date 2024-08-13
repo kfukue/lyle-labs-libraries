@@ -9,325 +9,189 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
+	marketdataquote "github.com/kfukue/lyle-labs-libraries/marketDataQuote"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 	decimal "github.com/shopspring/decimal"
 )
 
-func GetMarketData(marketDataID int) (*MarketData, error) {
+func GetMarketData(dbConnPgx utils.PgxIface, marketDataID *int) (*MarketData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	start_date,
-	end_date,
-	asset_id,
-	open_usd,
-	close_usd,
-	high_usd,
-	low_usd,
-	price_usd,
-	volume_usd,
-	market_cap_usd,
-	ticker,
-	description,
-	interval_id,
-	market_data_type_id,
-	source_id,
+	row, err := dbConnPgx.Query(ctx, `SELECT 
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		start_date,
+		end_date,
+		asset_id,
+		open_usd,
+		close_usd,
+		high_usd,
+		low_usd,
+		price_usd,
+		volume_usd,
+		market_cap_usd,
+		ticker,
+		description,
+		interval_id,
+		market_data_type_id,
+		source_id,
 
-	total_supply,
-	max_supply,
-	circulating_supply,
-	sparkline_7d,
+		total_supply,
+		max_supply,
+		circulating_supply,
+		sparkline_7d,
 
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at,
 	FROM market_data 
-	WHERE id = $1`, marketDataID)
-
-	marketData := &MarketData{}
-	err := row.Scan(
-		&marketData.ID,
-		&marketData.UUID,
-		&marketData.Name,
-		&marketData.AlternateName,
-		&marketData.StartDate,
-		&marketData.EndDate,
-		&marketData.AssetID,
-		&marketData.OpenUSD,
-		&marketData.CloseUSD,
-		&marketData.HighUSD,
-		&marketData.LowUSD,
-		&marketData.PriceUSD,
-		&marketData.VolumeUSD,
-		&marketData.MarketCapUSD,
-		&marketData.Ticker,
-		&marketData.Description,
-		&marketData.IntervalID,
-		&marketData.MarketDataTypeID,
-		&marketData.SourceID,
-		&marketData.TotalSupply,
-		&marketData.MaxSupply,
-		&marketData.CirculatingSupply,
-		&marketData.Sparkline7d,
-		&marketData.CreatedBy,
-		&marketData.CreatedAt,
-		&marketData.UpdatedBy,
-		&marketData.UpdatedAt,
-	)
+	WHERE id = $1`, *marketDataID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
+	defer row.Close()
+	marketData, err := pgx.CollectOneRow(row, pgx.RowToStructByName[MarketData])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return marketData, nil
+	return &marketData, nil
 }
 
-func GetTopTenMarketDatas() ([]MarketData, error) {
+func RemoveMarketData(dbConnPgx utils.PgxIface, marketDataID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	start_date,
-	end_date,
-	asset_id,
-	open_usd,
-	close_usd,
-	high_usd,
-	low_usd,
-	price_usd,
-	volume_usd,
-	market_cap_usd,
-	ticker,
-	description,
-	interval_id,
-	market_data_type_id,
-	source_id,
-	total_supply,
-	max_supply,
-	circulating_supply,
-	sparkline_7d,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
-	FROM market_data 
-	`)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	marketDataList := make([]MarketData, 0)
-	for results.Next() {
-		var marketData MarketData
-		results.Scan(
-			&marketData.ID,
-			&marketData.UUID,
-			&marketData.Name,
-			&marketData.AlternateName,
-			&marketData.StartDate,
-			&marketData.EndDate,
-			&marketData.AssetID,
-			&marketData.OpenUSD,
-			&marketData.CloseUSD,
-			&marketData.HighUSD,
-			&marketData.LowUSD,
-			&marketData.PriceUSD,
-			&marketData.VolumeUSD,
-			&marketData.MarketCapUSD,
-			&marketData.Ticker,
-			&marketData.Description,
-			&marketData.IntervalID,
-			&marketData.MarketDataTypeID,
-			&marketData.SourceID,
-			&marketData.TotalSupply,
-			&marketData.MaxSupply,
-			&marketData.CirculatingSupply,
-			&marketData.Sparkline7d,
-			&marketData.CreatedBy,
-			&marketData.CreatedAt,
-			&marketData.UpdatedBy,
-			&marketData.UpdatedAt,
-		)
-
-		marketDataList = append(marketDataList, marketData)
-	}
-	return marketDataList, nil
-}
-
-func RemoveMarketData(marketDataID int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM market_data WHERE id = $1`, marketDataID)
-	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethMarketData DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM market_data WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *marketDataID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func RemoveMarketDataFromBaseAssetBetweenDates(assetID int, startDate, endDate time.Time) error {
+func RemoveMarketDataFromBaseAssetBetweenDates(dbConnPgx utils.PgxIface, assetID *int, startDate, endDate time.Time) error {
 	log.Println(fmt.Sprintf("start : %s end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
-	err := RemoveMarketDataQuoteFromBaseAssetBetweenDates(assetID, startDate, endDate)
+	err := marketdataquote.RemoveMarketDataQuoteFromBaseAssetBetweenDates(dbConnPgx, assetID, startDate, endDate)
 	if err != nil {
 		log.Println(err.Error())
 		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err = database.DbConnPgx.Query(ctx, `DELETE FROM market_data 
-		WHERE asset_id = $1
-			AND start_date BETWEEN $2 and $3
-	`, assetID, startDate, endDate)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethMarketData DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
-}
-
-func RemoveMarketDataQuoteFromBaseAssetBetweenDates(assetID int, startDate, endDate time.Time) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `
-		DELETE FROM market_data_quotes
-		WHERE market_data_id IN (
-			SELECT ID
-			FROM market_data
-			WHERE asset_id = $1
-			AND start_date BETWEEN $2 and $3
-		);
-	`, assetID, startDate, endDate)
-	if err != nil {
-		log.Println(err.Error())
+	sql := `DELETE
+		FROM market_data 
+		WHERE 
+			asset_id = $1
+			AND start_date BETWEEN $2 and $3`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *assetID, startDate, endDate); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func GetMarketDataList(ids []int) ([]MarketData, error) {
+func GetMarketDataList(dbConnPgx utils.PgxIface, ids []int) ([]MarketData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	start_date,
-	end_date,
-	asset_id,
-	open_usd,
-	close_usd,
-	high_usd,
-	low_usd,
-	price_usd,
-	volume_usd,
-	market_cap_usd,
-	ticker,
-	description,
-	interval_id,
-	market_data_type_id,
-	source_id,
-	total_supply,
-	max_supply,
-	circulating_supply,
-	sparkline_7d,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		start_date,
+		end_date,
+		asset_id,
+		open_usd,
+		close_usd,
+		high_usd,
+		low_usd,
+		price_usd,
+		volume_usd,
+		market_cap_usd,
+		ticker,
+		description,
+		interval_id,
+		market_data_type_id,
+		source_id,
+		total_supply,
+		max_supply,
+		circulating_supply,
+		sparkline_7d,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
 	FROM market_data`
 	if len(ids) > 0 {
 		strIds := utils.SplitToString(ids, ",")
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	marketDataList := make([]MarketData, 0)
-	for results.Next() {
-		var marketData MarketData
-		results.Scan(
-			&marketData.ID,
-			&marketData.UUID,
-			&marketData.Name,
-			&marketData.AlternateName,
-			&marketData.StartDate,
-			&marketData.EndDate,
-			&marketData.AssetID,
-			&marketData.OpenUSD,
-			&marketData.CloseUSD,
-			&marketData.HighUSD,
-			&marketData.LowUSD,
-			&marketData.PriceUSD,
-			&marketData.VolumeUSD,
-			&marketData.MarketCapUSD,
-			&marketData.Ticker,
-			&marketData.Description,
-			&marketData.IntervalID,
-			&marketData.MarketDataTypeID,
-			&marketData.SourceID,
-			&marketData.TotalSupply,
-			&marketData.MaxSupply,
-			&marketData.CirculatingSupply,
-			&marketData.Sparkline7d,
-			&marketData.CreatedBy,
-			&marketData.CreatedAt,
-			&marketData.UpdatedBy,
-			&marketData.UpdatedAt,
-		)
-
-		marketDataList = append(marketDataList, marketData)
+	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[MarketData])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return marketDataList, nil
 }
 
-func GetMarketDataListByUUIDs(UUIDList []string) ([]MarketData, error) {
+func GetMarketDataListByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]MarketData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	start_date,
-	end_date,
-	asset_id,
-	open_usd,
-	close_usd,
-	high_usd,
-	low_usd,
-	price_usd,
-	volume_usd,
-	market_cap_usd,
-	ticker,
-	description,
-	interval_id,
-	market_data_type_id,
-	source_id,
-	total_supply,
-	max_supply,
-	circulating_supply,
-	sparkline_7d,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		start_date,
+		end_date,
+		asset_id,
+		open_usd,
+		close_usd,
+		high_usd,
+		low_usd,
+		price_usd,
+		volume_usd,
+		market_cap_usd,
+		ticker,
+		description,
+		interval_id,
+		market_data_type_id,
+		source_id,
+		total_supply,
+		max_supply,
+		circulating_supply,
+		sparkline_7d,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
 	FROM market_data
 	WHERE text(uuid) = ANY($1)
 	`, pq.Array(UUIDList))
@@ -336,346 +200,62 @@ func GetMarketDataListByUUIDs(UUIDList []string) ([]MarketData, error) {
 		return nil, err
 	}
 	defer results.Close()
-	marketDataList := make([]MarketData, 0)
-	for results.Next() {
-		var marketData MarketData
-		results.Scan(
-			&marketData.ID,
-			&marketData.UUID,
-			&marketData.Name,
-			&marketData.AlternateName,
-			&marketData.StartDate,
-			&marketData.EndDate,
-			&marketData.AssetID,
-			&marketData.OpenUSD,
-			&marketData.CloseUSD,
-			&marketData.HighUSD,
-			&marketData.LowUSD,
-			&marketData.PriceUSD,
-			&marketData.VolumeUSD,
-			&marketData.MarketCapUSD,
-			&marketData.Ticker,
-			&marketData.Description,
-			&marketData.IntervalID,
-			&marketData.MarketDataTypeID,
-			&marketData.SourceID,
-			&marketData.TotalSupply,
-			&marketData.MaxSupply,
-			&marketData.CirculatingSupply,
-			&marketData.Sparkline7d,
-			&marketData.CreatedBy,
-			&marketData.CreatedAt,
-			&marketData.UpdatedBy,
-			&marketData.UpdatedAt,
-		)
-
-		marketDataList = append(marketDataList, marketData)
+	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[MarketData])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return marketDataList, nil
 }
 
-func GetStartAndEndDateDiffMarketDataList(diffInDate int) ([]MarketData, error) {
+func GetStartAndEndDateDiffMarketDataList(dbConnPgx utils.PgxIface, diffInDate *int) ([]MarketData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	id,
-	uuid, 
-	name, 
-	alternate_name, 
-	start_date,
-	end_date,
-	asset_id,
-	open_usd,
-	close_usd,
-	high_usd,
-	low_usd,
-	price_usd,
-	volume_usd,
-	market_cap_usd,
-	ticker,
-	description,
-	interval_id,
-	market_data_type_id,
-	source_id,
-	total_supply,
-	max_supply,
-	circulating_supply,
-	sparkline_7d,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		start_date,
+		end_date,
+		asset_id,
+		open_usd,
+		close_usd,
+		high_usd,
+		low_usd,
+		price_usd,
+		volume_usd,
+		market_cap_usd,
+		ticker,
+		description,
+		interval_id,
+		market_data_type_id,
+		source_id,
+		total_supply,
+		max_supply,
+		circulating_supply,
+		sparkline_7d,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
 	FROM market_data
 	WHERE DATE_PART('day', AGE(start_date, end_date)) =$1
-	`, diffInDate)
+	`, *diffInDate)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	marketDataList := make([]MarketData, 0)
-	for results.Next() {
-		var marketData MarketData
-		results.Scan(
-			&marketData.ID,
-			&marketData.UUID,
-			&marketData.Name,
-			&marketData.AlternateName,
-			&marketData.StartDate,
-			&marketData.EndDate,
-			&marketData.AssetID,
-			&marketData.OpenUSD,
-			&marketData.CloseUSD,
-			&marketData.HighUSD,
-			&marketData.LowUSD,
-			&marketData.PriceUSD,
-			&marketData.VolumeUSD,
-			&marketData.MarketCapUSD,
-			&marketData.Ticker,
-			&marketData.Description,
-			&marketData.IntervalID,
-			&marketData.MarketDataTypeID,
-			&marketData.SourceID,
-			&marketData.TotalSupply,
-			&marketData.MaxSupply,
-			&marketData.CirculatingSupply,
-			&marketData.Sparkline7d,
-			&marketData.CreatedBy,
-			&marketData.CreatedAt,
-			&marketData.UpdatedBy,
-			&marketData.UpdatedAt,
-		)
-
-		marketDataList = append(marketDataList, marketData)
+	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[MarketData])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return marketDataList, nil
 }
-func GetLatestLiveMarketData() ([]MarketDataQuoteResults, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-	SELECT 
-	m.start_date,
-	mj.end_date,
-	baseA.name, 
-	baseA.ticker,
-	quoteA.name,
-	quoteA.ticker,
-	mq.market_data_id,
-	mq.base_asset_id,
-	mq.quote_asset_id,
-	mq.name,
-	mq.uuid,
-	mq.alternate_name,
-	mq.open,
-	mq.close,
-	mq.high_24h,
-	mq.low_24h,
-	mq.price,
-	mq.volume,
-	mq.market_cap,
-	mq.ticker,
-	mq.description,
-	mq.source_id,
-	mq.fully_diluted_valution,
-	mq.ath,
-	mq.ath_date,
-	mq.atl,
-	mq.atl_date,
-	mq.price_change_1h,
-	mq.price_change_24h,
-	mq.price_change_7d,
-	mq.price_change_30d,
-	mq.price_change_60d,
-	mq.price_change_200d,
-	mq.price_change_1y,
-	mq.created_by,
-	mq.created_at,
-	mq.updated_by,
-	mq.updated_at
-	FROM market_data_quotes mq
-	LEFT JOIN market_data m ON m.id = mq.market_data_id
-	LEFT JOIN market_data_jobs mj on m.id = mj.market_data_id
-	LEFT JOIN assets baseA on mq.base_asset_id = baseA.id
-	LEFT JOIN assets quoteA on mq.quote_asset_id = quoteA.id
-	WHERE mq.market_data_id IN (
-		SELECT market_data_id FROM market_data_jobs
-		where job_id = (
-			SELECT ID FROM jobs WHERE
-			job_category_id = 56 
-			ORDER BY end_date desc
-			LIMIT 1
-			)
-		)
-	AND mq.quote_asset_id = 34
-	ORDER BY baseA.ticker, m.start_date desc`)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	MarketDataQuoteResultsList := make([]MarketDataQuoteResults, 0)
-	for results.Next() {
-		var MarketDataQuoteResults MarketDataQuoteResults
-		results.Scan(
-			&MarketDataQuoteResults.StartDate,
-			&MarketDataQuoteResults.EndDate,
-			&MarketDataQuoteResults.BaseAssetName,
-			&MarketDataQuoteResults.BaseAssetTicker,
-			&MarketDataQuoteResults.QuoteAssetName,
-			&MarketDataQuoteResults.QuoteAssetTicker,
-			&MarketDataQuoteResults.MarketDataID,
-			&MarketDataQuoteResults.BaseAssetID,
-			&MarketDataQuoteResults.QuoteAssetID,
-			&MarketDataQuoteResults.UUID,
-			&MarketDataQuoteResults.Name,
-			&MarketDataQuoteResults.AlternateName,
-			&MarketDataQuoteResults.Open,
-			&MarketDataQuoteResults.Close,
-			&MarketDataQuoteResults.High24h,
-			&MarketDataQuoteResults.Low24h,
-			&MarketDataQuoteResults.Price,
-			&MarketDataQuoteResults.Volume,
-			&MarketDataQuoteResults.MarketCap,
-			&MarketDataQuoteResults.Ticker,
-			&MarketDataQuoteResults.Description,
-			&MarketDataQuoteResults.SourceID,
-			&MarketDataQuoteResults.FullyDilutedValution,
-			&MarketDataQuoteResults.Ath,
-			&MarketDataQuoteResults.AthDate,
-			&MarketDataQuoteResults.Atl,
-			&MarketDataQuoteResults.AtlDate,
-			&MarketDataQuoteResults.PriceChange1h,
-			&MarketDataQuoteResults.PriceChange24h,
-			&MarketDataQuoteResults.PriceChange7d,
-			&MarketDataQuoteResults.PriceChange30d,
-			&MarketDataQuoteResults.PriceChange60d,
-			&MarketDataQuoteResults.PriceChange200d,
-			&MarketDataQuoteResults.PriceChange1y,
-			&MarketDataQuoteResults.CreatedBy,
-			&MarketDataQuoteResults.CreatedAt,
-			&MarketDataQuoteResults.UpdatedBy,
-			&MarketDataQuoteResults.UpdatedAt,
-		)
 
-		MarketDataQuoteResultsList = append(MarketDataQuoteResultsList, MarketDataQuoteResults)
-	}
-	return MarketDataQuoteResultsList, nil
-}
-
-func GetAllMarketDataFromStrategyID(strategyID *int) ([]MarketDataQuoteResults, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-	SELECT 
-	m.start_date,
-	mj.end_date,
-	baseA.name, 
-	baseA.ticker,
-	quoteA.name,
-	quoteA.ticker,
-	mq.market_data_id,
-	mq.base_asset_id,
-	mq.quote_asset_id,
-	mq.name,
-	mq.uuid,
-	mq.alternate_name,
-	mq.open,
-	mq.close,
-	mq.high_24h,
-	mq.low_24h,
-	mq.price,
-	mq.volume,
-	mq.market_cap,
-	mq.ticker,
-	mq.description,
-	mq.source_id,
-	mq.fully_diluted_valution,
-	mq.ath,
-	mq.ath_date,
-	mq.atl,
-	mq.atl_date,
-	mq.price_change_1h,
-	mq.price_change_24h,
-	mq.price_change_7d,
-	mq.price_change_30d,
-	mq.price_change_60d,
-	mq.price_change_200d,
-	mq.price_change_1y,
-	mq.created_by,
-	mq.created_at,
-	mq.updated_by,
-	mq.updated_at
-	FROM market_data_quotes mq
-	LEFT JOIN market_data m ON m.id = mq.market_data_id
-	LEFT JOIN market_data_jobs mj on m.id = mj.market_data_id
-	LEFT JOIN assets baseA on mq.base_asset_id = baseA.id
-	LEFT JOIN assets quoteA on mq.quote_asset_id = quoteA.id
-	WHERE mq.market_data_id IN (
-		SELECT market_data_id 
-			FROM market_data_jobs
-			WHERE job_id IN (
-			SELECT job_id FROM strategy_jobs
-			where strategy_id = $1
-		)
-	)
-	-- 	AND mq.quote_asset_id = 34 ignore usd since need ecd ptp / ptp where base is ptp
-	ORDER BY m.start_date desc , baseA.ticker`, strategyID)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	MarketDataQuoteResultsList := make([]MarketDataQuoteResults, 0)
-	for results.Next() {
-		var MarketDataQuoteResults MarketDataQuoteResults
-		results.Scan(
-			&MarketDataQuoteResults.StartDate,
-			&MarketDataQuoteResults.EndDate,
-			&MarketDataQuoteResults.BaseAssetName,
-			&MarketDataQuoteResults.BaseAssetTicker,
-			&MarketDataQuoteResults.QuoteAssetName,
-			&MarketDataQuoteResults.QuoteAssetTicker,
-			&MarketDataQuoteResults.MarketDataID,
-			&MarketDataQuoteResults.BaseAssetID,
-			&MarketDataQuoteResults.QuoteAssetID,
-			&MarketDataQuoteResults.UUID,
-			&MarketDataQuoteResults.Name,
-			&MarketDataQuoteResults.AlternateName,
-			&MarketDataQuoteResults.Open,
-			&MarketDataQuoteResults.Close,
-			&MarketDataQuoteResults.High24h,
-			&MarketDataQuoteResults.Low24h,
-			&MarketDataQuoteResults.Price,
-			&MarketDataQuoteResults.Volume,
-			&MarketDataQuoteResults.MarketCap,
-			&MarketDataQuoteResults.Ticker,
-			&MarketDataQuoteResults.Description,
-			&MarketDataQuoteResults.SourceID,
-			&MarketDataQuoteResults.FullyDilutedValution,
-			&MarketDataQuoteResults.Ath,
-			&MarketDataQuoteResults.AthDate,
-			&MarketDataQuoteResults.Atl,
-			&MarketDataQuoteResults.AtlDate,
-			&MarketDataQuoteResults.PriceChange1h,
-			&MarketDataQuoteResults.PriceChange24h,
-			&MarketDataQuoteResults.PriceChange7d,
-			&MarketDataQuoteResults.PriceChange30d,
-			&MarketDataQuoteResults.PriceChange60d,
-			&MarketDataQuoteResults.PriceChange200d,
-			&MarketDataQuoteResults.PriceChange1y,
-			&MarketDataQuoteResults.CreatedBy,
-			&MarketDataQuoteResults.CreatedAt,
-			&MarketDataQuoteResults.UpdatedBy,
-			&MarketDataQuoteResults.UpdatedAt,
-		)
-
-		MarketDataQuoteResultsList = append(MarketDataQuoteResultsList, MarketDataQuoteResults)
-	}
-	return MarketDataQuoteResultsList, nil
-}
-
-func UpdateMarketData(marketData MarketData) error {
+func UpdateMarketData(dbConnPgx utils.PgxIface, marketData *MarketData) error {
 	// if the marketData id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -685,8 +265,13 @@ func UpdateMarketData(marketData MarketData) error {
 	layoutPostgres := utils.LayoutPostgres
 	startDate := marketData.StartDate
 	endDate := marketData.EndDate
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateMarketData DbConn.Begin   %s", err.Error())
+		return err
+	}
 	log.Println(fmt.Sprintf("Updating start: %s, end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE market_data SET 
+	sql := `UPDATE market_data SET 
 		name=$1,  
 		alternate_name=$2, 
 		start_date =$3,
@@ -711,7 +296,9 @@ func UpdateMarketData(marketData MarketData) error {
 
 		updated_by=$22, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$23`,
+		WHERE id=$23`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		marketData.Name,                             //1
 		marketData.AlternateName,                    //2
 		marketData.StartDate.Format(layoutPostgres), //3
@@ -734,20 +321,25 @@ func UpdateMarketData(marketData MarketData) error {
 		marketData.CirculatingSupply,                //20
 		pq.Array(marketData.Sparkline7d),            //21
 		marketData.UpdatedBy,                        //22
-		marketData.ID)                               //23
-	if err != nil {
-		log.Println(err.Error())
+		marketData.ID);                              //23
+	err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertMarketData(marketData MarketData) (int, error) {
+func InsertMarketData(dbConnPgx utils.PgxIface, marketData *MarketData) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertMarketData DbConn.Begin   %s", err.Error())
+		return -1, err
+	}
 	var insertID int
 	layoutPostgres := utils.LayoutPostgres
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO market_data 
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO market_data 
 	(
 		name,  
 		uuid,
@@ -827,14 +419,20 @@ func InsertMarketData(marketData MarketData) (int, error) {
 		pq.Array(marketData.Sparkline7d),            //21
 		marketData.CreatedBy,                        //22
 	).Scan(&insertID)
-
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, err
 	}
 	return int(insertID), nil
 }
-func InsertMarketDataListManual(marketDataList []MarketData) error {
+func InsertMarketDataList(dbConnPgx utils.PgxIface, marketDataList []MarketData) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -898,88 +496,7 @@ func InsertMarketDataListManual(marketDataList []MarketData) error {
 		}
 		rows = append(rows, row)
 	}
-	// Given db is a *sql.DB
-	// conn, err := database.DbConn.Conn(ctx)
-	// if err != nil {
-	// 	// handle error from acquiring connection from DB pool
-	// }
-
-	// err = conn.Raw(func(driverConn interface{}) error {
-	// 	conn := driverConn.(*stdlib.Conn).Conn() // conn is a *pgx.Conn
-	// 	// Do pgx specific stuff with conn
-	// 	copyCount, err := conn.CopyFrom(context.Background(),
-	// 		pgx.Identifier{"market_data"},
-	// 		[]string{
-	// 			"name",                //1
-	// 			"uuid",                //2
-	// 			"alternate_name",      //3
-	// 			"start_date",          //4
-	// 			"end_date",            //5
-	// 			"asset_id",            //6
-	// 			"open_usd",            //7
-	// 			"close_usd",           //8
-	// 			"high_usd",            //9
-	// 			"low_usd",             //10
-	// 			"price_usd",           //11
-	// 			"volume_usd",          //12
-	// 			"market_cap_usd",      //13
-	// 			"ticker",              //14
-	// 			"description",         //15
-	// 			"interval_id",         //16
-	// 			"market_data_type_id", //17
-	// 			"source_id",           //18
-	// 			"total_supply",        //19
-	// 			"max_supply",          //20
-	// 			"circulating_supply",  //21
-	// 			"sparkline_7d",        //22
-	// 			"created_by",          //23
-	// 			"created_at",          //24
-	// 			"updated_by",          //25
-	// 			"updated_at",          //26
-	// 		},
-	// 		pgx.CopyFromRows(rows),
-	// 	)
-	// 	log.Println(fmt.Printf("copy count: %d", copyCount))
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 		// handle error that occurred while using *pgx.Conn
-	// 	}
-	// 	return nil
-	// })
-	// _, err := database.DbConnPgx.CopyFrom(
-	// 	ctx,
-	// 	pgx.Identifier{"market_data"},
-	// 	[]string{
-	// 		"name",                //1
-	// 		"uuid",                //2
-	// 		// "alternate_name",      //3
-	// 		"start_date",          //4
-	// 		"end_date",            //5
-	// 		"asset_id",            //6
-	// 		"open_usd",            //7
-	// 		"close_usd",           //8
-	// 		"high_usd",            //9
-	// 		"low_usd",             //10
-	// 		"price_usd",           //11
-	// 		"volume_usd",          //12
-	// 		"market_cap_usd",      //13
-	// 		"ticker",              //14
-	// 		"description",         //15
-	// 		"interval_id",         //16
-	// 		"market_data_type_id", //17
-	// 		"source_id",           //18
-	// 		"total_supply",        //19
-	// 		"max_supply",          //20
-	// 		"circulating_supply",  //21
-	// 		// "sparkline_7d",        //22
-	// 		"created_by", //23
-	// 		"created_at", //24
-	// 		"updated_by", //25
-	// 		"updated_at", //26
-	// 	},
-	// 	pgx.CopyFromRows(rows),
-	// )
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"market_data"},
 		[]string{
@@ -1012,482 +529,92 @@ func InsertMarketDataListManual(marketDataList []MarketData) error {
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
-	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
-	}
-
-	return nil
-}
-
-func InsertMarketDataList(marketDataList []MarketData) error {
-	txn, err := database.DbConn.Begin()
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-
-	layoutPostgres := utils.LayoutPostgres
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	stmt, err := txn.Prepare(pq.CopyIn(
-		"market_data",
-		"name",                //1
-		"uuid",                //2
-		"alternate_name",      //3
-		"start_date",          //4
-		"end_date",            //5
-		"asset_id",            //6
-		"open_usd",            //7
-		"close_usd",           //8
-		"high_usd",            //9
-		"low_usd",             //10
-		"price_usd",           //11
-		"volume_usd",          //12
-		"market_cap_usd",      //13
-		"ticker",              //14
-		"description",         //15
-		"interval_id",         //16
-		"market_data_type_id", //17
-		"source_id",           //18
-		"total_supply",        //19
-		"max_supply",          //20
-		"circulating_supply",  //21
-		"sparkline_7d",        //22
-		"created_by",          //23
-		"created_at",          //24
-		"updated_by",          //25
-		"updated_at",          //26
-	))
-	if err != nil {
-		log.Fatal(err)
-	}
-	loc, _ := time.LoadLocation("UTC")
-	now := time.Now().In(loc)
-
-	for _, marketData := range marketDataList {
-		_, err = stmt.Exec(
-			marketData.Name,                             //1
-			marketData.UUID,                             //2
-			marketData.AlternateName,                    //3
-			marketData.StartDate.Format(layoutPostgres), //4
-			marketData.EndDate.Format(layoutPostgres),   //5
-			marketData.AssetID,                          //6
-			marketData.OpenUSD,                          //7
-			marketData.CloseUSD,                         //8
-			marketData.HighUSD,                          //9
-			marketData.LowUSD,                           //10
-			marketData.PriceUSD,                         //11
-			marketData.VolumeUSD,                        //12
-			marketData.MarketCapUSD,                     //13
-			marketData.Ticker,                           //14
-			marketData.Description,                      //15
-			marketData.IntervalID,                       //16
-			marketData.MarketDataTypeID,                 //17
-			marketData.SourceID,                         //18
-			marketData.TotalSupply,                      //19
-			marketData.MaxSupply,                        //20
-			marketData.CirculatingSupply,                //21
-			pq.Array(marketData.Sparkline7d),            //22
-			marketData.CreatedBy,                        //23
-			now.Format(layoutPostgres),                  //24
-			marketData.CreatedBy,                        //25
-			now.Format(layoutPostgres),                  //26
-		)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	_, err = stmt.ExecContext(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = stmt.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = txn.Commit()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return nil
-}
-
-func InsertMarketDataQuote(marketDataQuote MarketDataQuote) (int, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	var insertID int
-	layoutPostgres := utils.LayoutPostgres
-	loc, _ := time.LoadLocation("UTC")
-	now := time.Now().In(loc)
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO market_data_quotes 
-	(
-		"market_data_id",         //1
-		"base_asset_id",          //2
-		"quote_asset_id",         //3
-		"name",                   //4
-		"uuid",                   //5
-		"alternate_name",         //6
-		"open",                   //7
-		"close",                  //8
-		"high_24h",               //9
-		"low_24h",                //10
-		"price",                  //11
-		"volume",                 //12
-		"market_cap",             //13
-		"ticker",                 //14
-		"description",            //15
-		"source_id",              //16
-		"fully_diluted_valution", //17
-		"ath",                    //18
-		"ath_date",               //19
-		"atl",                    //20
-		"atl_date",               //21
-		"price_change_1h",        //22
-		"price_change_24h",       //23
-		"price_change_7d",        //24
-		"price_change_30d",       //25
-		"price_change_60d",       //26
-		"price_change_200d",      //27
-		"price_change_1y",        //28
-		"created_by",             //29
-		"created_at",             //30
-		"updated_by",             //31
-		"updated_at",             //32
-		) VALUES (
-			$1,
-			$2,
-			$3, 
-			$4, 
-			$5, 
-			$6, 
-			$7,
-			$8,
-			$9,
-			$10,
-			$11,
-			$12,
-			$13,
-			$14,
-			$15,
-			$16,
-			$17,
-			$18,
-			$19,
-			$20,
-			$21,
-			$22,
-			$23,
-			$24,
-			$25,
-			$26,
-			$27,
-			$28,
-			$29,
-			$30,
-			$31,
-			$32,
-		)
-		RETURNING id`,
-		marketDataQuote.MarketDataID,         //1
-		marketDataQuote.BaseAssetID,          //2
-		marketDataQuote.QuoteAssetID,         //3
-		marketDataQuote.Name,                 //4
-		marketDataQuote.UUID,                 //5
-		marketDataQuote.AlternateName,        //6
-		marketDataQuote.Open,                 //7
-		marketDataQuote.Close,                //8
-		marketDataQuote.High24h,              //9
-		marketDataQuote.Low24h,               //10
-		marketDataQuote.Price,                //11
-		marketDataQuote.Volume,               //12
-		marketDataQuote.MarketCap,            //13
-		marketDataQuote.Ticker,               //14
-		marketDataQuote.Description,          //15
-		marketDataQuote.SourceID,             //16
-		marketDataQuote.FullyDilutedValution, //17
-		marketDataQuote.Ath,                  //18
-		marketDataQuote.AthDate,              //19
-		marketDataQuote.Atl,                  //20
-		marketDataQuote.AtlDate,              //21
-		marketDataQuote.PriceChange1h,        //22
-		marketDataQuote.PriceChange24h,       //23
-		marketDataQuote.PriceChange7d,        //24
-		marketDataQuote.PriceChange30d,       //25
-		marketDataQuote.PriceChange60d,       //26
-		marketDataQuote.PriceChange200d,      //27
-		marketDataQuote.PriceChange1y,        //28
-		marketDataQuote.CreatedBy,            //29
-		now.Format(layoutPostgres),           //30
-		marketDataQuote.CreatedBy,            //31
-		now.Format(layoutPostgres),           //32
-	).Scan(&insertID)
-
+	log.Println(fmt.Printf("InsertMarketDataListManual: copy count: %d", copyCount))
 	if err != nil {
 		log.Println(err.Error())
-		return 0, err
+		return err
 	}
-	return int(insertID), nil
+
+	return nil
 }
-func InsertMarketDataQuoteListManual(marketDataQuoteList []MarketDataQuote) error {
+
+// for refinedev
+func GetMarketDataListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]MarketData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	loc, _ := time.LoadLocation("UTC")
-	now := time.Now().In(loc)
-	rows := [][]interface{}{}
-	for i, _ := range marketDataQuoteList {
-		marketDataQuote := marketDataQuoteList[i]
-		uuidString := &pgtype.UUID{}
-		uuidString.Set(marketDataQuote.UUID)
-		row := []interface{}{
-			*marketDataQuote.MarketDataID,                                     //1
-			*marketDataQuote.BaseAssetID,                                      //2
-			*marketDataQuote.QuoteAssetID,                                     //3
-			marketDataQuote.Name,                                              //4
-			uuidString,                                                        //5
-			marketDataQuote.AlternateName,                                     //6
-			utils.ConvertFloatToDecimal(marketDataQuote.Open),                 //7
-			utils.ConvertFloatToDecimal(marketDataQuote.Close),                //8
-			utils.ConvertFloatToDecimal(marketDataQuote.High24h),              //9
-			utils.ConvertFloatToDecimal(marketDataQuote.Low24h),               //10
-			utils.ConvertFloatToDecimal(marketDataQuote.Price),                //11
-			utils.ConvertFloatToDecimal(marketDataQuote.Volume),               //12
-			utils.ConvertFloatToDecimal(marketDataQuote.MarketCap),            //13
-			marketDataQuote.Ticker,                                            //14
-			marketDataQuote.Description,                                       //15
-			*marketDataQuote.SourceID,                                         //16
-			utils.ConvertFloatToDecimal(marketDataQuote.FullyDilutedValution), //17
-			utils.ConvertFloatToDecimal(marketDataQuote.Ath),                  //18
-			&marketDataQuote.AthDate,                                          //19
-			utils.ConvertFloatToDecimal(marketDataQuote.Atl),                  //20
-			&marketDataQuote.AtlDate,                                          //21
-			utils.ConvertFloatToDecimal(marketDataQuote.PriceChange1h),        //22
-			utils.ConvertFloatToDecimal(marketDataQuote.PriceChange24h),       //23
-			utils.ConvertFloatToDecimal(marketDataQuote.PriceChange7d),        //24
-			utils.ConvertFloatToDecimal(marketDataQuote.PriceChange30d),       //25
-			utils.ConvertFloatToDecimal(marketDataQuote.PriceChange60d),       //26
-			utils.ConvertFloatToDecimal(marketDataQuote.PriceChange200d),      //27
-			utils.ConvertFloatToDecimal(marketDataQuote.PriceChange1y),        //28
-			marketDataQuote.CreatedBy,                                         //29
-			&now,                                                              //30
-			marketDataQuote.CreatedBy,                                         //31
-			&now,                                                              //32
+	sql := `SELECT 
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		start_date,
+		end_date,
+		asset_id,
+		open_usd,
+		close_usd,
+		high_usd,
+		low_usd,
+		price_usd,
+		volume_usd,
+		market_cap_usd,
+		ticker,
+		description,
+		interval_id,
+		market_data_type_id,
+		source_id,
+		total_supply,
+		max_supply,
+		circulating_supply,
+		sparkline_7d,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
+	FROM market_data
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
 		}
-		rows = append(rows, row)
 	}
-	// Given db is a *sql.DB
-	// conn, err := database.DbConn.Conn(ctx)
-	// if err != nil {
-	// 	// handle error from acquiring connection from DB pool
-	// }
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
 
-	// err = conn.Raw(func(driverConn interface{}) error {
-	// 	conn := driverConn.(*stdlib.Conn).Conn() // conn is a *pgx.Conn
-	// 	// Do pgx specific stuff with conn
-	// 	copyCount, err := conn.CopyFrom(context.Background(),
-	// 		pgx.Identifier{"market_data_quotes"},
-	// 		[]string{
-	// 			"market_data_id",
-	// 			"base_asset_id",
-	// 			"quote_asset_id",
-	// 			"name",
-	// 			"uuid",
-	// 			"alternate_name",
-	// 			"open",
-	// 			"close",
-	// 			"high_24h",
-	// 			"low_24h",
-	// 			"price",
-	// 			"volume",
-	// 			"market_cap",
-	// 			"ticker",
-	// 			"description",
-	// 			"source_id",
-	// 			"fully_diluted_valution",
-	// 			"ath",
-	// 			"ath_date",
-	// 			"atl",
-	// 			"atl_date",
-	// 			"price_change_1h",
-	// 			"price_change_24h",
-	// 			"price_change_7d",
-	// 			"price_change_30d",
-	// 			"price_change_60d",
-	// 			"price_change_200d",
-	// 			"price_change_1y",
-	// 			"created_by",
-	// 			"created_at",
-	// 			"updated_by",
-	// 			"updated_at",
-	// 		},
-	// 		pgx.CopyFromRows(rows),
-	// 	)
-	// 	log.Println(fmt.Printf("copy count: %d", copyCount))
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 		// handle error that occurred while using *pgx.Conn
-	// 	}
-	// 	return nil
-	// })
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[MarketData])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return marketDataList, nil
+}
 
-	copyCount, err := database.DbConnPgx.CopyFrom(
-		ctx,
-		pgx.Identifier{"market_data_quotes"},
-		[]string{
-			"market_data_id",
-			"base_asset_id",
-			"quote_asset_id",
-			"name",
-			"uuid",
-			"alternate_name",
-			"open",
-			"close",
-			"high_24h",
-			"low_24h",
-			"price",
-			"volume",
-			"market_cap",
-			"ticker",
-			"description",
-			"source_id",
-			"fully_diluted_valution",
-			"ath",
-			"ath_date",
-			"atl",
-			"atl_date",
-			"price_change_1h",
-			"price_change_24h",
-			"price_change_7d",
-			"price_change_30d",
-			"price_change_60d",
-			"price_change_200d",
-			"price_change_1y",
-			"created_by",
-			"created_at",
-			"updated_by",
-			"updated_at",
-		},
-		pgx.CopyFromRows(rows),
+func GetTotalMarketDataCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT COUNT(*) FROM market_data`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err)
+		return nil, err
 	}
-
-	// if err != nil {
-	// 	// handle error that occurred while using *pgx.Conn
-	// }
-	return nil
-}
-func InsertMarketDataQuoteList(marketDataQuoteList []MarketDataQuote) error {
-	txn, err := database.DbConn.Begin()
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-
-	layoutPostgres := utils.LayoutPostgres
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	stmt, err := txn.Prepare(pq.CopyIn(
-		"market_data_quotes",
-		"market_data_id",         //1
-		"base_asset_id",          //2
-		"quote_asset_id",         //3
-		"name",                   //4
-		"uuid",                   //5
-		"alternate_name",         //6
-		"open",                   //7
-		"close",                  //8
-		"high_24h",               //9
-		"low_24h",                //10
-		"price",                  //11
-		"volume",                 //12
-		"market_cap",             //13
-		"ticker",                 //14
-		"description",            //15
-		"source_id",              //16
-		"fully_diluted_valution", //17
-		"ath",                    //18
-		"ath_date",               //19
-		"atl",                    //20
-		"atl_date",               //21
-		"price_change_1h",        //22
-		"price_change_24h",       //23
-		"price_change_7d",        //24
-		"price_change_30d",       //25
-		"price_change_60d",       //26
-		"price_change_200d",      //27
-		"price_change_1y",        //28
-		"created_by",             //29
-		"created_at",             //30
-		"updated_by",             //31
-		"updated_at",             //32
-	))
-	if err != nil {
-		log.Fatal(err)
-	}
-	loc, _ := time.LoadLocation("UTC")
-	now := time.Now().In(loc)
-
-	for _, marketDataQuote := range marketDataQuoteList {
-		_, err = stmt.Exec(
-			marketDataQuote.MarketDataID,         //1
-			marketDataQuote.BaseAssetID,          //2
-			marketDataQuote.QuoteAssetID,         //3
-			marketDataQuote.Name,                 //4
-			marketDataQuote.UUID,                 //5
-			marketDataQuote.AlternateName,        //6
-			marketDataQuote.Open,                 //7
-			marketDataQuote.Close,                //8
-			marketDataQuote.High24h,              //9
-			marketDataQuote.Low24h,               //10
-			marketDataQuote.Price,                //11
-			marketDataQuote.Volume,               //12
-			marketDataQuote.MarketCap,            //13
-			marketDataQuote.Ticker,               //14
-			marketDataQuote.Description,          //15
-			marketDataQuote.SourceID,             //16
-			marketDataQuote.FullyDilutedValution, //17
-			marketDataQuote.Ath,                  //18
-			marketDataQuote.AthDate,              //19
-			marketDataQuote.Atl,                  //20
-			marketDataQuote.AtlDate,              //21
-			marketDataQuote.PriceChange1h,        //22
-			marketDataQuote.PriceChange24h,       //23
-			marketDataQuote.PriceChange7d,        //24
-			marketDataQuote.PriceChange30d,       //25
-			marketDataQuote.PriceChange60d,       //26
-			marketDataQuote.PriceChange200d,      //27
-			marketDataQuote.PriceChange1y,        //28
-			marketDataQuote.CreatedBy,            //29
-			now.Format(layoutPostgres),           //30
-			marketDataQuote.CreatedBy,            //31
-			now.Format(layoutPostgres),           //32
-		)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	_, err = stmt.ExecContext(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = stmt.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = txn.Commit()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return nil
+	return &totalCount, nil
 }

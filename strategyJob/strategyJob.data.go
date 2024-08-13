@@ -9,267 +9,159 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
-func GetStrategyJob(strategyID int, jobID int) (*StrategyJob, error) {
+func GetStrategyJob(dbConnPgx utils.PgxIface, strategyID, jobID *int) (*StrategyJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
-	strategy_id,  
-	job_id,
-	uuid, 
-	name,
-	alternate_name,
-	start_date,
-	end_date,
-	description,
-	status_id,
-	response_status,
-	request_url,
-	request_body,
-	request_method,
-	response_data,
-	response_data_json,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
+	row, err := dbConnPgx.Query(ctx, `SELECT
+		strategy_id,  
+		job_id,
+		uuid, 
+		name,
+		alternate_name,
+		start_date,
+		end_date,
+		description,
+		status_id,
+		response_status,
+		request_url,
+		request_body,
+		request_method,
+		response_data,
+		response_data_json,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
 	FROM strategy_jobs 
 	WHERE strategy_id = $1
 	AND job_id = $2
-	`, strategyID, jobID)
-
-	strategyJob := &StrategyJob{}
-	err := row.Scan(
-		&strategyJob.StrategyID,
-		&strategyJob.JobID,
-		&strategyJob.UUID,
-		&strategyJob.Name,
-		&strategyJob.AlternateName,
-		&strategyJob.StartDate,
-		&strategyJob.EndDate,
-		&strategyJob.Description,
-		&strategyJob.StatusID,
-		&strategyJob.ResponseStatus,
-		&strategyJob.RequestUrl,
-		&strategyJob.RequestBody,
-		&strategyJob.RequestMethod,
-		&strategyJob.ResponseData,
-		&strategyJob.ResponseDataJson,
-		&strategyJob.CreatedBy,
-		&strategyJob.CreatedAt,
-		&strategyJob.UpdatedBy,
-		&strategyJob.UpdatedAt,
-	)
+	`, *strategyID, *jobID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	strategyJob, err := pgx.CollectOneRow(row, pgx.RowToStructByName[StrategyJob])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return strategyJob, nil
+	return &strategyJob, nil
 }
 
-func GetStrategyJobByStrategyID(strategyID int) (*StrategyJob, error) {
+func GetStrategyJobByStrategyID(dbConnPgx utils.PgxIface, strategyID *int) (*StrategyJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
-	strategy_id,
-	job_id,
-	uuid, 
-	name,
-	alternate_name,
-	start_date,
-	end_date,
-	description,
-	status_id,
-	response_status,
-	request_url,
-	request_body,
-	request_method,
-	response_data,
-	response_data_json,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
+	row, err := dbConnPgx.Query(ctx, `SELECT
+		strategy_id,
+		job_id,
+		uuid, 
+		name,
+		alternate_name,
+		start_date,
+		end_date,
+		description,
+		status_id,
+		response_status,
+		request_url,
+		request_body,
+		request_method,
+		response_data,
+		response_data_json,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
 	FROM strategy_jobs 
 	WHERE strategy_id = $1
-	`, strategyID)
-
-	strategyJob := &StrategyJob{}
-	err := row.Scan(
-		&strategyJob.StrategyID,
-		&strategyJob.JobID,
-		&strategyJob.UUID,
-		&strategyJob.Name,
-		&strategyJob.AlternateName,
-		&strategyJob.StartDate,
-		&strategyJob.EndDate,
-		&strategyJob.Description,
-		&strategyJob.StatusID,
-		&strategyJob.ResponseStatus,
-		&strategyJob.RequestUrl,
-		&strategyJob.RequestBody,
-		&strategyJob.RequestMethod,
-		&strategyJob.ResponseData,
-		&strategyJob.ResponseDataJson,
-		&strategyJob.CreatedBy,
-		&strategyJob.CreatedAt,
-		&strategyJob.UpdatedBy,
-		&strategyJob.UpdatedAt,
-	)
+	`, *strategyID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	strategyJob, err := pgx.CollectOneRow(row, pgx.RowToStructByName[StrategyJob])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return strategyJob, nil
+	return &strategyJob, nil
 }
 
-func GetTopTenStrategyJobs() ([]StrategyJob, error) {
+func RemoveStrategyJob(dbConnPgx utils.PgxIface, strategyID, jobID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	strategy_id,
-	job_id,
-	uuid, 
-	name,
-	alternate_name,
-	start_date,
-	end_date,
-	description,
-	status_id,
-	response_status,
-	request_url,
-	request_body,
-	request_method,
-	response_data,
-	response_data_json,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
-	FROM strategy_jobs 
-	`)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	strategyJobs := make([]StrategyJob, 0)
-	for results.Next() {
-		var strategyJob StrategyJob
-		results.Scan(
-			&strategyJob.StrategyID,
-			&strategyJob.JobID,
-			&strategyJob.UUID,
-			&strategyJob.Name,
-			&strategyJob.AlternateName,
-			&strategyJob.StartDate,
-			&strategyJob.EndDate,
-			&strategyJob.Description,
-			&strategyJob.StatusID,
-			&strategyJob.ResponseStatus,
-			&strategyJob.RequestUrl,
-			&strategyJob.RequestBody,
-			&strategyJob.RequestMethod,
-			&strategyJob.ResponseData,
-			&strategyJob.ResponseDataJson,
-			&strategyJob.CreatedBy,
-			&strategyJob.CreatedAt,
-			&strategyJob.UpdatedBy,
-			&strategyJob.UpdatedAt,
-		)
-
-		strategyJobs = append(strategyJobs, strategyJob)
-	}
-	return strategyJobs, nil
-}
-
-func RemoveStrategyJob(strategyID int, jobID int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM strategy_jobs WHERE 
-	strategy_id = $1 AND job_id =$2`, strategyID, jobID)
-	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveStrategyJob DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
+	sql := `DELETE FROM strategy_jobs WHERE 
+		strategy_id = $1 AND job_id =$2`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *strategyID, *jobID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func GetStrategyJobList() ([]StrategyJob, error) {
+func GetStrategyJobList(dbConnPgx utils.PgxIface) ([]StrategyJob, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-	strategy_id,
-	job_id,
-	uuid, 
-	name,
-	alternate_name,
-	start_date,
-	end_date,
-	description,
-	status_id,
-	response_status,
-	request_url,
-	request_body,
-	request_method,
-	response_data,
-	response_data_json,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
+		strategy_id,
+		job_id,
+		uuid, 
+		name,
+		alternate_name,
+		start_date,
+		end_date,
+		description,
+		status_id,
+		response_status,
+		request_url,
+		request_body,
+		request_method,
+		response_data,
+		response_data_json,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
 	FROM strategy_jobs`)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	strategyJobs := make([]StrategyJob, 0)
-	for results.Next() {
-		var strategyJob StrategyJob
-		results.Scan(
-			&strategyJob.StrategyID,
-			&strategyJob.JobID,
-			&strategyJob.UUID,
-			&strategyJob.Name,
-			&strategyJob.AlternateName,
-			&strategyJob.StartDate,
-			&strategyJob.EndDate,
-			&strategyJob.Description,
-			&strategyJob.StatusID,
-			&strategyJob.ResponseStatus,
-			&strategyJob.RequestUrl,
-			&strategyJob.RequestBody,
-			&strategyJob.RequestMethod,
-			&strategyJob.ResponseData,
-			&strategyJob.ResponseDataJson,
-			&strategyJob.CreatedBy,
-			&strategyJob.CreatedAt,
-			&strategyJob.UpdatedBy,
-			&strategyJob.UpdatedAt,
-		)
-
-		strategyJobs = append(strategyJobs, strategyJob)
+	strategyJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[StrategyJob])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return strategyJobs, nil
 }
 
-func UpdateStrategyJob(strategyJob StrategyJob) error {
+func UpdateStrategyJob(dbConnPgx utils.PgxIface, strategyJob *StrategyJob) error {
 	// if the strategyJob id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if (strategyJob.StrategyID == nil || *strategyJob.StrategyID == 0) || (strategyJob.JobID == nil || *strategyJob.JobID == 0) {
 		return errors.New("strategyJob has invalid ID")
 	}
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateStrategyJob DbConn.Begin   %s", err.Error())
+		return err
+	}
 	layoutPostgres := utils.LayoutPostgres
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE strategy_jobs SET 
+	sql := `UPDATE strategy_jobs SET 
 		name=$1,  
 		alternate_name=$2, 
 		start_date =$3,
@@ -284,7 +176,9 @@ func UpdateStrategyJob(strategyJob StrategyJob) error {
 		response_data_json =$12,
 		updated_by=$13, 
 		updated_at=current_timestamp at time zone 'UTC'	
-		WHERE strategy_id=$14 AND job_id=$15`,
+		WHERE strategy_id=$14 AND job_id=$15`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		strategyJob.Name,                             //1
 		strategyJob.AlternateName,                    //2
 		strategyJob.StartDate.Format(layoutPostgres), //3
@@ -300,20 +194,24 @@ func UpdateStrategyJob(strategyJob StrategyJob) error {
 		strategyJob.UpdatedBy,                        //13
 		strategyJob.StrategyID,                       //14
 		strategyJob.JobID,                            //15
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertStrategyJob(strategyJob StrategyJob) (int, int, error) {
+func InsertStrategyJob(dbConnPgx utils.PgxIface, strategyJob *StrategyJob) (int, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertStrategyJob DbConn.Begin   %s", err.Error())
+		return -1, -1, err
+	}
 	var StrategyID int
 	var JobID int
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO strategy_jobs  
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO strategy_jobs  
 	(
 		strategy_id,
 		job_id,
@@ -373,13 +271,20 @@ func InsertStrategyJob(strategyJob StrategyJob) (int, int, error) {
 		strategyJob.CreatedBy,        //16
 	).Scan(&StrategyID, &JobID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, 0, err
+		return -1, -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, -1, err
 	}
 	return int(StrategyID), int(JobID), nil
 }
 
-func InsertStrategyJobList(strategyJobList []StrategyJob) error {
+func InsertStrategyJobList(dbConnPgx utils.PgxIface, strategyJobList []StrategyJob) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -390,62 +295,138 @@ func InsertStrategyJobList(strategyJobList []StrategyJob) error {
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(strategyJob.UUID)
 		row := []interface{}{
-			*strategyJob.StrategyID,    //1
-			*strategyJob.JobID,         //2
+			strategyJob.StrategyID,     //1
+			strategyJob.JobID,          //2
 			uuidString,                 //3
 			strategyJob.Name,           //4
 			strategyJob.AlternateName,  //5
 			&strategyJob.StartDate,     //6
 			&strategyJob.EndDate,       //7
 			strategyJob.Description,    //8
-			*strategyJob.StatusID,      //9
+			strategyJob.StatusID,       //9
 			strategyJob.ResponseStatus, //10
 			strategyJob.RequestUrl,     //11
 			strategyJob.RequestBody,    //12
 			strategyJob.RequestMethod,  //13
 			strategyJob.ResponseData,   //14
 			// TODO: erroring out in json insert look into it later TAT-27
-			// strategyJob.ResponseDataJson //15
-			strategyJob.CreatedBy,  //16
-			&strategyJob.CreatedAt, //17
-			strategyJob.CreatedBy,  //18
-			&now,                   //19
+			strategyJob.ResponseDataJson, //15
+			strategyJob.CreatedBy,        //16
+			&strategyJob.CreatedAt,       //17
+			strategyJob.CreatedBy,        //18
+			&now,                         //19
 		}
 		rows = append(rows, row)
 	}
 	// Given db is a *sql.DB
 
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"strategy_jobs"},
 		[]string{
-			"strategy_id",     //1
-			"job_id",          //2
-			"uuid",            //3
-			"name",            //4
-			"alternate_name",  //5
-			"start_date",      //6
-			"end_date",        //7
-			"description",     //8
-			"status_id",       //9
-			"response_status", //10
-			"request_url",     //11
-			"request_body",    //12
-			"request_method",  //13
-			"response_data",   //14
-			// "response_data_json", //15
-			"created_by", //16
-			"created_at", //17
-			"updated_by", //18
-			"updated_at", //19
+			"strategy_id",        //1
+			"job_id",             //2
+			"uuid",               //3
+			"name",               //4
+			"alternate_name",     //5
+			"start_date",         //6
+			"end_date",           //7
+			"description",        //8
+			"status_id",          //9
+			"response_status",    //10
+			"request_url",        //11
+			"request_body",       //12
+			"request_method",     //13
+			"response_data",      //14
+			"response_data_json", //15
+			"created_by",         //16
+			"created_at",         //17
+			"updated_by",         //18
+			"updated_at",         //19
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertStrategyJobList: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
+	}
+	return nil
+}
+
+// for refinedev
+func GetStrategyJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]StrategyJob, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `
+	SELECT
+		strategy_id,  
+		job_id,
+		uuid, 
+		name,
+		alternate_name,
+		start_date,
+		end_date,
+		description,
+		status_id,
+		response_status,
+		request_url,
+		request_body,
+		request_method,
+		response_data,
+		response_data_json,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
+	FROM strategy_jobs 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
 	}
 
-	return nil
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	strategyJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[StrategyJob])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return strategyJobs, nil
+}
+
+func GetTotalStrategyJobsCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
+	COUNT(*)
+	FROM strategy_jobs
+	`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }

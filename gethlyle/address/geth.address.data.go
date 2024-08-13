@@ -9,14 +9,14 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
-func GetGethAddress(gethAddressID int) (*GethAddress, error) {
+func GetGethAddress(dbConnPgx utils.PgxIface, gethAddressID *int) (*GethAddress, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 	id,  
 	uuid, 
 	name,
@@ -30,35 +30,27 @@ func GetGethAddress(gethAddressID int) (*GethAddress, error) {
 	updated_at 
 	FROM geth_addresses 
 	WHERE id = $1
-	`, gethAddressID)
-
-	gethAddress := &GethAddress{}
-	err := row.Scan(
-		&gethAddress.ID,
-		&gethAddress.UUID,
-		&gethAddress.Name,
-		&gethAddress.AlternateName,
-		&gethAddress.Description,
-		&gethAddress.AddressStr,
-		&gethAddress.AddressTypeID,
-		&gethAddress.CreatedBy,
-		&gethAddress.CreatedAt,
-		&gethAddress.UpdatedBy,
-		&gethAddress.UpdatedAt,
-	)
+	`, *gethAddressID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
+	defer row.Close()
+	gethAddress, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethAddress])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethAddress, nil
+	return &gethAddress, nil
 }
 
-func GetGethAddressByAddressStr(addressStr string) (*GethAddress, error) {
+func GetGethAddressByAddressStr(dbConnPgx utils.PgxIface, addressStr string) (*GethAddress, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 	id,  
 	uuid, 
 	name,
@@ -74,33 +66,25 @@ func GetGethAddressByAddressStr(addressStr string) (*GethAddress, error) {
 	WHERE address_str = $1
 	`, addressStr)
 
-	gethAddress := &GethAddress{}
-	err := row.Scan(
-		&gethAddress.ID,
-		&gethAddress.UUID,
-		&gethAddress.Name,
-		&gethAddress.AlternateName,
-		&gethAddress.Description,
-		&gethAddress.AddressStr,
-		&gethAddress.AddressTypeID,
-		&gethAddress.CreatedBy,
-		&gethAddress.CreatedAt,
-		&gethAddress.UpdatedBy,
-		&gethAddress.UpdatedAt,
-	)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer row.Close()
+	gethAddress, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethAddress])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethAddress, nil
+	return &gethAddress, nil
 }
 
-func GetGethAddressList() ([]GethAddress, error) {
+func GetGethAddressList(dbConnPgx utils.PgxIface) ([]GethAddress, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	id,  
 	uuid, 
 	name,
@@ -120,32 +104,14 @@ func GetGethAddressList() ([]GethAddress, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethAddresses := make([]GethAddress, 0)
-	for results.Next() {
-		var gethAddress GethAddress
-		results.Scan(
-			&gethAddress.ID,
-			&gethAddress.UUID,
-			&gethAddress.Name,
-			&gethAddress.AlternateName,
-			&gethAddress.Description,
-			&gethAddress.AddressStr,
-			&gethAddress.AddressTypeID,
-			&gethAddress.CreatedBy,
-			&gethAddress.CreatedAt,
-			&gethAddress.UpdatedBy,
-			&gethAddress.UpdatedAt,
-		)
-
-		gethAddresses = append(gethAddresses, gethAddress)
-	}
+	gethAddresses, err := pgx.CollectRows(results, pgx.RowToStructByName[GethAddress])
 	return gethAddresses, nil
 }
 
-func GetGethAddressListByAddressStr(addressStrList []string) (*GethAddress, error) {
+func GetGethAddressListByAddressStr(dbConnPgx utils.PgxIface, addressStrList []string) ([]GethAddress, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	id,  
 	uuid, 
 	name,
@@ -161,33 +127,19 @@ func GetGethAddressListByAddressStr(addressStrList []string) (*GethAddress, erro
 	WHERE address_str = ANY($1)
 	`, pq.Array(addressStrList))
 
-	gethAddress := &GethAddress{}
-	err := row.Scan(
-		&gethAddress.ID,
-		&gethAddress.UUID,
-		&gethAddress.Name,
-		&gethAddress.AlternateName,
-		&gethAddress.Description,
-		&gethAddress.AddressStr,
-		&gethAddress.AddressTypeID,
-		&gethAddress.CreatedBy,
-		&gethAddress.CreatedAt,
-		&gethAddress.UpdatedBy,
-		&gethAddress.UpdatedAt,
-	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
-		log.Println(err)
+	if err != nil {
+		log.Println(err.Error())
 		return nil, err
 	}
-	return gethAddress, nil
+	defer results.Close()
+	gethAddresses, err := pgx.CollectRows(results, pgx.RowToStructByName[GethAddress])
+	return gethAddresses, nil
 }
 
-func GetGethAddressListByIds(addressIDs []int) (*GethAddress, error) {
+func GetGethAddressListByIds(dbConnPgx utils.PgxIface, addressIDs []int) ([]GethAddress, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 	id,  
 	uuid, 
 	name,
@@ -203,49 +155,45 @@ func GetGethAddressListByIds(addressIDs []int) (*GethAddress, error) {
 	WHERE id = ANY($1)
 	`, pq.Array(addressIDs))
 
-	gethAddress := &GethAddress{}
-	err := row.Scan(
-		&gethAddress.ID,
-		&gethAddress.UUID,
-		&gethAddress.Name,
-		&gethAddress.AlternateName,
-		&gethAddress.Description,
-		&gethAddress.AddressStr,
-		&gethAddress.AddressTypeID,
-		&gethAddress.CreatedBy,
-		&gethAddress.CreatedAt,
-		&gethAddress.UpdatedBy,
-		&gethAddress.UpdatedAt,
-	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	return gethAddress, nil
-}
-
-func RemoveGethAddress(gethAddressID *int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_addresses WHERE 
-	id = $1`, *gethAddressID)
 	if err != nil {
 		log.Println(err.Error())
-		return err
+		return nil, err
 	}
-	return nil
+	defer results.Close()
+	gethAddresses, err := pgx.CollectRows(results, pgx.RowToStructByName[GethAddress])
+	return gethAddresses, nil
 }
 
-func UpdateGethAddress(gethAddress GethAddress) error {
+func RemoveGethAddress(dbConnPgx utils.PgxIface, gethAddressID *int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in RemoveGethAddress DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `DELETE FROM geth_addresses WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *gethAddressID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func UpdateGethAddress(dbConnPgx utils.PgxIface, gethAddress *GethAddress) error {
 	// if the gethAddress id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if gethAddress.ID == nil || *gethAddress.ID == 0 {
 		return errors.New("gethAddress has invalid ID")
 	}
-	_, err := database.DbConnPgx.Exec(ctx, `UPDATE geth_addresses SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethAddress DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_addresses SET 
 		name=$1,
 		alternate_name=$2,
 		description=$3,
@@ -253,7 +201,9 @@ func UpdateGethAddress(gethAddress GethAddress) error {
 		address_type_id=$5,
 		updated_by=$6, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$7 `,
+		WHERE id=$7 `
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethAddress.Name,          //1
 		gethAddress.AlternateName, //2
 		gethAddress.Description,   //3
@@ -261,19 +211,23 @@ func UpdateGethAddress(gethAddress GethAddress) error {
 		gethAddress.AddressTypeID, //5
 		gethAddress.UpdatedBy,     //6
 		gethAddress.ID,            //7
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertGethAddress(gethAddress GethAddress) (int, error) {
+func InsertGethAddress(dbConnPgx utils.PgxIface, gethAddress *GethAddress) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertGethAddress DbConn.Begin   %s", err.Error())
+		return -1, err
+	}
 	var ID int
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO geth_addresses  
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO geth_addresses  
 	(
 		uuid, 
 		name,
@@ -306,13 +260,20 @@ func InsertGethAddress(gethAddress GethAddress) (int, error) {
 		gethAddress.CreatedBy,     //6
 	).Scan(&ID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, err
 	}
 	return int(ID), nil
 }
 
-func InsertGethAddressList(gethAddressList []*GethAddress) error {
+func InsertGethAddressList(dbConnPgx utils.PgxIface, gethAddressList []GethAddress) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -324,43 +285,107 @@ func InsertGethAddressList(gethAddressList []*GethAddress) error {
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(gethAddress.UUID)
 		row := []interface{}{
-			uuidString,                 //2
-			gethAddress.Name,           //3
-			gethAddress.AlternateName,  //4
-			gethAddress.Description,    //5
-			gethAddress.AddressStr,     //6
-			*gethAddress.AddressTypeID, //7
-			gethAddress.CreatedBy,      //8
-			&gethAddress.CreatedAt,     //9
-			gethAddress.CreatedBy,      //10
-			&now,                       //11
+			uuidString,                //1
+			gethAddress.Name,          //2
+			gethAddress.AlternateName, //3
+			gethAddress.Description,   //4
+			gethAddress.AddressStr,    //5
+			gethAddress.AddressTypeID, //6
+			gethAddress.CreatedBy,     //7
+			gethAddress.CreatedAt,     //8
+			gethAddress.CreatedBy,     //9
+			&now,                      //10
 		}
 		rows = append(rows, row)
 	}
 	// Given db is a *sql.DB
 
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"geth_addresses"},
 		[]string{
-			"uuid",            //2
-			"name",            //3
-			"alternate_name",  //4
-			"description",     //5
-			"address_str",     //6
-			"address_type_id", //7
-			"created_by",      //8
-			"created_at",      //9
-			"updated_by",      //10
-			"updated_at",      //11
+			"uuid",            //1
+			"name",            //2
+			"alternate_name",  //3
+			"description",     //4
+			"address_str",     //5
+			"address_type_id", //6
+			"created_by",      //7
+			"created_at",      //8
+			"updated_by",      //9
+			"updated_at",      //10
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertGethAddressList: copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
+	}
+	return nil
+}
+
+// for refinedev
+func GetGethAddressListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]GethAddress, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `SELECT 
+		id,  
+		uuid, 
+		name,
+		alternate_name,
+		description,
+		address_str,
+		address_type_id,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
+	FROM geth_addresses 
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " OR "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
 	}
 
-	return nil
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethAddressList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethAddress])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return gethAddressList, nil
+}
+
+func GetTotalGethAddressCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT COUNT(*) FROM geth_addresses`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
 }

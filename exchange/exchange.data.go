@@ -9,15 +9,14 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
 )
 
-func GetExchange(exchangeID int) (*Exchange, error) {
+func GetExchange(dbConnPgx utils.PgxIface, exchangeID *int) (*Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row, err := dbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -32,92 +31,40 @@ func GetExchange(exchangeID int) (*Exchange, error) {
 		updated_by, 
 		updated_at
 	FROM exchanges 
-	WHERE id = $1`, exchangeID)
-
-	exchange := &Exchange{}
-	err := row.Scan(
-		&exchange.ID,
-		&exchange.UUID,
-		&exchange.Name,
-		&exchange.AlternateName,
-		&exchange.ExchangeTypeID,
-		&exchange.Url,
-		&exchange.StartDate,
-		&exchange.EndDate,
-		&exchange.Description,
-		&exchange.CreatedBy,
-		&exchange.CreatedAt,
-		&exchange.UpdatedBy,
-		&exchange.UpdatedAt,
-	)
+	WHERE id = $1`, *exchangeID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
+	defer row.Close()
+	exchange, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Exchange])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return exchange, nil
+	return &exchange, nil
 }
 
-func RemoveExchange(exchangeID int) error {
+func RemoveExchange(dbConnPgx utils.PgxIface, exchangeID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Query(ctx, `DELETE FROM exchanges WHERE id = $1`, exchangeID)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveExchange DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
-}
-
-func GetExchanges() ([]Exchange, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
-		id,
-		uuid,
-		name,
-		alternate_name,
-		exchange_type_id,
-		url,
-		start_date,
-		end_date,
-		description,
-		created_by, 
-		created_at, 
-		updated_by, 
-		updated_at
-	FROM exchanges`)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
+	sql := `DELETE FROM exchanges WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *exchangeID); err != nil {
+		tx.Rollback(ctx)
+		return err
 	}
-	defer results.Close()
-	exchanges := make([]Exchange, 0)
-	for results.Next() {
-		var exchange Exchange
-		results.Scan(
-			&exchange.ID,
-			&exchange.UUID,
-			&exchange.Name,
-			&exchange.AlternateName,
-			&exchange.ExchangeTypeID,
-			&exchange.Url,
-			&exchange.StartDate,
-			&exchange.EndDate,
-			&exchange.Description,
-			&exchange.CreatedBy,
-			&exchange.CreatedAt,
-			&exchange.UpdatedBy,
-			&exchange.UpdatedAt,
-		)
-
-		exchanges = append(exchanges, exchange)
-	}
-	return exchanges, nil
+	return tx.Commit(ctx)
 }
-
-func GetExchangeList(ids []int) ([]Exchange, error) {
+func GetExchangeList(dbConnPgx utils.PgxIface, ids []int) ([]Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
@@ -140,39 +87,24 @@ func GetExchangeList(ids []int) ([]Exchange, error) {
 		additionalQuery := fmt.Sprintf(` WHERE id IN (%s)`, strIds)
 		sql += additionalQuery
 	}
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	exchanges := make([]Exchange, 0)
-	for results.Next() {
-		var exchange Exchange
-		results.Scan(
-			&exchange.ID,
-			&exchange.UUID,
-			&exchange.Name,
-			&exchange.AlternateName,
-			&exchange.ExchangeTypeID,
-			&exchange.Url,
-			&exchange.StartDate,
-			&exchange.EndDate,
-			&exchange.Description,
-			&exchange.CreatedBy,
-			&exchange.CreatedAt,
-			&exchange.UpdatedBy,
-			&exchange.UpdatedAt,
-		)
-		exchanges = append(exchanges, exchange)
+	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return exchanges, nil
 }
 
-func GetExchangesByUUIDs(UUIDList []string) ([]Exchange, error) {
+func GetExchangesByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -194,34 +126,18 @@ func GetExchangesByUUIDs(UUIDList []string) ([]Exchange, error) {
 		return nil, err
 	}
 	defer results.Close()
-	exchanges := make([]Exchange, 0)
-	for results.Next() {
-		var exchange Exchange
-		results.Scan(
-			&exchange.ID,
-			&exchange.UUID,
-			&exchange.Name,
-			&exchange.AlternateName,
-			&exchange.ExchangeTypeID,
-			&exchange.Url,
-			&exchange.StartDate,
-			&exchange.EndDate,
-			&exchange.Description,
-			&exchange.CreatedBy,
-			&exchange.CreatedAt,
-			&exchange.UpdatedBy,
-			&exchange.UpdatedAt,
-		)
-
-		exchanges = append(exchanges, exchange)
+	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return exchanges, nil
 }
 
-func GetStartAndEndDateDiffExchanges(diffInDate int) ([]Exchange, error) {
+func GetStartAndEndDateDiffExchanges(dbConnPgx utils.PgxIface, diffInDate *int) ([]Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `SELECT 
+	results, err := dbConnPgx.Query(ctx, `SELECT 
 		id,
 		uuid,
 		name,
@@ -237,44 +153,33 @@ func GetStartAndEndDateDiffExchanges(diffInDate int) ([]Exchange, error) {
 		updated_at
 	FROM exchanges
 	WHERE DATE_PART('day', AGE(start_date, end_date)) =$1
-	`, diffInDate)
+	`, *diffInDate)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	exchanges := make([]Exchange, 0)
-	for results.Next() {
-		var exchange Exchange
-		results.Scan(
-			&exchange.ID,
-			&exchange.UUID,
-			&exchange.Name,
-			&exchange.AlternateName,
-			&exchange.ExchangeTypeID,
-			&exchange.Url,
-			&exchange.StartDate,
-			&exchange.EndDate,
-			&exchange.Description,
-			&exchange.CreatedBy,
-			&exchange.CreatedAt,
-			&exchange.UpdatedBy,
-			&exchange.UpdatedAt,
-		)
-
-		exchanges = append(exchanges, exchange)
+	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return exchanges, nil
 }
 
-func UpdateExchange(exchange Exchange) error {
+func UpdateExchange(dbConnPgx utils.PgxIface, exchange *Exchange) error {
 	// if the exchange id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if exchange.ID == nil || *exchange.ID == 0 {
 		return errors.New("exchange has invalid ID")
 	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE exchanges SET 
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateAsset DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE exchanges SET 
 		name=$1,
 		alternate_name=$2,
 		exchange_type_id =$3,
@@ -284,7 +189,10 @@ func UpdateExchange(exchange Exchange) error {
 		description=$7,
 		updated_by=$8, 
 		updated_at=current_timestamp at time zone 'UTC'
-		WHERE id=$9`,
+		WHERE id=$9`
+
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		exchange.Name,           //1
 		exchange.AlternateName,  //2
 		exchange.ExchangeTypeID, //3
@@ -293,20 +201,26 @@ func UpdateExchange(exchange Exchange) error {
 		exchange.EndDate,        //6
 		exchange.Description,    //7
 		exchange.UpdatedBy,      //8
-		exchange.ID)             //9
-	if err != nil {
-		log.Println(err.Error())
+		exchange.ID,             //9
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
+
 }
 
-func InsertExchange(exchange Exchange) (int, error) {
+func InsertExchange(dbConnPgx utils.PgxIface, exchange *Exchange) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertAsset DbConn.Begin   %s", err.Error())
+		return -1, err
+	}
 	var insertID int
 	// layoutPostgres := utils.LayoutPostgres
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO exchanges 
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO exchanges 
 	(
 		uuid,
 		name,
@@ -344,14 +258,20 @@ func InsertExchange(exchange Exchange) (int, error) {
 		exchange.Description,    //7
 		exchange.CreatedBy,      //8
 	).Scan(&insertID)
-
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, err
 	}
 	return int(insertID), nil
 }
-func InsertExchanges(exchanges []Exchange) error {
+func InsertExchanges(dbConnPgx utils.PgxIface, exchanges []Exchange) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -377,7 +297,7 @@ func InsertExchanges(exchanges []Exchange) error {
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"exchanges"},
 		[]string{
@@ -396,37 +316,7 @@ func InsertExchanges(exchanges []Exchange) error {
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
-	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
-	}
-	return nil
-}
-
-// exchange chain methods
-
-func UpdateExchangeChainByUUID(exchangeChain ExchangeChain) error {
-	// if the exchange id is set, update, otherwise add
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	if exchangeChain.ExchangeID == nil || *exchangeChain.ExchangeID == 0 || exchangeChain.ChainID == nil || *exchangeChain.ChainID == 0 {
-		return errors.New("exchangeChain has invalid IDs")
-	}
-	_, err := database.DbConnPgx.Query(ctx, `UPDATE exchange_chains SET 
-		
-		exchange_id=$1,
-		chain_id=$2,
-		description=$3,
-		updated_by=$4, 
-		updated_at=current_timestamp at time zone 'UTC'
-		WHERE 
-		uuid=$5,`,
-		exchangeChain.ExchangeID,  //1
-		exchangeChain.ChainID,     //2
-		exchangeChain.Description, //3
-		exchangeChain.UpdatedBy,   //4
-		exchangeChain.UUID)        //5
+	log.Println(fmt.Printf("InsertExchanges: copy count: %d", copyCount))
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -434,12 +324,53 @@ func UpdateExchangeChainByUUID(exchangeChain ExchangeChain) error {
 	return nil
 }
 
-func InsertExchangeChain(exchangeChain ExchangeChain) (int, error) {
+// exchange chain methods
+
+func UpdateExchangeChainByUUID(dbConnPgx utils.PgxIface, exchangeChain *ExchangeChain) error {
+	// if the exchange id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	if exchangeChain.ExchangeID == nil || *exchangeChain.ExchangeID == 0 || exchangeChain.ChainID == nil || *exchangeChain.ChainID == 0 {
+		return errors.New("exchangeChain has invalid IDs")
+	}
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateAsset DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE exchange_chains SET 
+		exchange_id=$1,
+		chain_id=$2,
+		description=$3,
+		updated_by=$4, 
+		updated_at=current_timestamp at time zone 'UTC'
+		WHERE 
+		uuid=$5,`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
+		exchangeChain.ExchangeID,  //1
+		exchangeChain.ChainID,     //2
+		exchangeChain.Description, //3
+		exchangeChain.UpdatedBy,   //4
+		exchangeChain.UUID,        //5
+	); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func InsertExchangeChain(dbConnPgx utils.PgxIface, exchangeChain *ExchangeChain) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertAsset DbConn.Begin   %s", err.Error())
+		return -1, err
+	}
 	var insertID int
 	// layoutPostgres := utils.LayoutPostgres
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO exchange_chains 
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO exchange_chains 
 	(
 		uuid,
 		exchange_id,
@@ -466,14 +397,20 @@ func InsertExchangeChain(exchangeChain ExchangeChain) (int, error) {
 		exchangeChain.Description, //4
 		exchangeChain.CreatedBy,   //5
 	).Scan(&insertID)
-
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, err
+		return -1, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, err
 	}
 	return int(insertID), nil
 }
-func InsertExchangeChains(exchangeChains []ExchangeChain) error {
+func InsertExchangeChains(dbConnPgx utils.PgxIface, exchangeChains []ExchangeChain) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -495,7 +432,7 @@ func InsertExchangeChains(exchangeChains []ExchangeChain) error {
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"exchange_chains"},
 		[]string{
@@ -510,16 +447,16 @@ func InsertExchangeChains(exchangeChains []ExchangeChain) error {
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertExchangeChains copy count: %d", copyCount))
 	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
+		log.Println(err.Error())
+		return err
 	}
 	return nil
 }
 
 // for refinedev
-func GetExchangeListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]Exchange, error) {
+func GetExchangeListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
@@ -555,51 +492,30 @@ func GetExchangeListByPagination(_start, _end *int, _order, _sort string, _filte
 		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
 	}
 
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	exchanges := make([]Exchange, 0)
-	for results.Next() {
-		var exchange Exchange
-		results.Scan(
-			&exchange.ID,
-			&exchange.UUID,
-			&exchange.Name,
-			&exchange.AlternateName,
-			&exchange.ExchangeTypeID,
-			&exchange.Url,
-			&exchange.StartDate,
-			&exchange.EndDate,
-			&exchange.Description,
-			&exchange.CreatedBy,
-			&exchange.CreatedAt,
-			&exchange.UpdatedBy,
-			&exchange.UpdatedAt,
-		)
-
-		exchanges = append(exchanges, exchange)
+	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return exchanges, nil
 }
 
-func GetTotalExchangeCount() (*int, error) {
+func GetTotalExchangeCount(dbConnPgx utils.PgxIface) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
-	COUNT(*)
-	FROM exchanges
-	`)
+	row := dbConnPgx.QueryRow(ctx, `SELECT COUNT(*) FROM exchanges`)
 	totalCount := 0
 	err := row.Scan(
 		&totalCount,
 	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}

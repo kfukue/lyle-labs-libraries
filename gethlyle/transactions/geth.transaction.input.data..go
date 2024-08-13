@@ -9,14 +9,13 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/database"
-	"github.com/lib/pq"
+	"github.com/kfukue/lyle-labs-libraries/utils"
 )
 
-func GetGethTransactionInput(gethTransactionInputID int) (*GethTransactionInput, error) {
+func GetGethTransactionInput(dbConnPgx utils.PgxIface, gethTransactionInputID *int) (*GethTransactionInput, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT
+	row, err := dbConnPgx.Query(ctx, `SELECT
 		id,
 		uuid,
 		name,
@@ -31,23 +30,12 @@ func GetGethTransactionInput(gethTransactionInputID int) (*GethTransactionInput,
 		updated_at
 	FROM geth_transaction_inputs
 	WHERE id = $1
-	`, gethTransactionInputID)
-
-	gethTransactionInput := GethTransactionInput{}
-	err := row.Scan(
-		&gethTransactionInput.ID,
-		&gethTransactionInput.UUID,
-		&gethTransactionInput.Name,
-		&gethTransactionInput.AlternateName,
-		&gethTransactionInput.FunctionName,
-		&gethTransactionInput.MethodIDStr,
-		&gethTransactionInput.NumOfParameters,
-		&gethTransactionInput.Description,
-		&gethTransactionInput.CreatedBy,
-		&gethTransactionInput.CreatedAt,
-		&gethTransactionInput.UpdatedBy,
-		&gethTransactionInput.UpdatedAt,
-	)
+	`, *gethTransactionInputID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	gethTransactionInput, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethTransactionInput])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
@@ -57,10 +45,10 @@ func GetGethTransactionInput(gethTransactionInputID int) (*GethTransactionInput,
 	return &gethTransactionInput, nil
 }
 
-func GetGethTransactionInputByFromToAddress(fromToAddressID *int) ([]*GethTransactionInput, error) {
+func GetGethTransactionInputByFromToAddress(dbConnPgx utils.PgxIface, fromToAddressID *int) ([]GethTransactionInput, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT
 		id,
 		uuid,
@@ -79,225 +67,42 @@ func GetGethTransactionInputByFromToAddress(fromToAddressID *int) ([]*GethTransa
 		(from_address_id =$1 OR 
 			to_address_id = $1)
 		`,
-		fromToAddressID,
+		*fromToAddressID,
 	)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactionInputs := make([]*GethTransactionInput, 0)
-	for results.Next() {
-		var gethTransactionInput GethTransactionInput
-		results.Scan(
-			&gethTransactionInput.ID,
-			&gethTransactionInput.UUID,
-			&gethTransactionInput.Name,
-			&gethTransactionInput.AlternateName,
-			&gethTransactionInput.FunctionName,
-			&gethTransactionInput.MethodIDStr,
-			&gethTransactionInput.NumOfParameters,
-			&gethTransactionInput.Description,
-			&gethTransactionInput.CreatedBy,
-			&gethTransactionInput.CreatedAt,
-			&gethTransactionInput.UpdatedBy,
-			&gethTransactionInput.UpdatedAt,
-		)
-		gethTransactionInputs = append(gethTransactionInputs, &gethTransactionInput)
-	}
-	return gethTransactionInputs, nil
-}
-
-func GetGethTransactionInputByFromAddressAndBeforeBlockNumber(fromAddressID, blockNumber *int) ([]*GethTransactionInput, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-	SELECT
-		id,
-		uuid,
-		name,
-		alternate_name,
-		function_name,
-		method_id_str,
-		num_of_parameters,
-		description,
-		created_by,
-		created_at,
-		updated_by,
-		updated_at
-	FROM geth_transaction_inputs
-	WHERE
-		(from_address_id =$1 OR 
-			to_address_id = $1)
-		AND block_number <= $2
-		`,
-		fromAddressID, blockNumber,
-	)
+	gethTransactionInputs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransactionInput])
 	if err != nil {
-		log.Println(err.Error())
+		log.Println(err)
 		return nil, err
 	}
-	defer results.Close()
-	gethTransactionInputs := make([]*GethTransactionInput, 0)
-	for results.Next() {
-		var gethTransactionInput GethTransactionInput
-		results.Scan(
-			&gethTransactionInput.ID,
-			&gethTransactionInput.UUID,
-			&gethTransactionInput.Name,
-			&gethTransactionInput.AlternateName,
-			&gethTransactionInput.FunctionName,
-			&gethTransactionInput.MethodIDStr,
-			&gethTransactionInput.NumOfParameters,
-			&gethTransactionInput.Description,
-			&gethTransactionInput.CreatedBy,
-			&gethTransactionInput.CreatedAt,
-			&gethTransactionInput.UpdatedBy,
-			&gethTransactionInput.UpdatedAt,
-		)
-		gethTransactionInputs = append(gethTransactionInputs, &gethTransactionInput)
-	}
 	return gethTransactionInputs, nil
 }
 
-func GetGethTransactionInputsByTxnHash(txnHash string) ([]*GethTransactionInput, error) {
+func RemoveGethTransactionInput(dbConnPgx utils.PgxIface, gethTransactionInputID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-	SELECT
-		id,
-		uuid,
-		name,
-		alternate_name,
-		function_name,
-		method_id_str,
-		num_of_parameters,
-		description,
-		created_by,
-		created_at,
-		updated_by,
-		updated_at
-	FROM geth_transaction_inputs
-		WHERE
-		txn_hash = $1
-		`,
-		txnHash,
-	)
+	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	gethTransactionInputs := make([]*GethTransactionInput, 0)
-	for results.Next() {
-		var gethTransactionInput GethTransactionInput
-		results.Scan(
-			&gethTransactionInput.ID,
-			&gethTransactionInput.UUID,
-			&gethTransactionInput.Name,
-			&gethTransactionInput.AlternateName,
-			&gethTransactionInput.FunctionName,
-			&gethTransactionInput.MethodIDStr,
-			&gethTransactionInput.NumOfParameters,
-			&gethTransactionInput.Description,
-			&gethTransactionInput.CreatedBy,
-			&gethTransactionInput.CreatedAt,
-			&gethTransactionInput.UpdatedBy,
-			&gethTransactionInput.UpdatedAt,
-		)
-		gethTransactionInputs = append(gethTransactionInputs, &gethTransactionInput)
-	}
-	return gethTransactionInputs, nil
-}
-
-func GetGethTransactionInputsByTxnHashes(txnHashes []string) ([]*GethTransactionInput, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-	SELECT
-		id,
-		uuid,
-		chain_id,
-		name,
-		alternate_name,
-		function_name,
-		method_id_str,
-		num_of_parameters,
-		description,
-		created_by,
-		created_at,
-		updated_by,
-		updated_at
-		FROM geth_transaction_inputs
-		WHERE
-		txn_hash = ANY($1)
-		`,
-		pq.Array(txnHashes),
-	)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	gethTransactionInputs := make([]*GethTransactionInput, 0)
-	for results.Next() {
-		var gethTransactionInput GethTransactionInput
-		results.Scan(
-			&gethTransactionInput.ID,
-			&gethTransactionInput.UUID,
-			&gethTransactionInput.Name,
-			&gethTransactionInput.AlternateName,
-			&gethTransactionInput.FunctionName,
-			&gethTransactionInput.MethodIDStr,
-			&gethTransactionInput.NumOfParameters,
-			&gethTransactionInput.Description,
-			&gethTransactionInput.CreatedBy,
-			&gethTransactionInput.CreatedAt,
-			&gethTransactionInput.UpdatedBy,
-			&gethTransactionInput.UpdatedAt,
-		)
-		gethTransactionInputs = append(gethTransactionInputs, &gethTransactionInput)
-	}
-	return gethTransactionInputs, nil
-}
-
-func RemoveGethTransactionInput(gethTransactionInputID int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_transaction_inputs WHERE id = $1`, gethTransactionInputID)
-	if err != nil {
-		log.Println(err.Error())
+		log.Printf("Error in RemoveGethTransactionInput DbConn.Begin   %s", err.Error())
 		return err
 	}
-	return nil
-}
-
-func RemoveGethTransactionInputsFromChainIDAndStartBlockNumber(chainID, startBlockNumber *int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_transaction_inputs WHERE chain_id = $1 AND block_number >=  $2`, chainID, startBlockNumber)
-	if err != nil {
-		log.Println(err.Error())
+	sql := `DELETE FROM geth_transaction_inputs WHERE id = $1`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql, *gethTransactionInputID); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func RemoveGethTransactionInputsFromChainID(chainID *int) error {
+func GetGethTransactionInputList(dbConnPgx utils.PgxIface) ([]GethTransactionInput, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `DELETE FROM geth_transaction_inputs WHERE chain_id = $1`, *chainID)
-	if err != nil {
-		log.Println(err.Error())
-		return err
-	}
-	return nil
-}
-
-func GetGethTransactionInputList() ([]*GethTransactionInput, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
+	results, err := dbConnPgx.Query(ctx, `
 	SELECT
 		id,
 		uuid,
@@ -318,37 +123,27 @@ func GetGethTransactionInputList() ([]*GethTransactionInput, error) {
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactionInputs := make([]*GethTransactionInput, 0)
-	for results.Next() {
-		var gethTransactionInput GethTransactionInput
-		results.Scan(
-			&gethTransactionInput.ID,
-			&gethTransactionInput.UUID,
-			&gethTransactionInput.Name,
-			&gethTransactionInput.AlternateName,
-			&gethTransactionInput.FunctionName,
-			&gethTransactionInput.MethodIDStr,
-			&gethTransactionInput.NumOfParameters,
-			&gethTransactionInput.Description,
-			&gethTransactionInput.CreatedBy,
-			&gethTransactionInput.CreatedAt,
-			&gethTransactionInput.UpdatedBy,
-			&gethTransactionInput.UpdatedAt,
-		)
-
-		gethTransactionInputs = append(gethTransactionInputs, &gethTransactionInput)
+	gethTransactionInputs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransactionInput])
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 	return gethTransactionInputs, nil
 }
 
-func UpdateGethTransactionInput(gethTransactionInput GethTransactionInput) error {
+func UpdateGethTransactionInput(dbConnPgx utils.PgxIface, gethTransactionInput *GethTransactionInput) error {
 	// if the gethTransactionInput id is set, update, otherwise add
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if gethTransactionInput.ID == nil {
 		return errors.New("gethTransactionInput has invalid ID")
 	}
-	_, err := database.DbConnPgx.Exec(ctx, `UPDATE geth_transaction_inputs SET
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in UpdateGethTransactionInput DbConn.Begin   %s", err.Error())
+		return err
+	}
+	sql := `UPDATE geth_transaction_inputs SET 
 		name=$1,
 		alternate_name=$2,
 		function_name=$3,
@@ -357,7 +152,9 @@ func UpdateGethTransactionInput(gethTransactionInput GethTransactionInput) error
 		description=$6,
 		updated_by=$7,
 		updated_at=current_timestamp at time zone 'UTC',
-		WHERE id=$8`,
+		WHERE id=$8`
+	defer dbConnPgx.Close()
+	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethTransactionInput.Name,            //1
 		gethTransactionInput.AlternateName,   //2
 		gethTransactionInput.FunctionName,    //3
@@ -366,20 +163,24 @@ func UpdateGethTransactionInput(gethTransactionInput GethTransactionInput) error
 		gethTransactionInput.Description,     //6
 		gethTransactionInput.UpdatedBy,       //7
 		gethTransactionInput.ID,              //8
-	)
-	if err != nil {
-		log.Println(err.Error())
+	); err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-func InsertGethTransactionInput(gethTransactionInput GethTransactionInput) (int, string, error) {
+func InsertGethTransactionInput(dbConnPgx utils.PgxIface, gethTransactionInput *GethTransactionInput) (int, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
+	tx, err := dbConnPgx.Begin(ctx)
+	if err != nil {
+		log.Printf("Error in InsertGethTransactionInput DbConn.Begin   %s", err.Error())
+		return -1, "", err
+	}
 	var gethTransactionInputID int
 	var gethTransactionInputUUID string
-	err := database.DbConnPgx.QueryRow(ctx, `INSERT INTO geth_transaction_inputs
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO geth_transaction_inputs
 	(
 		uuid,
 		name,
@@ -415,12 +216,19 @@ func InsertGethTransactionInput(gethTransactionInput GethTransactionInput) (int,
 		gethTransactionInput.CreatedBy,       //7
 	).Scan(&gethTransactionInputID, &gethTransactionInputUUID)
 	if err != nil {
+		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return 0, "", err
+		return -1, "", err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		tx.Rollback(ctx)
+		log.Println(err.Error())
+		return -1, "", err
 	}
 	return int(gethTransactionInputID), gethTransactionInputUUID, nil
 }
-func InsertGethTransactionInputs(gethTransactionInputs []*GethTransactionInput) error {
+func InsertGethTransactionInputs(dbConnPgx utils.PgxIface, gethTransactionInputs []GethTransactionInput) error {
 	// need to supply uuid
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -447,7 +255,7 @@ func InsertGethTransactionInputs(gethTransactionInputs []*GethTransactionInput) 
 		}
 		rows = append(rows, row)
 	}
-	copyCount, err := database.DbConnPgx.CopyFrom(
+	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
 		pgx.Identifier{"geth_transaction_inputs"},
 		[]string{
@@ -465,92 +273,16 @@ func InsertGethTransactionInputs(gethTransactionInputs []*GethTransactionInput) 
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("geth_transaction_inputs copy count: %d", copyCount))
-	if err != nil {
-		log.Fatal(err)
-		// handle error that occurred while using *pgx.Conn
-	}
-	return nil
-}
-
-func UpdateGethTransactionInputAddresses() error {
-	// update address ids from existing addresses in geth_addresses
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	_, err := database.DbConnPgx.Exec(ctx, `
-		UPDATE geth_transaction_inputs as gt SET
-			from_address_id = ga.id from geth_addresses as ga
-			WHERE LOWER(gt.from_address) = LOWER(ga.address_str)
-			AND gt.from_address_id IS NULL
-			`,
-	)
-	if err != nil {
-		log.Println(err.Error())
-		return err
-	}
-	_, err = database.DbConnPgx.Exec(ctx, `
-			UPDATE geth_transaction_inputs as gt SET
-			to_address_id = ga.id from geth_addresses as ga
-			WHERE LOWER(gt.to_address) = LOWER(ga.address_str)
-			AND gt.to_address_id IS NULL
-			`,
-	)
-	if err != nil {
-		log.Println(err.Error())
-		return err
-	}
+	log.Println(fmt.Printf("InsertGethTransactionInputs: copy count: %d", copyCount))
 	if err != nil {
 		log.Println(err.Error())
 		return err
 	}
 	return nil
-}
-
-func GetNullAddressStrsFromTransactionInputs() ([]string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := database.DbConnPgx.Query(ctx, `
-		WITH sender_table as(
-			SELECT DISTINCT LOWER(gt.from_address) as address  
-			FROM geth_transaction_inputs gt
-				LEFT JOIN geth_addresses as ga
-				ON LOWER(gt.from_address) = LOWER(ga.address_str)
-			WHERE gt.from_address_id IS NULL
-			AND gt.base_asset_id = $1
-			AND ga.id IS NULL
-		),
-		to_table as(
-			SELECT DISTINCT LOWER(gt.to_address) as address 
-			FROM geth_transaction_inputs gt
-				LEFT JOIN geth_addresses as ga
-				ON LOWER(gt.to_address) = LOWER(ga.address_str)
-			WHERE gt.to_address_id IS NULL
-			AND gt.base_asset_id = $1
-			AND ga.id IS NULL
-		)
-		SELECT * FROM sender_table
-		UNION
-		SELECT * FROM to_table
-		`,
-	)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	gethNullAddressStrs := make([]string, 0)
-	for results.Next() {
-		var gethNullAddressStr string
-		results.Scan(
-			&gethNullAddressStr,
-		)
-		gethNullAddressStrs = append(gethNullAddressStrs, gethNullAddressStr)
-	}
-	return gethNullAddressStrs, nil
 }
 
 // for refinedev
-func GetTransactionInputListByPagination(_start, _end *int, _order, _sort string, _filters []string) ([]*GethTransactionInput, error) {
+func GetTransactionInputListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]GethTransactionInput, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `
@@ -586,46 +318,25 @@ func GetTransactionInputListByPagination(_start, _end *int, _order, _sort string
 		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
 	}
 
-	results, err := database.DbConnPgx.Query(ctx, sql)
+	results, err := dbConnPgx.Query(ctx, sql)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
 	defer results.Close()
-	gethTransactionInputs := make([]*GethTransactionInput, 0)
-	for results.Next() {
-		var gethTransactionInput GethTransactionInput
-		results.Scan(
-			&gethTransactionInput.ID,
-			&gethTransactionInput.UUID,
-			&gethTransactionInput.Name,
-			&gethTransactionInput.AlternateName,
-			&gethTransactionInput.FunctionName,
-			&gethTransactionInput.MethodIDStr,
-			&gethTransactionInput.NumOfParameters,
-			&gethTransactionInput.Description,
-			&gethTransactionInput.CreatedBy,
-			&gethTransactionInput.CreatedAt,
-			&gethTransactionInput.UpdatedBy,
-			&gethTransactionInput.UpdatedAt,
-		)
-
-		gethTransactionInputs = append(gethTransactionInputs, &gethTransactionInput)
-	}
+	gethTransactionInputs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransactionInput])
 	if err != nil {
-		log.Println(err.Error())
+		log.Println(err)
 		return nil, err
 	}
-	defer results.Close()
-
 	return gethTransactionInputs, nil
 }
 
-func GetTotalTransactionInputsCount() (*int, error) {
+func GetTotalTransactionInputsCount(dbConnPgx utils.PgxIface) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
-	row := database.DbConnPgx.QueryRow(ctx, `SELECT 
+	row := dbConnPgx.QueryRow(ctx, `SELECT 
 	COUNT(*)
 	FROM geth_transaction_inputs
 	`)
@@ -633,11 +344,47 @@ func GetTotalTransactionInputsCount() (*int, error) {
 	err := row.Scan(
 		&totalCount,
 	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 	return &totalCount, nil
+}
+
+func GetGethTransactionInputByFromMinerID(dbConnPgx utils.PgxIface, minerID *int) ([]GethTransactionInput, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	results, err := dbConnPgx.Query(ctx, `
+	SELECT
+		gti.id,
+		gti.uuid,
+		gti.name ,
+		gti.alternate_name,
+		gti.function_name,
+		gti.method_id_str,
+		gti.num_of_parameters,
+		gti.description,
+		gti.created_by,
+		gti.created_at,
+		gti.updated_by,
+		gti.updated_at
+	FROM geth_transaction_inputs gti 
+	JOIN geth_miners_transaction_inputs gmti
+		ON gti.id = gmti.transaction_input_id
+	WHERE
+		gmti.miner_id = $1
+		`,
+		*minerID,
+	)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	gethTransactionInputs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransactionInput])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return gethTransactionInputs, nil
 }
