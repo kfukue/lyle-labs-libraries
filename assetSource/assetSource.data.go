@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
@@ -279,11 +280,61 @@ func InsertAssetSource(dbConnPgx utils.PgxIface, assetSource *AssetSource) (int,
 		log.Println(err.Error())
 		return -1, -1, err
 	}
+	return int(SourceID), int(AssetID), nil
+}
+
+func InsertAssetSources(dbConnPgx utils.PgxIface, assetSources []AssetSource) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	loc, _ := time.LoadLocation("UTC")
+	now := time.Now().In(loc)
+	rows := [][]interface{}{}
+	for i, _ := range assetSources {
+		assetSource := assetSources[i]
+		uuidString := &pgtype.UUID{}
+		uuidString.Set(assetSource.UUID)
+		row := []interface{}{
+			assetSource.SourceID,         //1
+			assetSource.AssetID,          //2
+			uuidString,                   //3
+			assetSource.Name,             //4
+			assetSource.AlternateName,    //5
+			assetSource.SourceIdentifier, //6
+			assetSource.Description,      //7
+			assetSource.SourceData,       //8
+			assetSource.CreatedBy,        //9
+			&now,                         //10
+			assetSource.CreatedBy,        //11
+			&now,                         //12
+		}
+		rows = append(rows, row)
+	}
+	copyCount, err := dbConnPgx.CopyFrom(
+		ctx,
+		pgx.Identifier{"asset_sources"},
+		[]string{
+			"source_id",         //1
+			"asset_id",          //2
+			"uuid",              //3
+			"name",              //4
+			"alternate_name",    //5
+			"source_identifier", //6
+			"description",       //7
+			"source_data",       //8
+			"created_by",        //9
+			"created_at",        //10
+			"updated_by",        //11
+			"updated_at",        //12
+		},
+		pgx.CopyFromRows(rows),
+	)
+	log.Println(fmt.Printf("InsertAssetSources: copy count: %d", copyCount))
 	if err != nil {
 		log.Println(err.Error())
-		return 0, 0, err
+		return err
 	}
-	return int(SourceID), int(AssetID), nil
+
+	return nil
 }
 
 // for refinedev

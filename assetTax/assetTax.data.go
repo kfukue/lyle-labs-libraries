@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
@@ -243,24 +244,76 @@ func InsertAssetTax(dbConnPgx utils.PgxIface, assetTax *AssetTax) (int, int, err
 	return int(TaxID), int(AssetID), nil
 }
 
+func InsertAssetTaxes(dbConnPgx utils.PgxIface, assetTaxes []AssetTax) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	loc, _ := time.LoadLocation("UTC")
+	now := time.Now().In(loc)
+	rows := [][]interface{}{}
+	for _, assetTax := range assetTaxes {
+		uuidString := &pgtype.UUID{}
+		uuidString.Set(assetTax.UUID)
+		row := []interface{}{
+			assetTax.TaxID,           //1
+			assetTax.AssetID,         //2
+			uuidString,               //3
+			assetTax.Name,            //4
+			assetTax.AlternateName,   //5
+			assetTax.TaxRateOverride, //6
+			assetTax.TaxRateTypeID,   //7
+			assetTax.Description,     //8
+			assetTax.CreatedBy,       //9
+			&now,                     //10
+			assetTax.CreatedBy,       //11
+			&now,                     //12
+		}
+		rows = append(rows, row)
+	}
+	copyCount, err := dbConnPgx.CopyFrom(
+		ctx,
+		pgx.Identifier{"asset_taxes"},
+		[]string{
+			"tax_id",            //1
+			"asset_id",          //2
+			"uuid",              //3
+			"name",              //4
+			"alternate_name",    //5
+			"tax_rate_override", //6
+			"tax_rate_type_id",  //7
+			"description",       //8
+			"created_by",        //9
+			"created_at",        //10
+			"updated_by",        //11
+			"updated_at",        //12
+		},
+		pgx.CopyFromRows(rows),
+	)
+	log.Println(fmt.Printf("InsertAssetTaxes: copy count: %d", copyCount))
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	return nil
+}
+
 // for refinedev
 func GetAssetTaxListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]AssetTax, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
-
 	sql := `SELECT 
-	source_id,
-	asset_id,
-	uuid, 
-	name, 
-	alternate_name, 
-	source_identifier,
-	description,
-	source_data,
-	created_by, 
-	created_at, 
-	updated_by, 
-	updated_at 
+		tax_id,
+		asset_id,
+		uuid, 
+		name, 
+		alternate_name, 
+		tax_rate_override,
+		tax_rate_type_id,
+		description,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at 
 	FROM asset_taxes 
 	`
 	if len(_filters) > 0 {
@@ -286,12 +339,12 @@ func GetAssetTaxListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _o
 		return nil, err
 	}
 	defer results.Close()
-	assetSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetTax])
+	assetTaxes, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetTax])
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return assetSources, nil
+	return assetTaxes, nil
 }
 
 func GetTotalAssetTaxCount(dbConnPgx utils.PgxIface) (*int, error) {

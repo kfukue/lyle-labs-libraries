@@ -50,7 +50,7 @@ var columnsInsertList = []string{
 }
 var testTxns = []string{"0x1706fb8bf07d31852bbb0e5d1c8b0378c60b87a1fdccc36eab706603d67522d4", "0x0dc5e228f2520f74abfab4a97867dbf54e5bfc73e5a1d2a68aa79420ae1dd611"}
 
-var data1 = DexTxnJob{
+var TestData1 = DexTxnJob{
 	ID:                utils.Ptr[int](1),
 	JobID:             utils.Ptr[int](1),
 	UUID:              "880607ab-2833-4ad7-a231-b983a61c7b39",
@@ -69,7 +69,7 @@ var data1 = DexTxnJob{
 	UpdatedAt:         utils.SampleCreatedAtTime,
 }
 
-var data2 = DexTxnJob{
+var TestData2 = DexTxnJob{
 	ID:                utils.Ptr[int](2),
 	JobID:             utils.Ptr[int](3),
 	UUID:              "880607ab-2833-4ad7-a231-b983a61cad34",
@@ -87,7 +87,7 @@ var data2 = DexTxnJob{
 	UpdatedBy:         "SYSTEM",
 	UpdatedAt:         utils.SampleCreatedAtTime,
 }
-var allData = []DexTxnJob{data1, data2}
+var TestAllData = []DexTxnJob{TestData1, TestData2}
 
 func AddDexTxnJobToMockRows(mock pgxmock.PgxPoolIface, dataList []DexTxnJob) *pgxmock.Rows {
 	rows := mock.NewRows(columns)
@@ -121,7 +121,7 @@ func TestGetDexTxnJob(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []DexTxnJob{targetData}
 	dexTxnID := targetData.ID
 	mockRows := AddDexTxnJobToMockRows(mock, dataList)
@@ -179,13 +179,35 @@ func TestGetDexTxnJobForErr(t *testing.T) {
 	}
 }
 
+func TestGetDexTxnJobForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	dexTxnID := -1
+	mock.ExpectQuery("^SELECT (.+) FROM dex_txn_jobs").WithArgs(dexTxnID).WillReturnRows(differentModelRows)
+	foundDexTxnJob, err := GetDexTxnJob(mock, &dexTxnID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetDexTxnJob", err)
+	}
+	if foundDexTxnJob != nil {
+		t.Errorf("Expected foundDexTxnJob From Method GetDexTxnJob: to be empty but got this: %v", foundDexTxnJob)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetDexTxnJobByJobId(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []DexTxnJob{data1, data2}
+	dataList := []DexTxnJob{TestData1, TestData2}
 	mockRows := AddDexTxnJobToMockRows(mock, dataList)
 	jobID := 2
 	mock.ExpectQuery("^SELECT (.+) FROM dex_txn_jobs").WithArgs(jobID).WillReturnRows(mockRows)
@@ -193,7 +215,7 @@ func TestGetDexTxnJobByJobId(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' in GetDexTxnJobByJobId", err)
 	}
-	testDexTxnJobs := allData
+	testDexTxnJobs := TestAllData
 	for i, foundDexTxnJob := range foundDexTxnJobs {
 		if cmp.Equal(foundDexTxnJob, testDexTxnJobs[i]) == false {
 			t.Errorf("Expected DexTxnJob From Method GetDexTxnJobByJobId: %v is different from actual %v", foundDexTxnJob, testDexTxnJobs[i])
@@ -224,20 +246,42 @@ func TestGetDexTxnJobByJobIdForErr(t *testing.T) {
 	}
 }
 
+func TestGetDexTxnJobByJobIdForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	jobID := -1
+	mock.ExpectQuery("^SELECT (.+) FROM dex_txn_jobs").WithArgs(jobID).WillReturnRows(differentModelRows)
+	foundDexTxnJobs, err := GetDexTxnJobByJobId(mock, &jobID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetDexTxnJobByJobId", err)
+	}
+	if foundDexTxnJobs != nil {
+		t.Errorf("Expected foundDexTxnJobs From Method GetDexTxnJobByJobId: to be empty but got this: %v", foundDexTxnJobs)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetDexTxnJobList(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []DexTxnJob{data1, data2}
+	dataList := []DexTxnJob{TestData1, TestData2}
 	mockRows := AddDexTxnJobToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM dex_txn_jobs").WillReturnRows(mockRows)
 	foundDexTxnJobs, err := GetDexTxnJobList(mock)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetDexTxnJobList", err)
 	}
-	testDexTxnJobs := allData
+	testDexTxnJobs := TestAllData
 	for i, foundDexTxnJob := range foundDexTxnJobs {
 		if cmp.Equal(foundDexTxnJob, testDexTxnJobs[i]) == false {
 			t.Errorf("Expected DexTxnJob From Method GetDexTxnJobList: %v is different from actual %v", foundDexTxnJob, testDexTxnJobs[i])
@@ -267,13 +311,34 @@ func TestGetDexTxnJobListForErr(t *testing.T) {
 	}
 }
 
+func TestGetDexTxnJobListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM dex_txn_jobs").WillReturnRows(differentModelRows)
+	foundDexTxnJobs, err := GetDexTxnJobList(mock)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetDexTxnJobList", err)
+	}
+	if foundDexTxnJobs != nil {
+		t.Errorf("Expected foundDexTxnJobs From Method GetDexTxnJobList: to be empty but got this: %v", foundDexTxnJobs)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveDexTxnJob(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	dexTxnID := targetData.ID
 	mock.ExpectBegin()
 	mock.ExpectExec("^DELETE FROM dex_txn_jobs").WithArgs(*dexTxnID).WillReturnResult(pgxmock.NewResult("DELETE", 1))
@@ -281,6 +346,23 @@ func TestRemoveDexTxnJob(t *testing.T) {
 	err = RemoveDexTxnJob(mock, dexTxnID)
 	if err != nil {
 		t.Fatalf("an error '%s' in RemoveDexTxnJob", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestRemoveDexTxnJobOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	taxID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveDexTxnJob(mock, &taxID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -312,7 +394,7 @@ func TestUpdateDexTxnJob(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	mock.ExpectBegin()
 	mock.ExpectExec("^UPDATE dex_txn_jobs").WithArgs(
 		targetData.Name,                        //1
@@ -337,13 +419,47 @@ func TestUpdateDexTxnJob(t *testing.T) {
 	}
 }
 
+func TestUpdateDexTxnJobOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = nil
+	err = UpdateDexTxnJob(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+func TestUpdateDexTxnJobOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = UpdateDexTxnJob(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestUpdateDexTxnJobOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	targetData.ID = utils.Ptr[int](-1)
@@ -378,7 +494,7 @@ func TestInsertDexTxnJob(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	targetData.Name = "New Name"
 	mock.ExpectBegin()
 	mock.ExpectQuery("^INSERT INTO dex_txn_jobs").WithArgs(
@@ -407,13 +523,32 @@ func TestInsertDexTxnJob(t *testing.T) {
 	}
 }
 
+func TestInsertDexTxnJobOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, err = InsertDexTxnJob(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestInsertDexTxnJobOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
@@ -449,7 +584,7 @@ func TestInsertDexTxnJobOnFailureOnCommit(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
@@ -487,7 +622,7 @@ func TestInsertDexTxnJobList(t *testing.T) {
 	}
 	defer mock.Close()
 	mock.ExpectCopyFrom(pgx.Identifier{"dex_txn_jobs"}, columnsInsertList)
-	targetData := allData
+	targetData := TestAllData
 	err = InsertDexTxnJobList(mock, targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in InsertDexTxnJobList", err)
@@ -504,10 +639,127 @@ func TestInsertDexTxnJobListOnFailure(t *testing.T) {
 	}
 	defer mock.Close()
 	mock.ExpectCopyFrom(pgx.Identifier{"dex_txn_jobs"}, columnsInsertList).WillReturnError(fmt.Errorf("Random SQL Error"))
-	targetData := allData
+	targetData := TestAllData
 	err = InsertDexTxnJobList(mock, targetData)
 	if err == nil {
 		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetDexTxnJobListByPagination(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	dataList := TestAllData
+	mockRows := AddDexTxnJobToMockRows(mock, dataList)
+	_start := 1
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"job_id = 1", "chain_id=1"}
+	mock.ExpectQuery("^SELECT (.+) FROM dex_txn_jobs").WillReturnRows(mockRows)
+	foundChains, err := GetDexTxnJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err != nil {
+		t.Fatalf("an error '%s' in GetDexTxnJobListByPagination", err)
+	}
+	testChains := dataList
+	for i, foundChain := range foundChains {
+		if cmp.Equal(foundChain, testChains[i]) == false {
+			t.Errorf("Expected Chain From Method GetDexTxnJobListByPagination: %v is different from actual %v", foundChain, testChains[i])
+		}
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetDexTxnJobListByPaginationForErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"job_id = -1"}
+	mock.ExpectQuery("^SELECT (.+) FROM dex_txn_jobs").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
+	foundChains, err := GetDexTxnJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetDexTxnJobListByPagination", err)
+	}
+	if len(foundChains) != 0 {
+		t.Errorf("Expected From Method GetDexTxnJobListByPagination: to be empty but got this: %v", foundChains)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetDexTxnJobListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"job_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM dex_txn_jobs").WillReturnRows(differentModelRows)
+	foundChains, err := GetDexTxnJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetDexTxnJobListByPagination", err)
+	}
+	if foundChains != nil {
+		t.Errorf("Expected From Method GetDexTxnJobListByPagination: to be empty but got this: %v", foundChains)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetTotalDexTxnJobCount(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	numOfChainsExpected := 10
+	mock.ExpectQuery("^SELECT COUNT(.*) FROM dex_txn_jobs").WillReturnRows(mock.NewRows([]string{"count"}).AddRow(numOfChainsExpected))
+	numOfChains, err := GetTotalDexTxnJobCount(mock)
+	if err != nil {
+		t.Fatalf("an error '%s' in GetTotalDexTxnJobCount", err)
+	}
+	if *numOfChains != numOfChainsExpected {
+		t.Errorf("Expected Chain From Method GetTotalDexTxnJobCount: %d is different from actual %d", numOfChainsExpected, *numOfChains)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetTotalDexTxnJobCountForErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	mock.ExpectQuery("^SELECT COUNT(.*) FROM dex_txn_jobs").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
+	numOfChains, err := GetTotalDexTxnJobCount(mock)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetTotalDexTxnJobCount", err)
+	}
+	if numOfChains != nil {
+		t.Errorf("Expected numOfChains From Method GetTotalDexTxnJobCount to be empty but got this: %v", numOfChains)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)

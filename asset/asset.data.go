@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 	"github.com/lib/pq"
@@ -293,7 +294,7 @@ func RemoveAsset(dbConnPgx utils.PgxIface, assetID *int) error {
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in RemoveAccount DbConn.Begin   %s", err.Error())
+		log.Printf("Error in RemoveAsset DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `DELETE FROM assets WHERE id = $1`
@@ -1032,4 +1033,81 @@ func InsertAsset(dbConnPgx utils.PgxIface, asset *Asset) (int, error) {
 		return -1, err
 	}
 	return int(insertID), nil
+}
+
+func InsertAssets(dbConnPgx utils.PgxIface, assets []Asset) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	loc, _ := time.LoadLocation("UTC")
+	now := time.Now().In(loc)
+	rows := [][]interface{}{}
+	for i, _ := range assets {
+		asset := assets[i]
+		uuidString := &pgtype.UUID{}
+		uuidString.Set(asset.UUID)
+		row := []interface{}{
+			uuidString,                //1
+			asset.Name,                //2
+			asset.AlternateName,       //3
+			asset.Cusip,               //4
+			asset.Ticker,              //5
+			asset.BaseAssetID,         //6
+			asset.QuoteAssetID,        //7
+			asset.Description,         //8
+			asset.AssetTypeID,         //9
+			asset.CreatedBy,           //10
+			&now,                      //11
+			asset.CreatedBy,           //12
+			&now,                      //13
+			asset.ChainID,             //14
+			asset.CategoryID,          //15
+			asset.SubCategoryID,       //16
+			asset.IsDefaultQuote,      //17
+			asset.IgnoreMarketData,    //18
+			asset.Decimals,            //19
+			asset.ContractAddress,     //20
+			asset.StartingBlockNumber, //21
+			asset.ImportGeth,          //22
+			asset.ImportGethInitial,   //23
+
+		}
+		rows = append(rows, row)
+	}
+	copyCount, err := dbConnPgx.CopyFrom(
+		ctx,
+		pgx.Identifier{"assets"},
+		[]string{
+			"uuid",                  //1
+			"name",                  //2
+			"alternate_name",        //3
+			"cusip",                 //4
+			"ticker",                //5
+			"base_asset_id",         //6
+			"quote_asset_id",        //7
+			"description",           //8
+			"asset_type_id",         //9
+			"created_by",            //10
+			"created_at",            //11
+			"updated_by",            //12
+			"updated_at",            //13
+			"chain_id",              //14
+			"category_id",           //15
+			"sub_category_id",       //16
+			"is_default_quote",      //17
+			"ignore_market_data",    //18
+			"decimals",              //19
+			"contract_address",      //20
+			"starting_block_number", //21
+			"import_geth",           //22
+			"import_geth_initial",   //23
+		},
+		pgx.CopyFromRows(rows),
+	)
+	log.Println(fmt.Printf("InsertAssets: copy count: %d", copyCount))
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	return nil
 }

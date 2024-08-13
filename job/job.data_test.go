@@ -192,6 +192,28 @@ func TestGetJobForErr(t *testing.T) {
 	}
 }
 
+func TestGetJobForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	jobID := -1
+	mock.ExpectQuery("^SELECT (.+) FROM jobs").WithArgs(jobID).WillReturnRows(differentModelRows)
+	foundJob, err := GetJob(mock, &jobID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetJob", err)
+	}
+	if foundJob != nil {
+		t.Errorf("Expected foundJob From Method GetJob: to be empty but got this: %v", foundJob)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveJob(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -206,6 +228,23 @@ func TestRemoveJob(t *testing.T) {
 	err = RemoveJob(mock, jobID)
 	if err != nil {
 		t.Fatalf("an error '%s' in RemoveJob", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestRemoveJobOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	taxID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveJob(mock, &taxID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -241,7 +280,7 @@ func TestGetJobList(t *testing.T) {
 
 	mockRows := AddJobToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM jobs").WillReturnRows(mockRows)
-	ids := []int{}
+	ids := []int{1, 2}
 	foundJobList, err := GetJobList(mock, ids)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetJobList", err)
@@ -263,13 +302,34 @@ func TestGetJobListForErr(t *testing.T) {
 	}
 	defer mock.Close()
 	mock.ExpectQuery("^SELECT (.+) FROM jobs").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	ids := []int{}
+	ids := []int{1, 2}
 	foundJobList, err := GetJobList(mock, ids)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetJobList", err)
 	}
 	if len(foundJobList) != 0 {
 		t.Errorf("Expected From Method GetJobList: to be empty but got this: %v", foundJobList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetJobListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM jobs").WillReturnRows(differentModelRows)
+	ids := []int{1, 2}
+	foundJobList, err := GetJobList(mock, ids)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetJobList", err)
+	}
+	if foundJobList != nil {
+		t.Errorf("Expected foundJobList From Method GetJobList: to be empty but got this: %v", foundJobList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -321,6 +381,27 @@ func TestGetJobListByUUIDsForErr(t *testing.T) {
 	}
 }
 
+func TestGetJobListByUUIDsForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	uuidList := []string{"test", "test2"}
+	mock.ExpectQuery("^SELECT (.+) FROM jobs").WithArgs(pq.Array(uuidList)).WillReturnRows(differentModelRows)
+	foundJobList, err := GetJobListByUUIDs(mock, uuidList)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetJobListByUUIDs", err)
+	}
+	if foundJobList != nil {
+		t.Errorf("Expected foundJobList From Method GetJobListByUUIDs: to be empty but got this: %v", foundJobList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetStartAndEndDateDiffJobList(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -366,6 +447,27 @@ func TestGetStartAndEndDateDiffJobListForErr(t *testing.T) {
 	}
 }
 
+func TestGetStartAndEndDateDiffJobListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	diffInDate := -1
+	mock.ExpectQuery("^SELECT (.+) FROM jobs").WithArgs(diffInDate).WillReturnRows(differentModelRows)
+	foundJobList, err := GetStartAndEndDateDiffJobList(mock, &diffInDate)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetStartAndEndDateDiffJobList", err)
+	}
+	if foundJobList != nil {
+		t.Errorf("Expected foundJobList From Method GetStartAndEndDateDiffJobList: to be empty but got this: %v", foundJobList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestUpdateJob(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -395,6 +497,23 @@ func TestUpdateJob(t *testing.T) {
 	err = UpdateJob(mock, &targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in UpdateJob", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestUpdateJobOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = nil
+	err = UpdateJob(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -497,6 +616,24 @@ func TestInsertJob(t *testing.T) {
 	}
 }
 
+func TestInsertJobOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, _, err = InsertJob(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
 func TestInsertJobOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -625,11 +762,11 @@ func TestGetJobListByPagination(t *testing.T) {
 	defer mock.Close()
 	dataList := TestAllData
 	mockRows := AddJobToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"status_id = 1"}
+	filters := []string{"status_id = 1", "job_category_id=1"}
 	mock.ExpectQuery("^SELECT (.+) FROM jobs").WillReturnRows(mockRows)
 	foundJobList, err := GetJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -662,6 +799,31 @@ func TestGetJobListByPaginationForErr(t *testing.T) {
 		t.Fatalf("expected an error '%s' in GetJobListByPagination", err)
 	}
 	if len(foundJobList) != 0 {
+		t.Errorf("Expected From Method GetJobListByPagination: to be empty but got this: %v", foundJobList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetJobListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"status_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM jobs").WillReturnRows(differentModelRows)
+	foundJobList, err := GetJobListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetJobListByPagination", err)
+	}
+	if foundJobList != nil {
 		t.Errorf("Expected From Method GetJobListByPagination: to be empty but got this: %v", foundJobList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {

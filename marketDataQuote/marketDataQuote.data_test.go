@@ -372,6 +372,24 @@ func TestRemoveMarketDataQuoteFromBaseAssetBetweenDates(t *testing.T) {
 	}
 }
 
+func TestRemoveMarketDataQuoteFromBaseAssetBetweenDatesOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	assetID := 1
+	startDate := utils.SampleCreatedAtTime
+	endDate := utils.SampleCreatedAtTime
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveMarketDataQuoteFromBaseAssetBetweenDates(mock, &assetID, startDate, endDate)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
 func TestRemoveMarketDataQuoteFromBaseAssetBetweenDatesOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -499,6 +517,25 @@ func TestInsertMarketDataQuote(t *testing.T) {
 	err = InsertMarketDataQuote(mock, &targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in InsertMarketDataQuote", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertMarketDataQuoteOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.MarketDataID = utils.Ptr[int](-1)
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = InsertMarketDataQuote(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -653,11 +690,11 @@ func TestGetMarketDataQuoteListByPagination(t *testing.T) {
 	defer mock.Close()
 	dataList := TestAllData
 	mockRows := AddMarketDataQuoteToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"quote_asset_id = 1"}
+	filters := []string{"quote_asset_id = 1", "source_id=1"}
 	mock.ExpectQuery("^SELECT (.+) FROM market_data_quotes").WillReturnRows(mockRows)
 	foundMarketDataQuoteList, err := GetMarketDataQuoteListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -690,6 +727,31 @@ func TestGetMarketDataQuoteListByPaginationForErr(t *testing.T) {
 		t.Fatalf("expected an error '%s' in GetMarketDataQuoteListByPagination", err)
 	}
 	if len(foundMarketDataQuoteList) != 0 {
+		t.Errorf("Expected From Method GetMarketDataQuoteListByPagination: to be empty but got this: %v", foundMarketDataQuoteList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetMarketDataQuoteListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"quote_asset_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM market_data_quotes").WillReturnRows(differentModelRows)
+	foundMarketDataQuoteList, err := GetMarketDataQuoteListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetMarketDataQuoteListByPagination", err)
+	}
+	if foundMarketDataQuoteList != nil {
 		t.Errorf("Expected From Method GetMarketDataQuoteListByPagination: to be empty but got this: %v", foundMarketDataQuoteList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {

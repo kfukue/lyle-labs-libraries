@@ -64,38 +64,6 @@ func RemoveExchange(dbConnPgx utils.PgxIface, exchangeID *int) error {
 	}
 	return tx.Commit(ctx)
 }
-
-func GetExchanges(dbConnPgx utils.PgxIface) ([]Exchange, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := dbConnPgx.Query(ctx, `SELECT 
-		id,
-		uuid,
-		name,
-		alternate_name,
-		exchange_type_id,
-		url,
-		start_date,
-		end_date,
-		description,
-		created_by, 
-		created_at, 
-		updated_by, 
-		updated_at
-	FROM exchanges`)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	return exchanges, nil
-}
-
 func GetExchangeList(dbConnPgx utils.PgxIface, ids []int) ([]Exchange, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -547,9 +515,7 @@ func GetTotalExchangeCount(dbConnPgx utils.PgxIface) (*int, error) {
 	err := row.Scan(
 		&totalCount,
 	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}

@@ -366,6 +366,28 @@ func TestGetLiquidityPoolForErr(t *testing.T) {
 	}
 }
 
+func TestGetLiquidityPoolForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	liquidityPoolID := -1
+	mock.ExpectQuery("^SELECT (.+) FROM liquidity_pools").WithArgs(liquidityPoolID).WillReturnRows(differentModelRows)
+	foundLiquidityPool, err := GetLiquidityPool(mock, &liquidityPoolID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetLiquidityPool", err)
+	}
+	if foundLiquidityPool != nil {
+		t.Errorf("Expected foundLiquidityPool From Method GetLiquidityPool: to be empty but got this: %v", foundLiquidityPool)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveLiquidityPool(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -380,6 +402,23 @@ func TestRemoveLiquidityPool(t *testing.T) {
 	err = RemoveLiquidityPool(mock, liquidityPoolID)
 	if err != nil {
 		t.Fatalf("an error '%s' in RemoveLiquidityPool", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestRemoveLiquidityPoolOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	taxID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveLiquidityPool(mock, &taxID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -405,49 +444,6 @@ func TestRemoveLiquidityPoolOnFailure(t *testing.T) {
 	}
 }
 
-func TestGetLiquidityPools(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
-	}
-	defer mock.Close()
-	dataList := TestAllData
-
-	mockRows := AddLiquidityPoolToMockRows(mock, dataList)
-	mock.ExpectQuery("^SELECT (.+) FROM liquidity_pools").WillReturnRows(mockRows)
-	foundLiquidityPoolList, err := GetLiquidityPools(mock)
-	if err != nil {
-		t.Fatalf("an error '%s' in GetLiquidityPools", err)
-	}
-	for i, sourceLiquidityPool := range dataList {
-		if cmp.Equal(sourceLiquidityPool, foundLiquidityPoolList[i]) == false {
-			t.Errorf("Expected LiquidityPool From Method GetLiquidityPools: %v is different from actual %v", sourceLiquidityPool, foundLiquidityPoolList[i])
-		}
-	}
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("There awere unfulfilled expectations: %s", err)
-	}
-}
-
-func TestGetLiquidityPoolsForErr(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
-	}
-	defer mock.Close()
-	mock.ExpectQuery("^SELECT (.+) FROM liquidity_pools").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundLiquidityPoolList, err := GetLiquidityPools(mock)
-	if err == nil {
-		t.Fatalf("expected an error '%s' in GetLiquidityPools", err)
-	}
-	if len(foundLiquidityPoolList) != 0 {
-		t.Errorf("Expected From Method GetLiquidityPools: to be empty but got this: %v", foundLiquidityPoolList)
-	}
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("There awere unfulfilled expectations: %s", err)
-	}
-}
-
 func TestGetLiquidityPoolList(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -458,7 +454,7 @@ func TestGetLiquidityPoolList(t *testing.T) {
 
 	mockRows := AddLiquidityPoolToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM liquidity_pools").WillReturnRows(mockRows)
-	ids := []int{}
+	ids := []int{1, 2}
 	foundLiquidityPoolList, err := GetLiquidityPoolList(mock, ids)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetLiquidityPoolList", err)
@@ -487,6 +483,27 @@ func TestGetLiquidityPoolListForErr(t *testing.T) {
 	}
 	if len(foundLiquidityPoolList) != 0 {
 		t.Errorf("Expected From Method GetLiquidityPoolList: to be empty but got this: %v", foundLiquidityPoolList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetLiquidityPoolListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	ids := []int{}
+	mock.ExpectQuery("^SELECT (.+) FROM liquidity_pools").WillReturnRows(differentModelRows)
+	foundLiquidityPoolList, err := GetLiquidityPoolList(mock, ids)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetLiquidityPoolList", err)
+	}
+	if foundLiquidityPoolList != nil {
+		t.Errorf("Expected foundLiquidityPoolList From Method GetLiquidityPoolList: to be empty but got this: %v", foundLiquidityPoolList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -586,6 +603,27 @@ func TestGetLiquidityPoolsByUUIDsForErr(t *testing.T) {
 	}
 }
 
+func TestGetLiquidityPoolsByUUIDsForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	uuidList := []string{"test", "test2"}
+	mock.ExpectQuery("^SELECT (.+) FROM liquidity_pools").WithArgs(pq.Array(uuidList)).WillReturnRows(differentModelRows)
+	foundLiquidityPoolList, err := GetLiquidityPoolsByUUIDs(mock, uuidList)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetLiquidityPoolsByUUIDs", err)
+	}
+	if foundLiquidityPoolList != nil {
+		t.Errorf("Expected foundLiquidityPoolList From Method GetLiquidityPoolsByUUIDs: to be empty but got this: %v", foundLiquidityPoolList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestUpdateLiquidityPool(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -619,6 +657,23 @@ func TestUpdateLiquidityPool(t *testing.T) {
 	err = UpdateLiquidityPool(mock, &targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in UpdateLiquidityPool", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestUpdateLiquidityPoolOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = nil
+	err = UpdateLiquidityPool(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -722,6 +777,25 @@ func TestInsertLiquidityPool(t *testing.T) {
 	}
 	if err != nil {
 		t.Fatalf("an error '%s' in InsertLiquidityPool", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertLiquidityPoolOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, _, err = InsertLiquidityPool(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -862,11 +936,11 @@ func TestGetLiquidityPoolListByPagination(t *testing.T) {
 	defer mock.Close()
 	dataList := TestAllData
 	mockRows := AddLiquidityPoolToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"chain_id = 1"}
+	filters := []string{"chain_id = 1", "exchange_id=1"}
 	mock.ExpectQuery("^SELECT (.+) FROM liquidity_pools").WillReturnRows(mockRows)
 	foundLiquidityPoolList, err := GetLiquidityPoolListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -906,6 +980,30 @@ func TestGetLiquidityPoolListByPaginationForErr(t *testing.T) {
 	}
 }
 
+func TestGetLiquidityPoolListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"chain_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM liquidity_pools").WillReturnRows(differentModelRows)
+	foundLiquidityPoolList, err := GetLiquidityPoolListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetLiquidityPoolListByPagination", err)
+	}
+	if foundLiquidityPoolList != nil {
+		t.Errorf("Expected From Method GetLiquidityPoolListByPagination: to be empty but got this: %v", foundLiquidityPoolList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
 func TestGetTotalLiquidityPoolCount(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {

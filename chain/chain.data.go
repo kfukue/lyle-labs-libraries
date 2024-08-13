@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
 	"github.com/kfukue/lyle-labs-libraries/utils"
 )
@@ -256,9 +257,7 @@ func GetTotalChainCount(dbConnPgx utils.PgxIface) (*int, error) {
 	err := row.Scan(
 		&totalCount,
 	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
@@ -390,4 +389,67 @@ func InsertChain(dbConnPgx utils.PgxIface, chain *Chain) (int, error) {
 		return -1, err
 	}
 	return int(ID), nil
+}
+
+func InsertChains(dbConnPgx utils.PgxIface, chains []Chain) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	loc, _ := time.LoadLocation("UTC")
+	now := time.Now().In(loc)
+	rows := [][]interface{}{}
+	for _, chain := range chains {
+		uuidString := &pgtype.UUID{}
+		uuidString.Set(chain.UUID)
+		row := []interface{}{
+			uuidString,             //1
+			chain.BaseAssetID,      //2
+			chain.Name,             //3
+			chain.AlternateName,    //4
+			chain.Address,          //5
+			chain.ChainTypeID,      //6
+			chain.Description,      //7
+			chain.CreatedBy,        //8
+			&now,                   //9
+			chain.CreatedBy,        //10
+			&now,                   //11
+			chain.RpcURL,           //12
+			chain.ChainID,          //13
+			chain.BlockExplorerURL, //14
+			chain.RpcURLDev,        //15
+			chain.RpcURLProd,       //16
+			chain.RpcURLArchive,    //17
+		}
+		rows = append(rows, row)
+	}
+	copyCount, err := dbConnPgx.CopyFrom(
+		ctx,
+		pgx.Identifier{"chains"},
+		[]string{
+			"uuid",               //1
+			"base_asset_id",      //2
+			"name",               //3
+			"alternate_name",     //4
+			"address",            //5
+			"chain_type_id",      //6
+			"description",        //7
+			"created_by",         //8
+			"created_at",         //9
+			"updated_by",         //10
+			"updated_at",         //11
+			"rpc_url",            //12
+			"chain_id",           //13
+			"block_explorer_url", //14
+			"rpc_url_dev",        //15
+			"rpc_url_prod",       //16
+			"rpc_url_archive",    //17
+		},
+		pgx.CopyFromRows(rows),
+	)
+	log.Println(fmt.Printf("InsertChains: copy count: %d", copyCount))
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	return nil
 }

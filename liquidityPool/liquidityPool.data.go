@@ -74,47 +74,6 @@ func RemoveLiquidityPool(dbConnPgx utils.PgxIface, liquidityPoolID *int) error {
 	return tx.Commit(ctx)
 }
 
-func GetLiquidityPools(dbConnPgx utils.PgxIface) ([]LiquidityPool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
-	defer cancel()
-	results, err := dbConnPgx.Query(ctx, `SELECT 
-		id,
-		uuid,
-		name,
-		alternate_name,
-		pair_address,
-		chain_id,
-		exchange_id,
-		liquidity_pool_type_id,
-		token0_id,
-		token1_id,
-		url,
-		start_block,
-		latest_block_synced,
-		created_txn_hash,
-		IsActive,
-		description,
-		created_by, 
-		created_at, 
-		updated_by, 
-		updated_at,
-		base_asset_id,
-		quote_asset_id,
-		quote_asset_chainlink_address_usd
-	FROM liquidity_pools`)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer results.Close()
-	liquidityPools, err := pgx.CollectRows(results, pgx.RowToStructByName[LiquidityPool])
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	return liquidityPools, nil
-}
-
 func GetLiquidityPoolList(dbConnPgx utils.PgxIface, ids []int) ([]LiquidityPool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -673,9 +632,7 @@ func GetTotalLiquidityPoolCount(dbConnPgx utils.PgxIface) (*int, error) {
 	err := row.Scan(
 		&totalCount,
 	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}

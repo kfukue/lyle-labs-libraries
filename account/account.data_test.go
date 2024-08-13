@@ -12,24 +12,41 @@ import (
 )
 
 var columns = []string{
-	"id",
-	"uuid",
-	"name",
-	"alternate_name",
-	"address",
-	"name_from_source",
-	"portfolio_id",
-	"source_id",
-	"account_type_id",
-	"description",
-	"created_by",
-	"created_at",
-	"updated_by",
-	"updated_at",
-	"chain_id",
+	"id",               //1
+	"uuid",             //2
+	"name",             //3
+	"alternate_name",   //4
+	"address",          //5
+	"name_from_source", //6
+	"portfolio_id",     //7
+	"source_id",        //8
+	"account_type_id",  //9
+	"description",      //10
+	"created_by",       //11
+	"created_at",       //12
+	"updated_by",       //13
+	"updated_at",       //14
+	"chain_id",         //15
 }
 
-var data1 = Account{
+var DBColumnsInsertAccounts = []string{
+	"uuid",             //1
+	"name",             //2
+	"alternate_name",   //3
+	"address",          //4
+	"name_from_source", //5
+	"portfolio_id",     //6
+	"source_id",        //7
+	"account_type_id",  //8
+	"description",      //9
+	"created_by",       //10
+	"created_at",       //11
+	"updated_by",       //12
+	"updated_at",       //13
+	"chain_id",         //14
+}
+
+var TestData1 = Account{
 	ID:             utils.Ptr[int](1),
 	UUID:           "880607ab-2833-4ad7-a231-b983a61c7b39",
 	Name:           "0x82069A502461C3f73705A9Cd6d3aB4ef27112345",
@@ -47,7 +64,7 @@ var data1 = Account{
 	ChainID:        utils.Ptr[int](1),
 }
 
-var data2 = Account{
+var TestData2 = Account{
 	ID:             utils.Ptr[int](2),
 	UUID:           "98d5545f-4244-4838-234e-d98722ab1c52",
 	Name:           "L-gro",
@@ -65,7 +82,7 @@ var data2 = Account{
 	ChainID:        utils.Ptr[int](2),
 }
 
-var allData = []Account{data1, data2}
+var TestAllData = []Account{TestData1, TestData2}
 
 func AddAccountToMockRows(mock pgxmock.PgxPoolIface, dataList []Account) *pgxmock.Rows {
 	rows := mock.NewRows(columns)
@@ -97,7 +114,7 @@ func TestGetAccount(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	dataList := []Account{targetData}
 	mockRows := AddAccountToMockRows(mock, dataList)
 	accountID := utils.Ptr[int](1)
@@ -155,13 +172,34 @@ func TestGetAccountForErr(t *testing.T) {
 	}
 }
 
+func TestGetAccountForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	accountID := -1
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM accounts").WithArgs(accountID).WillReturnRows(differentModelRows)
+	foundAccount, err := GetAccount(mock, &accountID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAccount", err)
+	}
+	if foundAccount != nil {
+		t.Errorf("Expected foundAccount From Method GetAccount: to be empty but got this: %v", foundAccount)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetAccountByAddress(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []Account{targetData}
 	testAddress := targetData.Address
 	mockRows := AddAccountToMockRows(mock, dataList)
@@ -219,13 +257,34 @@ func TestGetAccountByAddressForErr(t *testing.T) {
 	}
 }
 
+func TestGetAccountByAddressForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	testAddress := "Fake-Address"
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM accounts").WithArgs(testAddress).WillReturnRows(differentModelRows)
+	foundAccount, err := GetAccountByAddress(mock, testAddress)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAccountByAddress", err)
+	}
+	if foundAccount != nil {
+		t.Errorf("Expected foundAccount From Method GetAccountByAddress: to be empty but got this: %v", foundAccount)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetAccountByAlternateName(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []Account{targetData}
 	testAlternateName := targetData.AlternateName
 	mockRows := AddAccountToMockRows(mock, dataList)
@@ -282,13 +341,34 @@ func TestGetAccountByAlternateNameForErr(t *testing.T) {
 	}
 }
 
+func TestGetAccountByAlternateNameForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	testAlternateName := "Fake-Address"
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM accounts").WithArgs(testAlternateName).WillReturnRows(differentModelRows)
+	foundAccount, err := GetAccountByAlternateName(mock, testAlternateName)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAccountByAlternateName", err)
+	}
+	if foundAccount != nil {
+		t.Errorf("Expected foundAccount From Method GetAccountByAlternateName: to be empty but got this: %v", foundAccount)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveAccount(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	mock.ExpectBegin()
 	mock.ExpectExec("^DELETE FROM accounts WHERE id = ?").WithArgs(*targetData.ID).WillReturnResult(pgxmock.NewResult("DELETE", 1))
 	mock.ExpectCommit()
@@ -301,13 +381,30 @@ func TestRemoveAccount(t *testing.T) {
 	}
 }
 
+func TestRemoveAccountOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetDataID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveAccount(mock, &targetDataID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveAccountOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	targetData.ID = utils.Ptr[int](-1)
 	mock.ExpectBegin()
 	mock.ExpectExec("^DELETE FROM accounts WHERE id = ?").WithArgs(-1).WillReturnError(fmt.Errorf("Cannot have -1 as ID"))
@@ -327,15 +424,15 @@ func TestGetAccountList(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []Account{data1, data2}
+	dataList := []Account{TestData1, TestData2}
 	mockRows := AddAccountToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM accounts").WillReturnRows(mockRows)
-	ids := make([]int, 0)
+	ids := []int{1, 2}
 	foundAccounts, err := GetAccountList(mock, ids)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetAccount", err)
 	}
-	testAccounts := allData
+	testAccounts := TestAllData
 	for i, foundAccount := range foundAccounts {
 		if cmp.Equal(foundAccount, testAccounts[i]) == false {
 			t.Errorf("Expected Account From Method GetAccount: %v is different from actual %v", foundAccount, testAccounts[i])
@@ -366,13 +463,34 @@ func TestGetAccountListForErr(t *testing.T) {
 	}
 }
 
+func TestGetAccountListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	ids := []int{1, 2}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM accounts").WillReturnRows(differentModelRows)
+	foundAccounts, err := GetAccountList(mock, ids)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAccountList", err)
+	}
+	if foundAccounts != nil {
+		t.Errorf("Expected foundAccounts From Method GetAccountList: to be empty but got this: %v", foundAccounts)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestUpdateAccount(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	mock.ExpectBegin()
 	mock.ExpectExec("^UPDATE accounts").WithArgs(
 		targetData.Name,
@@ -397,13 +515,46 @@ func TestUpdateAccount(t *testing.T) {
 	}
 }
 
+func TestUpdateAccountOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = nil
+	err = UpdateAccount(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+func TestUpdateAccountOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = UpdateAccount(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
 func TestUpdateAccountOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	targetData.ID = utils.Ptr[int](-1)
@@ -438,7 +589,7 @@ func TestInsertAccount(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	targetData.Name = "New Name"
 	mock.ExpectBegin()
 	mock.ExpectQuery("^INSERT INTO accounts").WithArgs(
@@ -466,13 +617,32 @@ func TestInsertAccount(t *testing.T) {
 	}
 }
 
+func TestInsertAccountOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, err = InsertAccount(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestInsertAccountOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
@@ -507,7 +677,7 @@ func TestInsertAccountOnFailureOnCommit(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
@@ -531,6 +701,156 @@ func TestInsertAccountOnFailureOnCommit(t *testing.T) {
 	}
 	if err == nil {
 		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertAccounts(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	mock.ExpectCopyFrom(pgx.Identifier{"accounts"}, DBColumnsInsertAccounts)
+	targetData := TestAllData
+	err = InsertAccounts(mock, targetData)
+	if err != nil {
+		t.Fatalf("an error '%s' in InsertAccounts", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertAccountsOnFailure(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	mock.ExpectCopyFrom(pgx.Identifier{"accounts"}, DBColumnsInsertAccounts).WillReturnError(fmt.Errorf("Random SQL Error"))
+	targetData := TestAllData
+	err = InsertAccounts(mock, targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetAccountListByPagination(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	dataList := TestAllData
+	mockRows := AddAccountToMockRows(mock, dataList)
+	_start := 1
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"account_type_id = 1", "chain_id=1"}
+	mock.ExpectQuery("^SELECT (.+) FROM accounts").WillReturnRows(mockRows)
+	foundAccountList, err := GetAccountListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err != nil {
+		t.Fatalf("an error '%s' in GetAccountListByPagination", err)
+	}
+	for i, sourceData := range dataList {
+		if cmp.Equal(sourceData, foundAccountList[i]) == false {
+			t.Errorf("Expected sourceData From Method GetAccountListByPagination: %v is different from actual %v", sourceData, foundAccountList[i])
+		}
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetAccountListByPaginationForErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"account_type_id = -1"}
+	mock.ExpectQuery("^SELECT (.+) FROM accounts").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
+	foundAccountList, err := GetAccountListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAccountListByPagination", err)
+	}
+	if len(foundAccountList) != 0 {
+		t.Errorf("Expected From Method GetAccountListByPagination: to be empty but got this: %v", foundAccountList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetAccountListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"account_type_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM accounts").WillReturnRows(differentModelRows)
+	foundAccountList, err := GetAccountListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAccountListByPagination", err)
+	}
+	if foundAccountList != nil {
+		t.Errorf("Expected From Method GetAccountListByPagination: to be empty but got this: %v", foundAccountList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetTotalAccountsCount(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	numOfChainsExpected := 10
+	mock.ExpectQuery("^SELECT COUNT(.*) FROM accounts").WillReturnRows(mock.NewRows([]string{"count"}).AddRow(numOfChainsExpected))
+	numOfChains, err := GetTotalAccountsCount(mock)
+	if err != nil {
+		t.Fatalf("an error '%s' in GetTotalAccountsCount", err)
+	}
+	if *numOfChains != numOfChainsExpected {
+		t.Errorf("Expected Chain From Method GetTotalAccountsCount: %d is different from actual %d", numOfChainsExpected, *numOfChains)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetTotalMinersForErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	mock.ExpectQuery("^SELECT COUNT(.*) FROM accounts").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
+	numOfChains, err := GetTotalAccountsCount(mock)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetTotalAccountsCount", err)
+	}
+	if numOfChains != nil {
+		t.Errorf("Expected numOfChains From Method GetTotalAccountsCount to be empty but got this: %v", numOfChains)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)

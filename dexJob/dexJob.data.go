@@ -312,3 +312,73 @@ func InsertDexTxnJobList(dbConnPgx utils.PgxIface, dexTxnJobList []DexTxnJob) er
 	}
 	return nil
 }
+
+func GetDexTxnJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]DexTxnJob, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	sql := `SELECT 
+	id,  
+	job_id,
+	uuid, 
+	name,
+	alternate_name,
+	start_date,
+	end_date,
+	description,
+	status_id,
+	chain_id,
+	exchange_id,
+	transaction_hashes,
+	created_by, 
+	created_at, 
+	updated_by, 
+	updated_at 
+	FROM dex_txn_jobs
+	`
+	if len(_filters) > 0 {
+		sql += "WHERE "
+		for i, filter := range _filters {
+			sql += filter
+			if i < len(_filters)-1 {
+				sql += " AND "
+			}
+		}
+	}
+	if _order != "" && _sort != "" {
+		sql += fmt.Sprintf(" ORDER BY %s %s ", _sort, _order)
+	}
+	if (_start != nil && *_start > 0) && (_end != nil && *_end > 0) {
+		pageSize := *_end - *_start
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d ", *_start, pageSize)
+	}
+
+	results, err := dbConnPgx.Query(ctx, sql)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	defer results.Close()
+	dexTxnJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[DexTxnJob])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return dexTxnJobs, nil
+}
+
+func GetTotalDexTxnJobCount(dbConnPgx utils.PgxIface) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	row := dbConnPgx.QueryRow(ctx, `SELECT COUNT(*) FROM dex_txn_jobs`)
+	totalCount := 0
+	err := row.Scan(
+		&totalCount,
+	)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &totalCount, nil
+}

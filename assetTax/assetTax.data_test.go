@@ -27,7 +27,22 @@ var columns = []string{
 	"updated_at",        //12
 }
 
-var data1 = AssetTax{
+var DBColumnsInsertAssetTaxes = []string{
+	"tax_id",            //1
+	"asset_id",          //2
+	"uuid",              //3
+	"name",              //4
+	"alternate_name",    //5
+	"tax_rate_override", //6
+	"tax_rate_type_id",  //7
+	"description",       //8
+	"created_by",        //9
+	"created_at",        //10
+	"updated_by",        //11
+	"updated_at",        //12
+}
+
+var TestData1 = AssetTax{
 	TaxID:           utils.Ptr[int](1),
 	AssetID:         utils.Ptr[int](1),
 	UUID:            "880607ab-2833-4ad7-a231-b983a61c7b39",
@@ -42,7 +57,7 @@ var data1 = AssetTax{
 	UpdatedAt:       utils.SampleCreatedAtTime,
 }
 
-var data2 = AssetTax{
+var TestData2 = AssetTax{
 	TaxID:           utils.Ptr[int](2),
 	AssetID:         utils.Ptr[int](2),
 	UUID:            "880607ab-2833-4ad7-a231-b983a61c7b334",
@@ -56,7 +71,7 @@ var data2 = AssetTax{
 	UpdatedBy:       "SYSTEM",
 	UpdatedAt:       utils.SampleCreatedAtTime,
 }
-var allData = []AssetTax{data1, data2}
+var TestAllData = []AssetTax{TestData1, TestData2}
 
 func AddAssetTaxToMockRows(mock pgxmock.PgxPoolIface, dataList []AssetTax) *pgxmock.Rows {
 	rows := mock.NewRows(columns)
@@ -85,14 +100,14 @@ func TestGetAllAssetTaxesByTaxType(t *testing.T) {
 	}
 	defer mock.Close()
 	taxTypeID := 1
-	dataList := []AssetTax{data1}
+	dataList := []AssetTax{TestData1}
 	mockRows := AddAssetTaxToMockRows(mock, dataList)
 	mock.ExpectQuery("^SELECT (.+) FROM asset_taxes").WithArgs(taxTypeID).WillReturnRows(mockRows)
 	foundAssetTaxes, err := GetAllAssetTaxesByTaxType(mock, &taxTypeID)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetAllAssetTaxesByTaxType", err)
 	}
-	testAssetTaxes := allData
+	testAssetTaxes := TestAllData
 	for i, foundAssetTax := range foundAssetTaxes {
 		if cmp.Equal(foundAssetTax, testAssetTaxes[i]) == false {
 			t.Errorf("Expected AssetTax From Method GetAllAssetTaxesByTaxType: %v is different from actual %v", foundAssetTax, testAssetTaxes[i])
@@ -123,13 +138,34 @@ func TestGetAllAssetTaxesByTaxTypeForErr(t *testing.T) {
 	}
 }
 
+func TestGetAllAssetTaxesByTaxTypeForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	taxTypeID := 1
+	mock.ExpectQuery("^SELECT (.+) FROM asset_taxes").WithArgs(taxTypeID).WillReturnRows(differentModelRows)
+	foundAssetTaxes, err := GetAllAssetTaxesByTaxType(mock, &taxTypeID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAllAssetTaxesByTaxType", err)
+	}
+	if foundAssetTaxes != nil {
+		t.Errorf("Expected foundAssetTaxes From Method GetAllAssetTaxesByTaxType: to be empty but got this: %v", foundAssetTaxes)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetAssetTax(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []AssetTax{targetData}
 	taxID := targetData.TaxID
 	assetID := targetData.AssetID
@@ -190,13 +226,36 @@ func TestGetAssetTaxForErr(t *testing.T) {
 	}
 }
 
+func TestGetAssetTaxForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	taxID := -1
+	assetID := -1
+	mock.ExpectQuery("^SELECT (.+) FROM asset_taxes").WithArgs(taxID, assetID).WillReturnRows(differentModelRows)
+	foundAssetTax, err := GetAssetTax(mock, &taxID, &assetID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAssetTax", err)
+	}
+	if foundAssetTax != nil {
+		t.Errorf("Expected foundAssetTax From Method GetAssetTax: to be empty but got this: %v", foundAssetTax)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveAssetTax(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	taxID := targetData.TaxID
 	assetID := targetData.AssetID
 	mock.ExpectBegin()
@@ -205,6 +264,24 @@ func TestRemoveAssetTax(t *testing.T) {
 	err = RemoveAssetTax(mock, taxID, assetID)
 	if err != nil {
 		t.Fatalf("an error '%s' in RemoveAssetTax", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestRemoveAssetTaxOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	taxID := -1
+	assetID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveAssetTax(mock, &taxID, &assetID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -237,7 +314,7 @@ func TestGetAssetTaxList(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []AssetTax{data1, data2}
+	dataList := []AssetTax{TestData1, TestData2}
 	mockRows := AddAssetTaxToMockRows(mock, dataList)
 	assetIds := []int{1, 2}
 	taxIds := []int{1, 2}
@@ -246,7 +323,7 @@ func TestGetAssetTaxList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' in GetAssetTaxList", err)
 	}
-	testAssetTaxes := allData
+	testAssetTaxes := TestAllData
 	for i, foundAssetTax := range foundAssetTaxes {
 		if cmp.Equal(foundAssetTax, testAssetTaxes[i]) == false {
 			t.Errorf("Expected AssetTax From Method GetAssetTaxList: %v is different from actual %v", foundAssetTax, testAssetTaxes[i])
@@ -278,13 +355,35 @@ func TestGetAssetTaxListForErr(t *testing.T) {
 	}
 }
 
+func TestGetAssetTaxListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	assetIds := []int{-1, -2}
+	taxIds := []int{1}
+	mock.ExpectQuery("^SELECT (.+) FROM asset_taxes").WillReturnRows(differentModelRows)
+	foundAssetTaxes, err := GetAssetTaxList(mock, assetIds, taxIds)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAssetTaxList", err)
+	}
+	if foundAssetTaxes != nil {
+		t.Errorf("Expected foundAssetTaxes From Method GetAssetTaxList: to be empty but got this: %v", foundAssetTaxes)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestUpdateAssetTax(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	mock.ExpectBegin()
 	mock.ExpectExec("^UPDATE asset_taxes").WithArgs(
 		targetData.Name,            //1
@@ -306,13 +405,46 @@ func TestUpdateAssetTax(t *testing.T) {
 	}
 }
 
+func TestUpdateAssetTaxOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.TaxID = nil
+	err = UpdateAssetTax(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+func TestUpdateAssetTaxOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = UpdateAssetTax(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestUpdateAssetTaxOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	targetData.AssetID = utils.Ptr[int](-1)
@@ -344,7 +476,7 @@ func TestInsertAssetTax(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	targetData.Name = "New Name"
 	mock.ExpectBegin()
 	mock.ExpectQuery("^INSERT INTO asset_taxes").WithArgs(
@@ -373,13 +505,30 @@ func TestInsertAssetTax(t *testing.T) {
 	}
 }
 
+func TestInsertAssetTaxOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, _, err = InsertAssetTax(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestInsertAssetTaxOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
@@ -415,7 +564,7 @@ func TestInsertAssetTaxOnFailureOnCommit(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
@@ -446,19 +595,53 @@ func TestInsertAssetTaxOnFailureOnCommit(t *testing.T) {
 	}
 }
 
+func TestInsertAssetTaxes(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	mock.ExpectCopyFrom(pgx.Identifier{"asset_taxes"}, DBColumnsInsertAssetTaxes)
+	targetData := TestAllData
+	err = InsertAssetTaxes(mock, targetData)
+	if err != nil {
+		t.Fatalf("an error '%s' in InsertAssetTaxes", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertAssetTaxesOnFailure(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	mock.ExpectCopyFrom(pgx.Identifier{"asset_taxes"}, DBColumnsInsertAssetTaxes).WillReturnError(fmt.Errorf("Random SQL Error"))
+	targetData := TestAllData
+	err = InsertAssetTaxes(mock, targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetAssetTaxListByPagination(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := allData
+	dataList := TestAllData
 	mockRows := AddAssetTaxToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"tax_id = 1"}
+	filters := []string{"tax_id = 1", "asset_id=1"}
 	mock.ExpectQuery("^SELECT (.+) FROM asset_taxes").WillReturnRows(mockRows)
 	foundAssetTaxes, err := GetAssetTaxListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -492,6 +675,31 @@ func TestGetAssetTaxListByPaginationForErr(t *testing.T) {
 		t.Fatalf("expected an error '%s' in GetAssetTaxListByPagination", err)
 	}
 	if len(foundAssetTaxes) != 0 {
+		t.Errorf("Expected From Method GetAssetTaxListByPagination: to be empty but got this: %v", foundAssetTaxes)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetAssetTaxListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"tax_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM asset_taxes").WillReturnRows(differentModelRows)
+	foundAssetTaxes, err := GetAssetTaxListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAssetTaxListByPagination", err)
+	}
+	if foundAssetTaxes != nil {
 		t.Errorf("Expected From Method GetAssetTaxListByPagination: to be empty but got this: %v", foundAssetTaxes)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {

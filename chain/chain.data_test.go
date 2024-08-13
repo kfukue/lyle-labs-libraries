@@ -32,7 +32,27 @@ var columns = []string{
 	"rpc_url_archive",    //18
 }
 
-var data1 = Chain{
+var DBColumnsInsertChains = []string{
+	"uuid",               //1
+	"base_asset_id",      //2
+	"name",               //3
+	"alternate_name",     //4
+	"address",            //5
+	"chain_type_id",      //6
+	"description",        //7
+	"created_by",         //8
+	"created_at",         //9
+	"updated_by",         //10
+	"updated_at",         //11
+	"rpc_url",            //12
+	"chain_id",           //13
+	"block_explorer_url", //14
+	"rpc_url_dev",        //15
+	"rpc_url_prod",       //16
+	"rpc_url_archive",    //17
+}
+
+var TestData1 = Chain{
 	ID:               utils.Ptr[int](1),
 	UUID:             "880607ab-2833-4ad7-a231-b983a61c7b39",
 	BaseAssetID:      utils.Ptr[int](2),
@@ -53,7 +73,7 @@ var data1 = Chain{
 	RpcURLArchive:    "ws://erigon.dappnode:8545",
 }
 
-var data2 = Chain{
+var TestData2 = Chain{
 	ID:               utils.Ptr[int](1),
 	UUID:             "880607ab-2833-4ad7-a231-b983a61c7b334",
 	BaseAssetID:      utils.Ptr[int](495),
@@ -73,7 +93,7 @@ var data2 = Chain{
 	RpcURLProd:       "https://api.avax.network/ext/bc/C/rpc",
 	RpcURLArchive:    "https://api.avax.network/ext/bc/C/rpc",
 }
-var allData = []Chain{data1, data2}
+var TestAllData = []Chain{TestData1, TestData2}
 
 func AddChainToMockRows(mock pgxmock.PgxPoolIface, dataList []Chain) *pgxmock.Rows {
 	rows := mock.NewRows(columns)
@@ -109,7 +129,7 @@ func TestGetChain(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []Chain{targetData}
 	chainID := targetData.ChainID
 	mockRows := AddChainToMockRows(mock, dataList)
@@ -167,13 +187,35 @@ func TestGetChainForErr(t *testing.T) {
 	}
 }
 
+func TestGetChainForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	chainID := -1
+	mock.ExpectQuery("^SELECT (.+) FROM chains").WithArgs(chainID).WillReturnRows(differentModelRows)
+	foundChain, err := GetChain(mock, &chainID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetChain", err)
+	}
+	if foundChain != nil {
+		t.Errorf("Expected foundChain From Method GetChain: to be empty but got this: %v", foundChain)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetChainByAddress(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []Chain{targetData}
 	chainAddress := targetData.Address
 	mockRows := AddChainToMockRows(mock, dataList)
@@ -230,13 +272,36 @@ func TestGetChainByAddressForErr(t *testing.T) {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
 	}
 }
+
+func TestGetChainByAddressForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	chainAddress := "xxx"
+	mock.ExpectQuery("^SELECT (.+) FROM chains").WithArgs(chainAddress).WillReturnRows(differentModelRows)
+	foundChain, err := GetChainByAddress(mock, chainAddress)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetChainByAddress", err)
+	}
+	if foundChain != nil {
+		t.Errorf("Expected foundChain From Method GetChainByAddress: to be empty but got this: %v", foundChain)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetChainByAlternateName(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []Chain{targetData}
 	chainAlternateName := targetData.AlternateName
 	mockRows := AddChainToMockRows(mock, dataList)
@@ -294,13 +359,35 @@ func TestGetChainByAlternateNameForErr(t *testing.T) {
 	}
 }
 
+func TestGetChainByAlternateNameForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	chainAlternateName := "xxx"
+	mock.ExpectQuery("^SELECT (.+) FROM chains").WithArgs(chainAlternateName).WillReturnRows(differentModelRows)
+	foundChain, err := GetChainByAlternateName(mock, chainAlternateName)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetChainByAlternateName", err)
+	}
+	if foundChain != nil {
+		t.Errorf("Expected foundChain From Method GetChainByAlternateName: to be empty but got this: %v", foundChain)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveChain(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	chainID := targetData.ChainID
 	mock.ExpectBegin()
 	mock.ExpectExec("^DELETE FROM chains").WithArgs(*chainID).WillReturnResult(pgxmock.NewResult("DELETE", 1))
@@ -308,6 +395,23 @@ func TestRemoveChain(t *testing.T) {
 	err = RemoveChain(mock, chainID)
 	if err != nil {
 		t.Fatalf("an error '%s' in RemoveChain", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestRemoveChainOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	taxID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveChain(mock, &taxID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -339,7 +443,7 @@ func TestGetChainList(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []Chain{data1, data2}
+	dataList := []Chain{TestData1, TestData2}
 	mockRows := AddChainToMockRows(mock, dataList)
 	chainIDs := []int{1, 2}
 	mock.ExpectQuery("^SELECT (.+) FROM chains").WillReturnRows(mockRows)
@@ -347,7 +451,7 @@ func TestGetChainList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' in GetChainList", err)
 	}
-	testChains := allData
+	testChains := TestAllData
 	for i, foundChain := range foundChains {
 		if cmp.Equal(foundChain, testChains[i]) == false {
 			t.Errorf("Expected Chain From Method GetChainList: %v is different from actual %v", foundChain, testChains[i])
@@ -377,19 +481,41 @@ func TestGetChainListForErr(t *testing.T) {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
 	}
 }
+
+func TestGetChainListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	chainIDs := []int{-1, -2}
+	mock.ExpectQuery("^SELECT (.+) FROM chains").WillReturnRows(differentModelRows)
+	foundChains, err := GetChainList(mock, chainIDs)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetChainList", err)
+	}
+	if foundChains != nil {
+		t.Errorf("Expected foundChains From Method GetChainList: to be empty but got this: %v", foundChains)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetChainListByPagination(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := allData
+	dataList := TestAllData
 	mockRows := AddChainToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"chain_type_id = 1"}
+	filters := []string{"chain_type_id = 1", "base_asset_id=1"}
 	mock.ExpectQuery("^SELECT (.+) FROM chains").WillReturnRows(mockRows)
 	foundChains, err := GetChainListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -423,6 +549,31 @@ func TestGetChainListByPaginationForErr(t *testing.T) {
 		t.Fatalf("expected an error '%s' in GetChainListByPagination", err)
 	}
 	if len(foundChains) != 0 {
+		t.Errorf("Expected From Method GetChainListByPagination: to be empty but got this: %v", foundChains)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetChainListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"chain_type_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM chains").WillReturnRows(differentModelRows)
+	foundChains, err := GetChainListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetChainListByPagination", err)
+	}
+	if foundChains != nil {
 		t.Errorf("Expected From Method GetChainListByPagination: to be empty but got this: %v", foundChains)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -474,7 +625,7 @@ func TestUpdateChain(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	mock.ExpectBegin()
 	mock.ExpectExec("^UPDATE chains").WithArgs(
 		targetData.Name,             //1
@@ -502,13 +653,46 @@ func TestUpdateChain(t *testing.T) {
 	}
 }
 
+func TestUpdateChainOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = nil
+	err = UpdateChain(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+func TestUpdateChainOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = UpdateChain(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
 func TestUpdateChainOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	targetData.ID = utils.Ptr[int](-1)
@@ -546,7 +730,7 @@ func TestInsertChain(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	targetData.Name = "New Name"
 	mock.ExpectBegin()
 	mock.ExpectQuery("^INSERT INTO chains").WithArgs(
@@ -577,13 +761,31 @@ func TestInsertChain(t *testing.T) {
 	}
 }
 
+func TestInsertChainOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, err = InsertChain(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestInsertChainOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
@@ -621,7 +823,7 @@ func TestInsertChainOnFailureOnCommit(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
@@ -646,6 +848,40 @@ func TestInsertChainOnFailureOnCommit(t *testing.T) {
 	if chainID >= 0 {
 		t.Fatalf("Expecting -1 for chainID because of error chainID: %d", chainID)
 	}
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertChains(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	mock.ExpectCopyFrom(pgx.Identifier{"chains"}, DBColumnsInsertChains)
+	targetData := TestAllData
+	err = InsertChains(mock, targetData)
+	if err != nil {
+		t.Fatalf("an error '%s' in InsertChains", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertChainsOnFailure(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	mock.ExpectCopyFrom(pgx.Identifier{"chains"}, DBColumnsInsertChains).WillReturnError(fmt.Errorf("Random SQL Error"))
+	targetData := TestAllData
+	err = InsertChains(mock, targetData)
 	if err == nil {
 		t.Fatalf("was expecting an error, but there was none")
 	}

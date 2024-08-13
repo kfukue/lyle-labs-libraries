@@ -43,7 +43,7 @@ var columnsInsertExchanges = []string{
 	"updated_at",       //12
 }
 
-var data1 = Exchange{
+var TestData1 = Exchange{
 	ID:             utils.Ptr[int](1),
 	UUID:           "880607ab-2833-4ad7-a231-b983a61c7b39",
 	Name:           "Coinbase",
@@ -59,7 +59,7 @@ var data1 = Exchange{
 	UpdatedAt:      utils.SampleCreatedAtTime,
 }
 
-var data2 = Exchange{
+var TestData2 = Exchange{
 	ID:             utils.Ptr[int](2),
 	UUID:           "880607ab-2833-4ad7-a231-b983a61cad34",
 	Name:           "Binance",
@@ -74,7 +74,7 @@ var data2 = Exchange{
 	UpdatedBy:      "SYSTEM",
 	UpdatedAt:      utils.SampleCreatedAtTime,
 }
-var allData = []Exchange{data1, data2}
+var TestAllData = []Exchange{TestData1, TestData2}
 
 func AddExchangeToMockRows(mock pgxmock.PgxPoolIface, dataList []Exchange) *pgxmock.Rows {
 	rows := mock.NewRows(columns)
@@ -168,7 +168,7 @@ func TestGetExchange(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data2
+	targetData := TestData2
 	dataList := []Exchange{targetData}
 	exchangeID := targetData.ID
 	mockRows := AddExchangeToMockRows(mock, dataList)
@@ -226,13 +226,35 @@ func TestGetExchangeForErr(t *testing.T) {
 	}
 }
 
+func TestGetExchangeForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	exchangeID := -1
+	mock.ExpectQuery("^SELECT (.+) FROM exchanges").WithArgs(exchangeID).WillReturnRows(differentModelRows)
+	foundExchange, err := GetExchange(mock, &exchangeID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetExchange", err)
+	}
+	if foundExchange != nil {
+		t.Errorf("Expected foundExchange From Method GetExchange: to be empty but got this: %v", foundExchange)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveExchange(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	exchangeID := targetData.ID
 	mock.ExpectBegin()
 	mock.ExpectExec("^DELETE FROM exchanges").WithArgs(*exchangeID).WillReturnResult(pgxmock.NewResult("DELETE", 1))
@@ -240,6 +262,23 @@ func TestRemoveExchange(t *testing.T) {
 	err = RemoveExchange(mock, exchangeID)
 	if err != nil {
 		t.Fatalf("an error '%s' in RemoveExchange", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestRemoveExchangeOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	taxID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveExchange(mock, &taxID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -264,65 +303,21 @@ func TestRemoveExchangeOnFailure(t *testing.T) {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
 	}
 }
-
-func TestGetExchanges(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
-	}
-	defer mock.Close()
-	dataList := []Exchange{data1, data2}
-	mockRows := AddExchangeToMockRows(mock, dataList)
-	mock.ExpectQuery("^SELECT (.+) FROM exchanges").WillReturnRows(mockRows)
-	foundExchanges, err := GetExchanges(mock)
-	if err != nil {
-		t.Fatalf("an error '%s' in GetExchanges", err)
-	}
-	testExchanges := allData
-	for i, foundExchange := range foundExchanges {
-		if cmp.Equal(foundExchange, testExchanges[i]) == false {
-			t.Errorf("Expected Exchange From Method GetExchanges: %v is different from actual %v", foundExchange, testExchanges[i])
-		}
-	}
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("There awere unfulfilled expectations: %s", err)
-	}
-}
-
-func TestGetExchangesForErr(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
-	}
-	defer mock.Close()
-	mock.ExpectQuery("^SELECT (.+) FROM exchanges").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundExchanges, err := GetExchanges(mock)
-	if err == nil {
-		t.Fatalf("expected an error '%s' in GetExchanges", err)
-	}
-	if len(foundExchanges) != 0 {
-		t.Errorf("Expected From Method GetExchanges: to be empty but got this: %v", foundExchanges)
-	}
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("There awere unfulfilled expectations: %s", err)
-	}
-}
-
 func TestGetExchangeList(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []Exchange{data1, data2}
+	dataList := []Exchange{TestData1, TestData2}
 	mockRows := AddExchangeToMockRows(mock, dataList)
-	ids := []int{*data1.ID, *data2.ID}
+	ids := []int{*TestData1.ID, *TestData2.ID}
 	mock.ExpectQuery("^SELECT (.+) FROM exchanges").WillReturnRows(mockRows)
 	foundExchanges, err := GetExchangeList(mock, ids)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetExchangeList", err)
 	}
-	testExchanges := allData
+	testExchanges := TestAllData
 	for i, foundExchange := range foundExchanges {
 		if cmp.Equal(foundExchange, testExchanges[i]) == false {
 			t.Errorf("Expected Exchange From Method GetExchangeList: %v is different from actual %v", foundExchange, testExchanges[i])
@@ -339,7 +334,7 @@ func TestGetExchangeListForErr(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	ids := []int{*data1.ID, *data2.ID}
+	ids := []int{*TestData1.ID, *TestData2.ID}
 	mock.ExpectQuery("^SELECT (.+) FROM exchanges").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
 	foundExchanges, err := GetExchangeList(mock, ids)
 	if err == nil {
@@ -353,21 +348,42 @@ func TestGetExchangeListForErr(t *testing.T) {
 	}
 }
 
+func TestGetExchangeListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	ids := []int{*TestData1.ID, *TestData2.ID}
+	mock.ExpectQuery("^SELECT (.+) FROM exchanges").WillReturnRows(differentModelRows)
+	foundExchanges, err := GetExchangeList(mock, ids)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetExchangeList", err)
+	}
+	if foundExchanges != nil {
+		t.Errorf("Expected foundExchanges From Method GetExchangeList: to be empty but got this: %v", foundExchanges)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetExchangesByUUIDs(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []Exchange{data1, data2}
+	dataList := []Exchange{TestData1, TestData2}
 	mockRows := AddExchangeToMockRows(mock, dataList)
-	uuids := []string{data1.UUID, data2.UUID}
+	uuids := []string{TestData1.UUID, TestData2.UUID}
 	mock.ExpectQuery("^SELECT (.+) FROM exchanges").WithArgs(pq.Array(uuids)).WillReturnRows(mockRows)
 	foundExchanges, err := GetExchangesByUUIDs(mock, uuids)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetExchangesByUUIDs", err)
 	}
-	testExchanges := allData
+	testExchanges := TestAllData
 	for i, foundExchange := range foundExchanges {
 		if cmp.Equal(foundExchange, testExchanges[i]) == false {
 			t.Errorf("Expected Exchange From Method GetExchangesByUUIDs: %v is different from actual %v", foundExchange, testExchanges[i])
@@ -384,7 +400,7 @@ func TestGetExchangesByUUIDsForErr(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	uuids := []string{data1.UUID, data2.UUID}
+	uuids := []string{TestData1.UUID, TestData2.UUID}
 	mock.ExpectQuery("^SELECT (.+) FROM exchanges").WithArgs(pq.Array(uuids)).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
 	foundExchanges, err := GetExchangesByUUIDs(mock, uuids)
 	if err == nil {
@@ -398,13 +414,34 @@ func TestGetExchangesByUUIDsForErr(t *testing.T) {
 	}
 }
 
+func TestGetExchangesByUUIDsForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	uuids := []string{TestData1.UUID, TestData2.UUID}
+	mock.ExpectQuery("^SELECT (.+) FROM exchanges").WithArgs(pq.Array(uuids)).WillReturnRows(differentModelRows)
+	foundExchanges, err := GetExchangesByUUIDs(mock, uuids)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetExchangesByUUIDs", err)
+	}
+	if foundExchanges != nil {
+		t.Errorf("Expected foundExchanges From Method GetExchangesByUUIDs: to be empty but got this: %v", foundExchanges)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetStartAndEndDateDiffExchanges(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := []Exchange{data1}
+	dataList := []Exchange{TestData1}
 	mockRows := AddExchangeToMockRows(mock, dataList)
 	diffInDate := 10
 	mock.ExpectQuery("^SELECT (.+) FROM exchanges").WithArgs(diffInDate).WillReturnRows(mockRows)
@@ -412,7 +449,7 @@ func TestGetStartAndEndDateDiffExchanges(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' in GetStartAndEndDateDiffExchanges", err)
 	}
-	testExchanges := allData
+	testExchanges := TestAllData
 	for i, foundExchange := range foundExchanges {
 		if cmp.Equal(foundExchange, testExchanges[i]) == false {
 			t.Errorf("Expected Exchange From Method GetStartAndEndDateDiffExchanges: %v is different from actual %v", foundExchange, testExchanges[i])
@@ -443,13 +480,34 @@ func TestGetStartAndEndDateDiffExchangesForErr(t *testing.T) {
 	}
 }
 
+func TestGetStartAndEndDateDiffExchangesForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	diffInDate := -10
+	mock.ExpectQuery("^SELECT (.+) FROM exchanges").WithArgs(diffInDate).WillReturnRows(differentModelRows)
+	foundExchanges, err := GetStartAndEndDateDiffExchanges(mock, &diffInDate)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetStartAndEndDateDiffExchanges", err)
+	}
+	if foundExchanges != nil {
+		t.Errorf("Expected foundExchanges From Method GetStartAndEndDateDiffExchanges: to be empty but got this: %v", foundExchanges)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestUpdateExchange(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	mock.ExpectBegin()
 	mock.ExpectExec("^UPDATE exchanges").WithArgs(
 		targetData.Name,           //1
@@ -472,13 +530,30 @@ func TestUpdateExchange(t *testing.T) {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
 	}
 }
+
+func TestUpdateExchangeOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = nil
+	err = UpdateExchange(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
 func TestUpdateExchangeOnFailureAtBegin(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	targetData.ID = utils.Ptr[int](-1)
@@ -497,7 +572,7 @@ func TestUpdateExchangeOnFailure(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	targetData.ID = utils.Ptr[int](-1)
@@ -530,7 +605,7 @@ func TestInsertExchange(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	targetData.Name = "New Name"
 	mock.ExpectBegin()
 	mock.ExpectQuery("^INSERT INTO exchanges").WithArgs(
@@ -556,13 +631,32 @@ func TestInsertExchange(t *testing.T) {
 	}
 }
 
+func TestInsertExchangeOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, err = InsertExchange(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestInsertExchangeOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
@@ -595,7 +689,7 @@ func TestInsertExchangeOnFailureOnCommit(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := data1
+	targetData := TestData1
 	// name can't be nil
 	targetData.Name = ""
 	mock.ExpectBegin()
@@ -630,7 +724,7 @@ func TestInsertExchanges(t *testing.T) {
 	}
 	defer mock.Close()
 	mock.ExpectCopyFrom(pgx.Identifier{"exchanges"}, columnsInsertExchanges)
-	targetData := allData
+	targetData := TestAllData
 	err = InsertExchanges(mock, targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in InsertExchanges", err)
@@ -647,7 +741,7 @@ func TestInsertExchangesOnFailure(t *testing.T) {
 	}
 	defer mock.Close()
 	mock.ExpectCopyFrom(pgx.Identifier{"exchanges"}, columnsInsertExchanges).WillReturnError(fmt.Errorf("Random SQL Error"))
-	targetData := allData
+	targetData := TestAllData
 	err = InsertExchanges(mock, targetData)
 	if err == nil {
 		t.Fatalf("was expecting an error, but there was none")
@@ -676,6 +770,23 @@ func TestUpdateExchangeChainByUUID(t *testing.T) {
 	err = UpdateExchangeChainByUUID(mock, &targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in UpdateExchangeChainByUUID", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestUpdateExchangeChainByUUIDOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := data1ExchangeChain
+	targetData.ExchangeID = nil
+	err = UpdateExchangeChainByUUID(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -874,13 +985,13 @@ func TestGetExchangeListByPagination(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := allData
+	dataList := TestAllData
 	mockRows := AddExchangeToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"exchange_type_id = 1"}
+	filters := []string{"exchange_type_id = 1", "id=1"}
 	mock.ExpectQuery("^SELECT (.+) FROM exchanges").WillReturnRows(mockRows)
 	foundExcchangeList, err := GetExchangeListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -913,6 +1024,31 @@ func TestGetExchangeListByPaginationForErr(t *testing.T) {
 		t.Fatalf("expected an error '%s' in GetExchangeListByPagination", err)
 	}
 	if len(foundExcchangeList) != 0 {
+		t.Errorf("Expected From Method GetExchangeListByPagination: to be empty but got this: %v", foundExcchangeList)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetExchangeListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"exchange_type_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM exchanges").WillReturnRows(differentModelRows)
+	foundExcchangeList, err := GetExchangeListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetExchangeListByPagination", err)
+	}
+	if foundExcchangeList != nil {
 		t.Errorf("Expected From Method GetExchangeListByPagination: to be empty but got this: %v", foundExcchangeList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {

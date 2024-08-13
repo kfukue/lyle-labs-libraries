@@ -76,6 +76,28 @@ func TestGetAssetForErr(t *testing.T) {
 	}
 }
 
+func TestGetAssetForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	assetID := -1
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM assets").WithArgs(assetID).WillReturnRows(differentModelRows)
+	foundAsset, err := GetAsset(mock, &assetID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAsset", err)
+	}
+	if foundAsset != nil {
+		t.Errorf("Expected foundAsset From Method GetAsset: to be empty but got this: %v", foundAsset)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetAssetByTicker(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -134,6 +156,28 @@ func TestGetAssetByTickerForErr(t *testing.T) {
 	}
 	if foundAsset != nil {
 		t.Errorf("Expected Asset From Method GetAssetByTicker: to be empty but got this: %v", foundAsset)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetAssetByTickerForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	testTicker := "Fake-Ticker"
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM assets").WithArgs(testTicker).WillReturnRows(differentModelRows)
+	foundAsset, err := GetAssetByTicker(mock, testTicker)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAssetByTicker", err)
+	}
+	if foundAsset != nil {
+		t.Errorf("Expected foundAsset From Method GetAssetByTicker: to be empty but got this: %v", foundAsset)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -204,6 +248,28 @@ func TestGetAssetByContractAddressForErr(t *testing.T) {
 	}
 }
 
+func TestGetAssetByContractAddressForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	testContractAddress := "Fake-Ticker"
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM assets").WithArgs(testContractAddress).WillReturnRows(differentModelRows)
+	foundAsset, err := GetAssetByContractAddress(mock, testContractAddress)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAssetByContractAddress", err)
+	}
+	if foundAsset != nil {
+		t.Errorf("Expected foundAsset From Method GetAssetByContractAddress: to be empty but got this: %v", foundAsset)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetAssetByCusip(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -268,6 +334,27 @@ func TestGetAssetByCusipForErr(t *testing.T) {
 	}
 }
 
+func TestGetAssetByCusipForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	testCusip := "Fake-Ticker"
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM assets").WithArgs(testCusip).WillReturnRows(differentModelRows)
+	foundAsset, err := GetAssetByCusip(mock, testCusip)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAssetByCusip", err)
+	}
+	if foundAsset != nil {
+		t.Errorf("Expected foundAsset From Method GetAssetByCusip: to be empty but got this: %v", foundAsset)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
 func TestGetAssetByBaseAndQuoteID(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -335,6 +422,29 @@ func TestGetAssetByBaseAndQuoteIDForErr(t *testing.T) {
 	}
 }
 
+func TestGetAssetByBaseAndQuoteIDForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	baseAssetID := utils.Ptr[int](-1)
+	quoteAssetID := utils.Ptr[int](-1)
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM assets").WithArgs(*baseAssetID, *quoteAssetID).WillReturnRows(differentModelRows)
+	foundAsset, err := GetAssetByBaseAndQuoteID(mock, baseAssetID, quoteAssetID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAssetByBaseAndQuoteID", err)
+	}
+	if foundAsset != nil {
+		t.Errorf("Expected foundAsset From Method GetAssetByBaseAndQuoteID: to be empty but got this: %v", foundAsset)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetGethImportAssets(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -379,6 +489,26 @@ func TestGetGethImportAssetsForErr(t *testing.T) {
 	}
 }
 
+func TestGetGethImportAssetsForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM assets").WillReturnRows(differentModelRows)
+	foundAssets, err := GetGethImportAssets(mock)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethImportAssets", err)
+	}
+	if foundAssets != nil {
+		t.Errorf("Expected foundAssets From Method GetGethImportAssets: to be empty but got this: %v", foundAssets)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveAsset(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -392,6 +522,23 @@ func TestRemoveAsset(t *testing.T) {
 	err = RemoveAsset(mock, targetData.ID)
 	if err != nil {
 		t.Fatalf("an error '%s' in RemoveAsset", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestRemoveAssetOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	taxID := -1
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = RemoveAsset(mock, &taxID)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -463,6 +610,26 @@ func TestGetCurrentTradingAssetsForErr(t *testing.T) {
 	}
 }
 
+func TestGetCurrentTradingAssetsForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM public.get_current_assets").WillReturnRows(differentModelRows)
+	foundAssets, err := GetCurrentTradingAssets(mock)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetCurrentTradingAssets", err)
+	}
+	if foundAssets != nil {
+		t.Errorf("Expected foundAssets From Method GetCurrentTradingAssets: to be empty but got this: %v", foundAssets)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetCryptoAssets(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -501,6 +668,26 @@ func TestGetCryptoAssetsForErr(t *testing.T) {
 	}
 	if len(foundAssets) != 0 {
 		t.Errorf("Expected From Method GetCryptoAssets: to be empty but got this: %v", foundAssets)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetCryptoAssetsForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) assets where asset_type_id = 1").WillReturnRows(differentModelRows)
+	foundAssets, err := GetCryptoAssets(mock)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetCryptoAssets", err)
+	}
+	if foundAssets != nil {
+		t.Errorf("Expected foundAssets From Method GetCryptoAssets: to be empty but got this: %v", foundAssets)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -558,6 +745,29 @@ func TestGetAssetsByAssetTypeAndSourceForErr(t *testing.T) {
 	}
 }
 
+func TestGetAssetsByAssetTypeAndSourceForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	assetTypeID := dataAssetWithSources1.AssetTypeID
+	sourceID := dataAssetWithSources1.SourceID
+	excludeIgnoreMarketData := false
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM assets").WithArgs(*assetTypeID, *sourceID).WillReturnRows(differentModelRows)
+	foundAssets, err := GetAssetsByAssetTypeAndSource(mock, assetTypeID, sourceID, excludeIgnoreMarketData)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAssetsByAssetTypeAndSource", err)
+	}
+	if foundAssets != nil {
+		t.Errorf("Expected foundAssets From Method GetAssetsByAssetTypeAndSource: to be empty but got this: %v", foundAssets)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetCryptoAssetsBySourceId(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -600,6 +810,28 @@ func TestGetCryptoAssetsBySourceIdForErr(t *testing.T) {
 	}
 	if len(foundAssets) != 0 {
 		t.Errorf("Expected From Method GetCryptoAssetsBySourceId: to be empty but got this: %v", foundAssets)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetCryptoAssetsBySourceIdForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	sourceID := dataAssetWithSources1.SourceID
+	excludeIgnoreMarketData := false
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM assets").WithArgs(*sourceID).WillReturnRows(differentModelRows)
+	foundAssets, err := GetCryptoAssetsBySourceId(mock, sourceID, excludeIgnoreMarketData)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetCryptoAssetsBySourceId", err)
+	}
+	if foundAssets != nil {
+		t.Errorf("Expected foundAssets From Method GetCryptoAssetsBySourceId: to be empty but got this: %v", foundAssets)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -724,6 +956,29 @@ func TestGetAssetWithSourceByAssetIdAndSourceIDForErr(t *testing.T) {
 	}
 }
 
+func TestGetAssetWithSourceByAssetIdAndSourceIDForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	assetID := utils.Ptr[int](-1)
+	sourceID := utils.Ptr[int](-1)
+	excludeIgnoreMarketData := true
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM assets").WithArgs(*assetID, *sourceID).WillReturnRows(differentModelRows)
+	foundAsset, err := GetAssetWithSourceByAssetIdAndSourceID(mock, assetID, sourceID, excludeIgnoreMarketData)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAssetWithSourceByAssetIdAndSourceID", err)
+	}
+	if foundAsset != nil {
+		t.Errorf("Expected foundAsset From Method GetAssetWithSourceByAssetIdAndSourceID: to be empty but got this: %v", foundAsset)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetAssetWithSourceByAssetIdsAndSourceID(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -768,6 +1023,29 @@ func TestGetAssetWithSourceByAssetIdsAndSourceIDForErr(t *testing.T) {
 	}
 	if len(foundAssets) != 0 {
 		t.Errorf("Expected From Method GetAssetWithSourceByAssetIdsAndSourceID: to be empty but got this: %v", foundAssets)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetAssetWithSourceByAssetIdsAndSourceIDForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	assetIDs := []int{-1, -2}
+	sourceID := dataAssetWithSources1.SourceID
+	excludeIgnoreMarketData := false
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM assets").WithArgs(pq.Array(assetIDs), *sourceID).WillReturnRows(differentModelRows)
+	foundAssets, err := GetAssetWithSourceByAssetIdsAndSourceID(mock, assetIDs, sourceID, excludeIgnoreMarketData)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAssetWithSourceByAssetIdsAndSourceID", err)
+	}
+	if foundAssets != nil {
+		t.Errorf("Expected foundAssets From Method GetAssetWithSourceByAssetIdsAndSourceID: to be empty but got this: %v", foundAssets)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -824,6 +1102,27 @@ func TestGetAssetListForErr(t *testing.T) {
 	}
 }
 
+func TestGetAssetListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	assetIDs := []int{-1, -2}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM assets").WillReturnRows(differentModelRows)
+	foundAssets, err := GetAssetList(mock, assetIDs)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAssetList", err)
+	}
+	if foundAssets != nil {
+		t.Errorf("Expected foundAssets From Method GetAssetList: to be empty but got this: %v", foundAssets)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetAssetsByChainId(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -870,6 +1169,27 @@ func TestGetAssetsByChainIdForErr(t *testing.T) {
 	}
 }
 
+func TestGetAssetsByChainIdForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	chainID := TestData1.ChainID
+	mock.ExpectQuery("^SELECT (.+) FROM assets WHERE chain_id = ?").WithArgs(*chainID).WillReturnRows(differentModelRows)
+	foundAssets, err := GetAssetsByChainId(mock, chainID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAssetsByChainId", err)
+	}
+	if foundAssets != nil {
+		t.Errorf("Expected foundAssets From Method GetAssetsByChainId: to be empty but got this: %v", foundAssets)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetAssetListByPagination(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -878,11 +1198,11 @@ func TestGetAssetListByPagination(t *testing.T) {
 	defer mock.Close()
 	dataList := []Asset{TestData1}
 	mockRows := AddAssetToMockRows(mock, dataList)
-	_start := 0
+	_start := 1
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"id = 1", "import_geth = TRUE"}
+	filters := []string{"asset_type_id = 1", "import_geth = TRUE"}
 	mock.ExpectQuery("^SELECT (.+) FROM assets").WillReturnRows(mockRows)
 	foundAssets, err := GetAssetListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
@@ -910,13 +1230,38 @@ func TestGetAssetListByPaginationForErr(t *testing.T) {
 	_end := 10
 	_sort := "id"
 	_order := "ASC"
-	filters := []string{"id = 1", "import_geth = TRUE"}
+	filters := []string{"asset_type_id = 1", "import_geth = TRUE"}
 	mock.ExpectQuery("^SELECT (.+) FROM assets").WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
 	foundAssets, err := GetAssetListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetAssetListByPagination", err)
 	}
 	if len(foundAssets) != 0 {
+		t.Errorf("Expected From Method GetAssetListByPagination: to be empty but got this: %v", foundAssets)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetAssetListByPaginationForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	_start := 0
+	_end := 10
+	_sort := "id"
+	_order := "ASC"
+	filters := []string{"asset_type_id = 1"}
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM assets").WillReturnRows(differentModelRows)
+	foundAssets, err := GetAssetListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetAssetListByPagination", err)
+	}
+	if foundAssets != nil {
 		t.Errorf("Expected From Method GetAssetListByPagination: to be empty but got this: %v", foundAssets)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -1009,6 +1354,27 @@ func TestGetDefaultQuoteAssetListBySourceIDForErr(t *testing.T) {
 	}
 }
 
+func TestGetDefaultQuoteAssetListBySourceIDForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	sourceID := -1
+	mock.ExpectQuery("^SELECT (.+) FROM get_default_quotes").WithArgs(sourceID).WillReturnRows(differentModelRows)
+	foundAssets, err := GetDefaultQuoteAssetListBySourceID(mock, &sourceID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetDefaultQuoteAssetListBySourceID", err)
+	}
+	if foundAssets != nil {
+		t.Errorf("Expected foundAssets From Method GetDefaultQuoteAssetListBySourceID: to be empty but got this: %v", foundAssets)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestGetDefaultQuoteAssetList(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -1052,6 +1418,26 @@ func TestGetDefaultQuoteAssetListForErr(t *testing.T) {
 	}
 }
 
+func TestGetDefaultQuoteAssetListForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM get_default_quotes").WillReturnRows(differentModelRows)
+	foundAssets, err := GetDefaultQuoteAssetList(mock)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetDefaultQuoteAssetList", err)
+	}
+	if foundAssets != nil {
+		t.Errorf("Expected foundAssets From Method GetDefaultQuoteAssetList: to be empty but got this: %v", foundAssets)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestUpdateAsset(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -1086,6 +1472,40 @@ func TestUpdateAsset(t *testing.T) {
 	err = UpdateAsset(mock, &targetData)
 	if err != nil {
 		t.Fatalf("an error '%s' in UpdateAsset", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestUpdateAssetOnFailureAtParameter(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = nil
+	err = UpdateAsset(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+func TestUpdateAssetOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	err = UpdateAsset(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -1179,6 +1599,25 @@ func TestInsertAsset(t *testing.T) {
 	}
 }
 
+func TestInsertAssetOnFailureAtBegin(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData1
+	targetData.ID = utils.Ptr[int](-1)
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
+	_, err = InsertAsset(mock, &targetData)
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestInsertAssetOnFailure(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -1260,6 +1699,40 @@ func TestInsertAssetOnFailureOnCommit(t *testing.T) {
 	if newID >= 0 {
 		t.Fatalf("Expecting -1 for ID because of error ID: %d", newID)
 	}
+	if err == nil {
+		t.Fatalf("was expecting an error, but there was none")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertAssets(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	mock.ExpectCopyFrom(pgx.Identifier{"assets"}, DBColumnsInsertAssets)
+	targetData := TestAllData
+	err = InsertAssets(mock, targetData)
+	if err != nil {
+		t.Fatalf("an error '%s' in InsertAssets", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestInsertAssetsOnFailure(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	mock.ExpectCopyFrom(pgx.Identifier{"assets"}, DBColumnsInsertAssets).WillReturnError(fmt.Errorf("Random SQL Error"))
+	targetData := TestAllData
+	err = InsertAssets(mock, targetData)
 	if err == nil {
 		t.Fatalf("was expecting an error, but there was none")
 	}
