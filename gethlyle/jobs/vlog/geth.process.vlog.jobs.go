@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/kfukue/lyle-labs-libraries/utils"
+	"github.com/kfukue/lyle-labs-libraries/v2/utils"
 )
 
 type GethProcessVlogJob struct {

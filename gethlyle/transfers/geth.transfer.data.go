@@ -9,8 +9,8 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	gethlyleaddresses "github.com/kfukue/lyle-labs-libraries/gethlyle/address"
-	"github.com/kfukue/lyle-labs-libraries/utils"
+	gethlyleaddresses "github.com/kfukue/lyle-labs-libraries/v2/gethlyle/address"
+	"github.com/kfukue/lyle-labs-libraries/v2/utils"
 	"github.com/lib/pq"
 )
 

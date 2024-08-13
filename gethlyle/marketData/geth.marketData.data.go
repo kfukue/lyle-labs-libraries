@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/utils"
+	"github.com/kfukue/lyle-labs-libraries/v2/utils"
 	"github.com/lib/pq"
 	decimal "github.com/shopspring/decimal"
 )

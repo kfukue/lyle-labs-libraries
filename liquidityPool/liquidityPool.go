@@ -3,7 +3,7 @@ package liquiditypool
 import (
 	"time"
 
-	"github.com/kfukue/lyle-labs-libraries/asset"
+	"github.com/kfukue/lyle-labs-libraries/v2/asset"
 )
 
 type LiquidityPool struct {

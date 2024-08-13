@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgtype"
 	pgx "github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/utils"
+	"github.com/kfukue/lyle-labs-libraries/v2/utils"
 )
 
 func GetAccount(dbConnPgx utils.PgxIface, accountID *int) (*Account, error) {

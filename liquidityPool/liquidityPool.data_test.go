@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5"
-	"github.com/kfukue/lyle-labs-libraries/asset"
-	"github.com/kfukue/lyle-labs-libraries/utils"
+	"github.com/kfukue/lyle-labs-libraries/v2/asset"
+	"github.com/kfukue/lyle-labs-libraries/v2/utils"
 	"github.com/lib/pq"
 	"github.com/pashagolub/pgxmock/v4"
 )

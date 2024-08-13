@@ -14,7 +14,7 @@ import (
 	pgxpool5 "github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
-	"github.com/kfukue/lyle-labs-libraries/utils"
+	"github.com/kfukue/lyle-labs-libraries/v2/utils"
 	_ "github.com/lib/pq"
 )
 

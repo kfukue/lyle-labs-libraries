@@ -9,8 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gofrs/uuid"
-	"github.com/kfukue/lyle-labs-libraries/asset"
-	"github.com/kfukue/lyle-labs-libraries/utils"
+	"github.com/kfukue/lyle-labs-libraries/v2/asset"
+	"github.com/kfukue/lyle-labs-libraries/v2/utils"
 )
 
 type GethAddress struct {

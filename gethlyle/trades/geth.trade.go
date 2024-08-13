@@ -3,7 +3,7 @@ package gethlyletrades
 import (
 	"time"
 
-	"github.com/kfukue/lyle-labs-libraries/asset"
+	"github.com/kfukue/lyle-labs-libraries/v2/asset"
 	"github.com/shopspring/decimal"
 )
 

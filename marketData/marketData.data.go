@@ -9,8 +9,8 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	marketdataquote "github.com/kfukue/lyle-labs-libraries/marketDataQuote"
-	"github.com/kfukue/lyle-labs-libraries/utils"
+	marketdataquote "github.com/kfukue/lyle-labs-libraries/v2/marketDataQuote"
+	"github.com/kfukue/lyle-labs-libraries/v2/utils"
 	"github.com/lib/pq"
 	decimal "github.com/shopspring/decimal"
 )
@@ -94,7 +94,7 @@ func RemoveMarketDataFromBaseAssetBetweenDates(dbConnPgx utils.PgxIface, assetID
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in RemoveGethMarketData DbConn.Begin   %s", err.Error())
+		log.Printf("Error in RemoveMarketDataFromBaseAssetBetweenDates DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `DELETE
