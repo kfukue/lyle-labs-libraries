@@ -30,9 +30,9 @@ const (
 var DbConn *sql.DB
 var DbConnPgx *pgxpool5.Pool
 
-func init() {
-	DbConn, DbConnPgx, _ = SetupDatabase()
-}
+// func init() {
+// 	DbConn, DbConnPgx, _ = SetupDatabase()
+// }
 
 // SetupDatabase
 func SetupDatabase() (*sql.DB, *pgxpool5.Pool, error) {
