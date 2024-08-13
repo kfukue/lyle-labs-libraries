@@ -1,4 +1,4 @@
-module github.com/kfukue/lyle-labs-libraries
+module github.com/kfukue/lyle-labs-libraries/v2
 
 go 1.22.0
 
