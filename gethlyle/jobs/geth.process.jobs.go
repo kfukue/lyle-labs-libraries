@@ -12,7 +12,7 @@ type GethProcessJob struct {
 	UUID             string     `json:"uuid" db:"uuid"`                           //2
 	Name             string     `json:"name" db:"name"`                           //3
 	AlternateName    string     `json:"alternateName" db:"alternate_name"`        //4
-	StartDate        time.Time  `json:"startDate" db:"start_date"`                //5
+	StartDate        *time.Time `json:"startDate" db:"start_date"`                //5
 	EndDate          *time.Time `json:"endDate" db:"end_date"`                    //6
 	Description      string     `json:"description" db:"description"`             //7
 	StatusID         *int       `json:"statusId" db:"status_id"`                  //8

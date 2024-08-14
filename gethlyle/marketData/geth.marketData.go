@@ -12,8 +12,8 @@ type GethMarketData struct {
 	UUID              string            `json:"uuid" db:"uuid"`                            //2
 	Name              string            `json:"name" db:"name"`                            //3
 	AlternateName     string            `json:"alternateName" db:"alternate_name"`         //4
-	StartDate         time.Time         `json:"startDate" db:"start_date"`                 //5
-	EndDate           time.Time         `json:"endDate" db:"end_date"`                     //6
+	StartDate         *time.Time        `json:"startDate" db:"start_date"`                 //5
+	EndDate           *time.Time        `json:"endDate" db:"end_date"`                     //6
 	AssetID           *int              `json:"assetId" db:"asset_id"`                     //7
 	OpenUSD           *decimal.Decimal  `json:"openUsd" db:"open_usd"`                     //8
 	CloseUSD          *decimal.Decimal  `json:"closeUsd" db:"close_usd"`                   //9
