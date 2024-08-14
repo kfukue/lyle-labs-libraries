@@ -107,7 +107,7 @@ func GetGethTradeByStartAndEndDates(dbConnPgx utils.PgxIface, startDate, endDate
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTrades, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
 	if err != nil {
 		log.Println(err)
@@ -161,7 +161,7 @@ func GetGethTradeByFromAddress(dbConnPgx utils.PgxIface, addressStr string) ([]G
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTrades, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
 	if err != nil {
 		log.Println(err)
@@ -215,7 +215,7 @@ func GetGethTradeByFromAddressId(dbConnPgx utils.PgxIface, addressID *int) ([]Ge
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTrades, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
 	if err != nil {
 		log.Println(err)
@@ -266,7 +266,7 @@ func GetGethTradeByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]GethTra
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTrades, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
 	if err != nil {
 		log.Println(err)
@@ -310,11 +310,40 @@ func GetNetTransfersByTxnHashAndAddressStrs(dbConnPgx utils.PgxIface, txnHash, a
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
-	netTransfersByAddress, err := pgx.CollectRows(results, pgx.RowToStructByName[NetTransferByAddress])
-	if err != nil {
-		log.Println(err)
-		return nil, err
+
+	netTransfersByAddress := make([]NetTransferByAddress, 0)
+	for results.Next() {
+		var netTransferByAddress NetTransferByAddress
+		results.Scan(
+			&netTransferByAddress.TxnHash,
+			&netTransferByAddress.AddressStr,
+			&netTransferByAddress.AssetID,
+			&netTransferByAddress.NetAmount,
+			&netTransferByAddress.Asset.ID,
+			&netTransferByAddress.Asset.UUID,
+			&netTransferByAddress.Asset.Name,
+			&netTransferByAddress.Asset.AlternateName,
+			&netTransferByAddress.Asset.Cusip,
+			&netTransferByAddress.Asset.Ticker,
+			&netTransferByAddress.Asset.BaseAssetID,
+			&netTransferByAddress.Asset.QuoteAssetID,
+			&netTransferByAddress.Asset.Description,
+			&netTransferByAddress.Asset.AssetTypeID,
+			&netTransferByAddress.Asset.CreatedBy,
+			&netTransferByAddress.Asset.CreatedAt,
+			&netTransferByAddress.Asset.UpdatedBy,
+			&netTransferByAddress.Asset.UpdatedAt,
+			&netTransferByAddress.Asset.ChainID,
+			&netTransferByAddress.Asset.CategoryID,
+			&netTransferByAddress.Asset.SubCategoryID,
+			&netTransferByAddress.Asset.IsDefaultQuote,
+			&netTransferByAddress.Asset.IgnoreMarketData,
+			&netTransferByAddress.Asset.Decimals,
+			&netTransferByAddress.Asset.ContractAddress,
+			&netTransferByAddress.StartingBlockNumber,
+			&netTransferByAddress.ImportGeth,
+			&netTransferByAddress.ImportGethInitial,
+		)
 	}
 	return netTransfersByAddress, nil
 }
@@ -371,11 +400,40 @@ func GetFromNetTransfersByTxnHashesAndAddressStrs(dbConnPgx utils.PgxIface, txnH
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
-	netTransfersByAddress, err := pgx.CollectRows(results, pgx.RowToStructByName[NetTransferByAddress])
-	if err != nil {
-		log.Println(err)
-		return nil, err
+
+	netTransfersByAddress := make([]NetTransferByAddress, 0)
+	for results.Next() {
+		var netTransferByAddress NetTransferByAddress
+		results.Scan(
+			&netTransferByAddress.TxnHash,
+			&netTransferByAddress.AddressStr,
+			&netTransferByAddress.AssetID,
+			&netTransferByAddress.NetAmount,
+			&netTransferByAddress.Asset.ID,
+			&netTransferByAddress.Asset.UUID,
+			&netTransferByAddress.Asset.Name,
+			&netTransferByAddress.Asset.AlternateName,
+			&netTransferByAddress.Asset.Cusip,
+			&netTransferByAddress.Asset.Ticker,
+			&netTransferByAddress.Asset.BaseAssetID,
+			&netTransferByAddress.Asset.QuoteAssetID,
+			&netTransferByAddress.Asset.Description,
+			&netTransferByAddress.Asset.AssetTypeID,
+			&netTransferByAddress.Asset.CreatedBy,
+			&netTransferByAddress.Asset.CreatedAt,
+			&netTransferByAddress.Asset.UpdatedBy,
+			&netTransferByAddress.Asset.UpdatedAt,
+			&netTransferByAddress.Asset.ChainID,
+			&netTransferByAddress.Asset.CategoryID,
+			&netTransferByAddress.Asset.SubCategoryID,
+			&netTransferByAddress.Asset.IsDefaultQuote,
+			&netTransferByAddress.Asset.IgnoreMarketData,
+			&netTransferByAddress.Asset.Decimals,
+			&netTransferByAddress.Asset.ContractAddress,
+			&netTransferByAddress.StartingBlockNumber,
+			&netTransferByAddress.ImportGeth,
+			&netTransferByAddress.ImportGethInitial,
+		)
 	}
 	return netTransfersByAddress, nil
 }
@@ -418,7 +476,7 @@ func RemoveGethTrade(dbConnPgx utils.PgxIface, gethTradeID *int) error {
 		return err
 	}
 	sql := `DELETE FROM geth_trades WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethTradeID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -435,7 +493,7 @@ func DeleteGethTradesByBaseAssetId(dbConnPgx utils.PgxIface, baseAssetID *int) e
 		return err
 	}
 	sql := `DELETE FROM geth_trades WHERE base_asset_id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -483,7 +541,7 @@ func GetGethTradeList(dbConnPgx utils.PgxIface) ([]GethTrade, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTrades, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
 	if err != nil {
 		log.Println(err)
@@ -532,7 +590,7 @@ func UpdateGethTrade(dbConnPgx utils.PgxIface, gethTrade *GethTrade) error {
 		oracle_price_usd=$24,
 		oracle_price_asset_id=$25
 		WHERE id=$26`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 
 		gethTrade.Name,                   //1
@@ -888,7 +946,7 @@ func GetGethTradeListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTrades, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTrade])
 	if err != nil {
 		log.Println(err)

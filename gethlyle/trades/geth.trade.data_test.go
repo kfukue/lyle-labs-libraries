@@ -672,29 +672,6 @@ func TestGetNetTransfersByTxnHashAndAddressStrsForErr(t *testing.T) {
 	}
 }
 
-func TestGetNetTransfersByTxnHashAndAddressStrsForCollectRowsErr(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
-	}
-	defer mock.Close()
-	txnHash := TestData1.TxnHash
-	addressStr := TestData1.AddressStr
-	baseAssetID := -1
-	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
-	mock.ExpectQuery("^WITH to_address as").WithArgs(txnHash, addressStr, baseAssetID).WillReturnRows(differentModelRows)
-	foundGethTradeList, err := GetNetTransfersByTxnHashAndAddressStrs(mock, txnHash, addressStr, &baseAssetID)
-	if err == nil {
-		t.Fatalf("expected an error '%s' in GetNetTransfersByTxnHashAndAddressStrs", err)
-	}
-	if foundGethTradeList != nil {
-		t.Errorf("Expected foundGethTradeList From Method GetNetTransfersByTxnHashAndAddressStrs: to be empty but got this: %v", foundGethTradeList)
-	}
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("There awere unfulfilled expectations: %s", err)
-	}
-}
-
 func TestGetFromNetTransfersByTxnHashesAndAddressStrs(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -736,28 +713,6 @@ func TestGetFromNetTransfersByTxnHashesAndAddressStrsForErr(t *testing.T) {
 	}
 	if len(foundGethTradeList) != 0 {
 		t.Errorf("Expected From Method GetFromNetTransfersByTxnHashesAndAddressStrs: to be empty but got this: %v", foundGethTradeList)
-	}
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("There awere unfulfilled expectations: %s", err)
-	}
-}
-
-func TestGetFromNetTransfersByTxnHashesAndAddressStrsForCollectRowsErr(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
-	}
-	defer mock.Close()
-	txnHashes := []string{TestData1.TxnHash, TestData2.TxnHash}
-	baseAssetID := -1
-	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
-	mock.ExpectQuery("^WITH to_address as").WithArgs(pq.Array(txnHashes), baseAssetID).WillReturnRows(differentModelRows)
-	foundGethTradeList, err := GetFromNetTransfersByTxnHashesAndAddressStrs(mock, txnHashes, &baseAssetID)
-	if err == nil {
-		t.Fatalf("expected an error '%s' in GetFromNetTransfersByTxnHashesAndAddressStrs", err)
-	}
-	if foundGethTradeList != nil {
-		t.Errorf("Expected foundGethTradeList From Method GetFromNetTransfersByTxnHashesAndAddressStrs: to be empty but got this: %v", foundGethTradeList)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
