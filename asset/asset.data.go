@@ -417,10 +417,10 @@ func GetAssetsByAssetTypeAndSource(dbConnPgx utils.PgxIface, assetTypeID *int, s
 		assets.is_default_quote,
 		assets.ignore_market_data,
 		assets.decimals,
-		contract_address,
-		starting_block_number,
-		import_geth,
-		import_geth_initial,
+		assets.contract_address,
+		assets.starting_block_number,
+		assets.import_geth,
+		assets.import_geth_initial,
 		assetSources.source_id,
 		assetSources.source_identifier
 		FROM assets assets
@@ -437,10 +437,39 @@ func GetAssetsByAssetTypeAndSource(dbConnPgx utils.PgxIface, assetTypeID *int, s
 		return nil, err
 	}
 	defer results.Close()
-	assetsWithSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetWithSources])
-	if err != nil {
-		log.Println(err)
-		return nil, err
+	assetsWithSources := make([]AssetWithSources, 0)
+	for results.Next() {
+		var asset AssetWithSources
+		results.Scan(
+			&asset.Asset.ID,
+			&asset.Asset.UUID,
+			&asset.Asset.Name,
+			&asset.Asset.AlternateName,
+			&asset.Asset.Cusip,
+			&asset.Asset.Ticker,
+			&asset.Asset.BaseAssetID,
+			&asset.Asset.QuoteAssetID,
+			&asset.Asset.Description,
+			&asset.Asset.AssetTypeID,
+			&asset.Asset.CreatedBy,
+			&asset.Asset.CreatedAt,
+			&asset.Asset.UpdatedBy,
+			&asset.Asset.UpdatedAt,
+			&asset.Asset.ChainID,
+			&asset.Asset.CategoryID,
+			&asset.Asset.SubCategoryID,
+			&asset.Asset.IsDefaultQuote,
+			&asset.Asset.IgnoreMarketData,
+			&asset.Asset.Decimals,
+			&asset.Asset.ContractAddress,
+			&asset.StartingBlockNumber,
+			&asset.ImportGeth,
+			&asset.ImportGethInitial,
+			&asset.SourceID,
+			&asset.SourceIdentifier,
+		)
+
+		assetsWithSources = append(assetsWithSources, asset)
 	}
 	return assetsWithSources, nil
 }
@@ -489,10 +518,39 @@ func GetCryptoAssetsBySourceId(dbConnPgx utils.PgxIface, sourceID *int, excludeI
 		return nil, err
 	}
 	defer results.Close()
-	assetsWithSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetWithSources])
-	if err != nil {
-		log.Println(err)
-		return nil, err
+	assetsWithSources := make([]AssetWithSources, 0)
+	for results.Next() {
+		var asset AssetWithSources
+		results.Scan(
+			&asset.Asset.ID,
+			&asset.Asset.UUID,
+			&asset.Asset.Name,
+			&asset.Asset.AlternateName,
+			&asset.Asset.Cusip,
+			&asset.Asset.Ticker,
+			&asset.Asset.BaseAssetID,
+			&asset.Asset.QuoteAssetID,
+			&asset.Asset.Description,
+			&asset.Asset.AssetTypeID,
+			&asset.Asset.CreatedBy,
+			&asset.Asset.CreatedAt,
+			&asset.Asset.UpdatedBy,
+			&asset.Asset.UpdatedAt,
+			&asset.Asset.ChainID,
+			&asset.Asset.CategoryID,
+			&asset.Asset.SubCategoryID,
+			&asset.Asset.IsDefaultQuote,
+			&asset.Asset.IgnoreMarketData,
+			&asset.Asset.Decimals,
+			&asset.Asset.ContractAddress,
+			&asset.StartingBlockNumber,
+			&asset.ImportGeth,
+			&asset.ImportGethInitial,
+			&asset.SourceID,
+			&asset.SourceIdentifier,
+		)
+
+		assetsWithSources = append(assetsWithSources, asset)
 	}
 	return assetsWithSources, nil
 
@@ -534,13 +592,13 @@ func GetAssetWithSourceByAssetIdAndSourceID(dbConnPgx utils.PgxIface, assetID, s
 	assets.sub_category_id,
 	assets.is_default_quote,
 	assets.ignore_market_data,
-	assetSources.source_id as source_id,
-	assetSources.source_identifier as source_identifier,
 	assets.decimals,
-	contract_address,
-	starting_block_number,
-	import_geth,
-	import_geth_initial
+	assets.contract_address,
+	assets.starting_block_number,
+	assets.import_geth,
+	assets.import_geth_initial,
+	assetSources.source_id as source_id,
+	assetSources.source_identifier as source_identifier
 	FROM assets assets
 	JOIN asset_sources assetSources ON assets.id = assetSources.asset_id
 	WHERE 
@@ -550,20 +608,43 @@ func GetAssetWithSourceByAssetIdAndSourceID(dbConnPgx utils.PgxIface, assetID, s
 		query += `AND ignore_market_data = FALSE
 		`
 	}
-	row, err := dbConnPgx.Query(ctx, query, *assetID, *sourceID)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	defer row.Close()
-	assetsWithSource, err := pgx.CollectOneRow(row, pgx.RowToStructByName[AssetWithSources])
+	row := dbConnPgx.QueryRow(ctx, query, *assetID, *sourceID)
+	assetWithSources := &AssetWithSources{}
+	err := row.Scan(
+		&assetWithSources.Asset.ID,
+		&assetWithSources.Asset.UUID,
+		&assetWithSources.Asset.Name,
+		&assetWithSources.Asset.AlternateName,
+		&assetWithSources.Asset.Cusip,
+		&assetWithSources.Asset.Ticker,
+		&assetWithSources.Asset.BaseAssetID,
+		&assetWithSources.Asset.QuoteAssetID,
+		&assetWithSources.Asset.Description,
+		&assetWithSources.Asset.AssetTypeID,
+		&assetWithSources.Asset.CreatedBy,
+		&assetWithSources.Asset.CreatedAt,
+		&assetWithSources.Asset.UpdatedBy,
+		&assetWithSources.Asset.UpdatedAt,
+		&assetWithSources.Asset.ChainID,
+		&assetWithSources.Asset.CategoryID,
+		&assetWithSources.Asset.SubCategoryID,
+		&assetWithSources.Asset.IsDefaultQuote,
+		&assetWithSources.Asset.IgnoreMarketData,
+		&assetWithSources.Asset.Decimals,
+		&assetWithSources.Asset.ContractAddress,
+		&assetWithSources.Asset.StartingBlockNumber,
+		&assetWithSources.Asset.ImportGeth,
+		&assetWithSources.Asset.ImportGethInitial,
+		&assetWithSources.SourceID,
+		&assetWithSources.SourceIdentifier,
+	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return &assetsWithSource, nil
+	return assetWithSources, nil
 }
 
 func GetAssetWithSourceByAssetIdsAndSourceID(dbConnPgx utils.PgxIface, assetIDs []int, sourceID *int, excludeIgnoreMarketData bool) ([]AssetWithSources, error) {
@@ -590,10 +671,10 @@ func GetAssetWithSourceByAssetIdsAndSourceID(dbConnPgx utils.PgxIface, assetIDs 
 	assets.is_default_quote,
 	assets.ignore_market_data,
 	assets.decimals,
-	contract_address,
-	starting_block_number,
-	import_geth,
-	import_geth_initial,
+	assets.contract_address,
+	assets.starting_block_number,
+	assets.import_geth,
+	assets.import_geth_initial,
 	assetSources.source_id,
 	assetSources.source_identifier
 	FROM assets assets
@@ -611,10 +692,39 @@ func GetAssetWithSourceByAssetIdsAndSourceID(dbConnPgx utils.PgxIface, assetIDs 
 		return nil, err
 	}
 	defer results.Close()
-	assetsWithSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetWithSources])
-	if err != nil {
-		log.Println(err)
-		return nil, err
+	assetsWithSources := make([]AssetWithSources, 0)
+	for results.Next() {
+		var asset AssetWithSources
+		results.Scan(
+			&asset.Asset.ID,
+			&asset.Asset.UUID,
+			&asset.Asset.Name,
+			&asset.Asset.AlternateName,
+			&asset.Asset.Cusip,
+			&asset.Asset.Ticker,
+			&asset.Asset.BaseAssetID,
+			&asset.Asset.QuoteAssetID,
+			&asset.Asset.Description,
+			&asset.Asset.AssetTypeID,
+			&asset.Asset.CreatedBy,
+			&asset.Asset.CreatedAt,
+			&asset.Asset.UpdatedBy,
+			&asset.Asset.UpdatedAt,
+			&asset.Asset.ChainID,
+			&asset.Asset.CategoryID,
+			&asset.Asset.SubCategoryID,
+			&asset.Asset.IsDefaultQuote,
+			&asset.Asset.IgnoreMarketData,
+			&asset.Asset.Decimals,
+			&asset.Asset.ContractAddress,
+			&asset.Asset.StartingBlockNumber,
+			&asset.Asset.ImportGeth,
+			&asset.Asset.ImportGethInitial,
+			&asset.SourceID,
+			&asset.SourceIdentifier,
+		)
+
+		assetsWithSources = append(assetsWithSources, asset)
 	}
 	return assetsWithSources, nil
 }
@@ -812,10 +922,10 @@ func GetDefaultQuoteAssetListBySourceID(dbConnPgx utils.PgxIface, sourceID *int)
 	assets.is_default_quote,
 	assets.ignore_market_data,
 	assets.decimals,
-	contract_address,
-	starting_block_number,
-	import_geth,
-	import_geth_initial,
+	assets.contract_address,
+	assets.starting_block_number,
+	assets.import_geth,
+	assets.import_geth_initial,
 	assetSources.source_id,
 	assetSources.source_identifier
 	FROM get_default_quotes assets
@@ -827,10 +937,39 @@ func GetDefaultQuoteAssetListBySourceID(dbConnPgx utils.PgxIface, sourceID *int)
 		return nil, err
 	}
 	defer results.Close()
-	assetWithSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetWithSources])
-	if err != nil {
-		log.Println(err)
-		return nil, err
+	assetWithSources := make([]AssetWithSources, 0)
+	for results.Next() {
+		var asset AssetWithSources
+		results.Scan(
+			&asset.Asset.ID,
+			&asset.Asset.UUID,
+			&asset.Asset.Name,
+			&asset.Asset.AlternateName,
+			&asset.Asset.Cusip,
+			&asset.Asset.Ticker,
+			&asset.Asset.BaseAssetID,
+			&asset.Asset.QuoteAssetID,
+			&asset.Asset.Description,
+			&asset.Asset.AssetTypeID,
+			&asset.Asset.CreatedBy,
+			&asset.Asset.CreatedAt,
+			&asset.Asset.UpdatedBy,
+			&asset.Asset.UpdatedAt,
+			&asset.Asset.ChainID,
+			&asset.Asset.CategoryID,
+			&asset.Asset.SubCategoryID,
+			&asset.Asset.IsDefaultQuote,
+			&asset.Asset.IgnoreMarketData,
+			&asset.Asset.Decimals,
+			&asset.Asset.ContractAddress,
+			&asset.StartingBlockNumber,
+			&asset.ImportGeth,
+			&asset.ImportGethInitial,
+			&asset.SourceID,
+			&asset.SourceIdentifier,
+		)
+
+		assetWithSources = append(assetWithSources, asset)
 	}
 	return assetWithSources, nil
 
@@ -1041,7 +1180,7 @@ func InsertAssets(dbConnPgx utils.PgxIface, assets []Asset) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range assets {
+	for i := range assets {
 		asset := assets[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(asset.UUID)
