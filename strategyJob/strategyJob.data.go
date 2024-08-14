@@ -103,7 +103,7 @@ func RemoveStrategyJob(dbConnPgx utils.PgxIface, strategyID, jobID *int) error {
 	}
 	sql := `DELETE FROM strategy_jobs WHERE 
 		strategy_id = $1 AND job_id =$2`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *strategyID, *jobID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -139,7 +139,7 @@ func GetStrategyJobList(dbConnPgx utils.PgxIface) ([]StrategyJob, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	strategyJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[StrategyJob])
 	if err != nil {
 		log.Println(err)
@@ -177,7 +177,7 @@ func UpdateStrategyJob(dbConnPgx utils.PgxIface, strategyJob *StrategyJob) error
 		updated_by=$13, 
 		updated_at=current_timestamp at time zone 'UTC'	
 		WHERE strategy_id=$14 AND job_id=$15`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		strategyJob.Name,                             //1
 		strategyJob.AlternateName,                    //2
@@ -403,7 +403,7 @@ func GetStrategyJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *int,
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	strategyJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[StrategyJob])
 	if err != nil {
 		log.Println(err)

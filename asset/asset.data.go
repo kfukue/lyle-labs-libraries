@@ -48,7 +48,6 @@ func GetAsset(dbConnPgx utils.PgxIface, assetID *int) (*Asset, error) {
 		return nil, err
 	}
 	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
-	defer row.Close()
 	asset, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Asset])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -94,7 +93,7 @@ func GetAssetByTicker(dbConnPgx utils.PgxIface, ticker string) (*Asset, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer row.Close()
+
 	asset, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Asset])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -140,7 +139,7 @@ func GetAssetByContractAddress(dbConnPgx utils.PgxIface, contractAddress string)
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer row.Close()
+
 	asset, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Asset])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -186,7 +185,7 @@ func GetAssetByCusip(dbConnPgx utils.PgxIface, cusip string) (*Asset, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer row.Close()
+
 	asset, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Asset])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -234,7 +233,7 @@ func GetAssetByBaseAndQuoteID(dbConnPgx utils.PgxIface, baseAssetID *int, quoteA
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer row.Close()
+
 	asset, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Asset])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -280,7 +279,7 @@ func GetGethImportAssets(dbConnPgx utils.PgxIface) ([]Asset, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
 	if err != nil {
 		log.Println(err)
@@ -298,7 +297,7 @@ func RemoveAsset(dbConnPgx utils.PgxIface, assetID *int) error {
 		return err
 	}
 	sql := `DELETE FROM assets WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *assetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -339,7 +338,7 @@ func GetCurrentTradingAssets(dbConnPgx utils.PgxIface) ([]Asset, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
 	if err != nil {
 		log.Println(err)
@@ -384,7 +383,7 @@ func GetCryptoAssets(dbConnPgx utils.PgxIface) ([]Asset, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
 	if err != nil {
 		log.Println(err)
@@ -436,7 +435,7 @@ func GetAssetsByAssetTypeAndSource(dbConnPgx utils.PgxIface, assetTypeID *int, s
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assetsWithSources := make([]AssetWithSources, 0)
 	for results.Next() {
 		var asset AssetWithSources
@@ -517,7 +516,7 @@ func GetCryptoAssetsBySourceId(dbConnPgx utils.PgxIface, sourceID *int, excludeI
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assetsWithSources := make([]AssetWithSources, 0)
 	for results.Next() {
 		var asset AssetWithSources
@@ -691,7 +690,7 @@ func GetAssetWithSourceByAssetIdsAndSourceID(dbConnPgx utils.PgxIface, assetIDs 
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assetsWithSources := make([]AssetWithSources, 0)
 	for results.Next() {
 		var asset AssetWithSources
@@ -768,7 +767,7 @@ func GetAssetList(dbConnPgx utils.PgxIface, ids []int) ([]Asset, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
 	if err != nil {
 		log.Println(err)
@@ -811,7 +810,7 @@ func GetAssetsByChainId(dbConnPgx utils.PgxIface, chainID *int) ([]Asset, error)
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
 	if err != nil {
 		log.Println(err)
@@ -874,7 +873,7 @@ func GetAssetListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _orde
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
 	if err != nil {
 		log.Println(err)
@@ -936,7 +935,7 @@ func GetDefaultQuoteAssetListBySourceID(dbConnPgx utils.PgxIface, sourceID *int)
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assetWithSources := make([]AssetWithSources, 0)
 	for results.Next() {
 		var asset AssetWithSources
@@ -1007,7 +1006,7 @@ func GetDefaultQuoteAssetList(dbConnPgx utils.PgxIface) ([]Asset, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assets, err := pgx.CollectRows(results, pgx.RowToStructByName[Asset])
 	if err != nil {
 		log.Println(err)
@@ -1050,7 +1049,7 @@ func UpdateAsset(dbConnPgx utils.PgxIface, asset *Asset) error {
 		import_geth = $18,
 		import_geth_initial = $19
 		WHERE id=$20`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		asset.Name,                //1
 		asset.AlternateName,       //2

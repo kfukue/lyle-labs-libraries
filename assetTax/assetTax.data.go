@@ -38,7 +38,7 @@ func GetAllAssetTaxesByTaxType(dbConnPgx utils.PgxIface, taxTypeID *int) ([]Asse
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assetTaxes, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetTax])
 	if err != nil {
 		log.Println(err)
@@ -71,7 +71,7 @@ func GetAssetTax(dbConnPgx utils.PgxIface, taxID, assetID *int) (*AssetTax, erro
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assetTax, err := pgx.CollectOneRow(results, pgx.RowToStructByName[AssetTax])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -91,7 +91,7 @@ func RemoveAssetTax(dbConnPgx utils.PgxIface, taxID, assetID *int) error {
 		return err
 	}
 	sql := `DELETE FROM asset_taxes WHERE tax_id = $1 AND asset_id =$2`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *taxID, *assetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -136,7 +136,7 @@ func GetAssetTaxList(dbConnPgx utils.PgxIface, assetIds []int, taxIds []int) ([]
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assetTaxes, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetTax])
 	if err != nil {
 		log.Println(err)
@@ -166,7 +166,7 @@ func UpdateAssetTax(dbConnPgx utils.PgxIface, assetTax *AssetTax) error {
 		updated_by=$6, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE tax_id=$7 AND asset_id=$8`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		assetTax.Name,            //1
 		assetTax.AlternateName,   //2
@@ -338,7 +338,7 @@ func GetAssetTaxListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _o
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assetTaxes, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetTax])
 	if err != nil {
 		log.Println(err)

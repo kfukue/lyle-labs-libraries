@@ -59,7 +59,7 @@ func RemoveStrategyMarketDataAsset(dbConnPgx utils.PgxIface, strategyMarketDataA
 		return err
 	}
 	sql := `DELETE FROM strategy_market_data_assets WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *strategyMarketDataAssetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -99,7 +99,7 @@ func GetStrategyMarketDataAssets(dbConnPgx utils.PgxIface, ids []int) ([]Strateg
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	strategyMarketDataAssets, err := pgx.CollectRows(results, pgx.RowToStructByName[StrategyMarketDataAsset])
 	if err != nil {
 		log.Println(err)
@@ -136,7 +136,7 @@ func GetStrategyMarketDataAssetsByUUIDs(dbConnPgx utils.PgxIface, UUIDList []str
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	strategyMarketDataAssets, err := pgx.CollectRows(results, pgx.RowToStructByName[StrategyMarketDataAsset])
 	if err != nil {
 		log.Println(err)
@@ -173,7 +173,7 @@ func GetStrategyMarketDataAssetsByStrategyID(dbConnPgx utils.PgxIface, strategyI
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	strategyMarketDataAssets, err := pgx.CollectRows(results, pgx.RowToStructByName[StrategyMarketDataAsset])
 	if err != nil {
 		log.Println(err)
@@ -210,7 +210,7 @@ func GetStartAndEndDateDiffStrategyMarketDataAssets(dbConnPgx utils.PgxIface, di
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	strategyMarketDataAssets, err := pgx.CollectRows(results, pgx.RowToStructByName[StrategyMarketDataAsset])
 	if err != nil {
 		log.Println(err)
@@ -247,7 +247,7 @@ func UpdateStrategyMarketDataAsset(dbConnPgx utils.PgxIface, strategyMarketDataA
 		updated_by=$13, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$14`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		strategyMarketDataAsset.StrategyID,    //1
 		strategyMarketDataAsset.BaseAssetID,   //2
@@ -451,7 +451,7 @@ func GetStrategyMarketDataAssetListByPagination(dbConnPgx utils.PgxIface, _start
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	strategyList, err := pgx.CollectRows(results, pgx.RowToStructByName[StrategyMarketDataAsset])
 	if err != nil {
 		log.Println(err)

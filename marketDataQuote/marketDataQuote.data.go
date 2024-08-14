@@ -75,7 +75,7 @@ func GetLatestLiveMarketData(dbConnPgx utils.PgxIface) ([]MarketDataQuoteResults
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	MarketDataQuoteResultsList := make([]MarketDataQuoteResults, 0)
 	for results.Next() {
 		var MarketDataQuoteResults MarketDataQuoteResults
@@ -141,7 +141,7 @@ func RemoveMarketDataQuoteFromBaseAssetBetweenDates(dbConnPgx utils.PgxIface, as
 			WHERE asset_id = $1
 			AND start_date BETWEEN $2 and $3
 		);`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *assetID, startDate, endDate); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -210,7 +210,7 @@ func GetAllMarketDataFromStrategyID(dbConnPgx utils.PgxIface, strategyID *int) (
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	MarketDataQuoteResultsList := make([]MarketDataQuoteResults, 0)
 	for results.Next() {
 		var MarketDataQuoteResults MarketDataQuoteResults
@@ -537,7 +537,7 @@ func GetMarketDataQuoteListByPagination(dbConnPgx utils.PgxIface, _start, _end *
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	marketDataQuoteList, err := pgx.CollectRows(results, pgx.RowToStructByName[MarketDataQuote])
 	if err != nil {
 		log.Println(err)

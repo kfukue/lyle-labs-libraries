@@ -58,7 +58,7 @@ func RemoveStepAsset(dbConnPgx utils.PgxIface, stepAssetID *int) error {
 		return err
 	}
 	sql := `DELETE FROM step_assets WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *stepAssetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -97,7 +97,7 @@ func GetStepAssets(dbConnPgx utils.PgxIface, ids []int) ([]StepAsset, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	stepAssets, err := pgx.CollectRows(results, pgx.RowToStructByName[StepAsset])
 	if err != nil {
 		log.Println(err)
@@ -133,7 +133,7 @@ func GetStepAssetsByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]StepAs
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	stepAssets, err := pgx.CollectRows(results, pgx.RowToStructByName[StepAsset])
 	if err != nil {
 		log.Println(err)
@@ -169,7 +169,7 @@ func GetStartAndEndDateDiffStepAssets(dbConnPgx utils.PgxIface, diffInDate *int)
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	stepAssets, err := pgx.CollectRows(results, pgx.RowToStructByName[StepAsset])
 	if err != nil {
 		log.Println(err)
@@ -205,7 +205,7 @@ func UpdateStepAsset(dbConnPgx utils.PgxIface, stepAsset *StepAsset) error {
 		updated_by=$12, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$13`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		stepAsset.StepID,          //1
 		stepAsset.AssetID,         //2
@@ -403,7 +403,7 @@ func GetStepAssetListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	stepAssets, err := pgx.CollectRows(results, pgx.RowToStructByName[StepAsset])
 	if err != nil {
 		log.Println(err)

@@ -42,7 +42,7 @@ func GetGethProcessJob(dbConnPgx utils.PgxIface, gethProcessJobID *int) (*GethPr
 		return nil, err
 	}
 	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
-	defer row.Close()
+
 	gethProcessJob, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethProcessJob])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -87,7 +87,7 @@ func GetLatestGethProcessJobByImportTypeIDAndAssetID(dbConnPgx utils.PgxIface, i
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer row.Close()
+
 	gethProcessJob, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethProcessJob])
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -126,7 +126,7 @@ func GetGethProcessJobList(dbConnPgx utils.PgxIface) ([]GethProcessJob, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethProcessJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethProcessJob])
 	if err != nil {
 		log.Println(err)
@@ -144,7 +144,7 @@ func RemoveGethProcessJob(dbConnPgx utils.PgxIface, gethProcessJobID *int) error
 		return err
 	}
 	sql := `DELETE FROM geth_process_jobs WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethProcessJobID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -180,7 +180,7 @@ func UpdateGethProcessJob(dbConnPgx utils.PgxIface, gethProcessJob *GethProcessJ
 		updated_at=current_timestamp at time zone 'UTC',
 		asset_id =$13
 		WHERE id=$14 `
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethProcessJob.Name,             //1
 		gethProcessJob.AlternateName,    //2
@@ -392,7 +392,7 @@ func GetGethProcessJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *i
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethProcessJobList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethProcessJob])
 	if err != nil {
 		log.Println(err)

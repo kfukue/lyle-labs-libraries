@@ -36,7 +36,7 @@ func GetGethAddress(dbConnPgx utils.PgxIface, gethAddressID *int) (*GethAddress,
 		return nil, err
 	}
 	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
-	defer row.Close()
+
 	gethAddress, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethAddress])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -70,7 +70,7 @@ func GetGethAddressByAddressStr(dbConnPgx utils.PgxIface, addressStr string) (*G
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer row.Close()
+
 	gethAddress, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethAddress])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -103,7 +103,7 @@ func GetGethAddressList(dbConnPgx utils.PgxIface) ([]GethAddress, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethAddresses, err := pgx.CollectRows(results, pgx.RowToStructByName[GethAddress])
 	return gethAddresses, nil
 }
@@ -131,7 +131,7 @@ func GetGethAddressListByAddressStr(dbConnPgx utils.PgxIface, addressStrList []s
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethAddresses, err := pgx.CollectRows(results, pgx.RowToStructByName[GethAddress])
 	return gethAddresses, nil
 }
@@ -159,7 +159,7 @@ func GetGethAddressListByIds(dbConnPgx utils.PgxIface, addressIDs []int) ([]Geth
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethAddresses, err := pgx.CollectRows(results, pgx.RowToStructByName[GethAddress])
 	return gethAddresses, nil
 }
@@ -173,7 +173,7 @@ func RemoveGethAddress(dbConnPgx utils.PgxIface, gethAddressID *int) error {
 		return err
 	}
 	sql := `DELETE FROM geth_addresses WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethAddressID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -202,7 +202,7 @@ func UpdateGethAddress(dbConnPgx utils.PgxIface, gethAddress *GethAddress) error
 		updated_by=$6, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$7 `
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethAddress.Name,          //1
 		gethAddress.AlternateName, //2
@@ -365,7 +365,7 @@ func GetGethAddressListByPagination(dbConnPgx utils.PgxIface, _start, _end *int,
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethAddressList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethAddress])
 	if err != nil {
 		log.Println(err)

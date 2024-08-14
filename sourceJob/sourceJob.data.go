@@ -81,7 +81,7 @@ func RemoveSourceJob(dbConnPgx utils.PgxIface, sourceID, jobID *int) error {
 	}
 	sql := `DELETE FROM source_jobs WHERE 
 		source_id = $1 AND job_id =$2`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *sourceID, *jobID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -106,7 +106,7 @@ func GetSourceJobList(dbConnPgx utils.PgxIface) ([]SourceJob, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	sourceJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[SourceJob])
 	if err != nil {
 		log.Println(err)
@@ -132,7 +132,7 @@ func UpdateSourceJob(dbConnPgx utils.PgxIface, sourceJob *SourceJob) error {
 		updated_by=$2, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE source_id=$7 AND job_id=$8`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		sourceJob.Description, //1
 		sourceJob.UpdatedBy,   //2
@@ -282,7 +282,7 @@ func GetSourceJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	sourceJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[SourceJob])
 	if err != nil {
 		log.Println(err)

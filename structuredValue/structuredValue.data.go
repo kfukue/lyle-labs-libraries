@@ -50,7 +50,7 @@ func RemoveStructuredValue(dbConnPgx utils.PgxIface, structuredValueID *int) err
 		return err
 	}
 	sql := `DELETE FROM structured_values WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *structuredValueID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -78,7 +78,7 @@ func GetStructuredValueByStructuredValueTypeIDList(dbConnPgx utils.PgxIface, str
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	structuredValues, err := pgx.CollectRows(results, pgx.RowToStructByName[StructuredValue])
 	if err != nil {
 		log.Println(err)
@@ -111,7 +111,7 @@ func GetStructuredValueList(dbConnPgx utils.PgxIface, ids []int) ([]StructuredVa
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	structuredValues, err := pgx.CollectRows(results, pgx.RowToStructByName[StructuredValue])
 	if err != nil {
 		log.Println(err)
@@ -140,7 +140,6 @@ func UpdateStructuredValue(dbConnPgx utils.PgxIface, structuredValue *Structured
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$5`
 
-	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		structuredValue.Name,                  //1
 		structuredValue.AlternateName,         //2
@@ -278,7 +277,7 @@ func GetStructuredValueListByPagination(dbConnPgx utils.PgxIface, _start, _end *
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	structuredValues, err := pgx.CollectRows(results, pgx.RowToStructByName[StructuredValue])
 	if err != nil {
 		log.Println(err)

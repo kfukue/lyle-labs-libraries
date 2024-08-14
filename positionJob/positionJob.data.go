@@ -143,7 +143,7 @@ func RemovePositionJob(dbConnPgx utils.PgxIface, positionID, jobID *int) error {
 	}
 	sql := `DELETE FROM position_jobs WHERE 
 		position_id = $1 AND job_id =$2`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *positionID, *jobID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -161,7 +161,7 @@ func RemovePositionJobByUUID(dbConnPgx utils.PgxIface, positionJobUUID string) e
 	}
 	sql := `DELETE FROM position_jobs WHERE 
 		WHERE text(uuid) = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, positionJobUUID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -197,7 +197,7 @@ func GetPositionJobList(dbConnPgx utils.PgxIface) ([]PositionJob, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	positionJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[PositionJob])
 	if err != nil {
 		log.Println(err)
@@ -233,7 +233,7 @@ func UpdatePositionJob(dbConnPgx utils.PgxIface, positionJob *PositionJob) error
 		updated_by=$12, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE position_id=$13 AND job_id=$14`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		positionJob.Name,           //1
 		positionJob.AlternateName,  //2
@@ -284,7 +284,7 @@ func UpdatePositionJobByUUID(dbConnPgx utils.PgxIface, positionJob *PositionJob)
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE text(uuid) = $13
 		`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		positionJob.Name,           //1
 		positionJob.AlternateName,  //2
@@ -518,7 +518,7 @@ func GetPositionJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *int,
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	positionJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[PositionJob])
 	if err != nil {
 		log.Println(err)

@@ -66,7 +66,7 @@ func RemoveLiquidityPool(dbConnPgx utils.PgxIface, liquidityPoolID *int) error {
 		return err
 	}
 	sql := `DELETE FROM liquidity_pools WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *liquidityPoolID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -112,7 +112,7 @@ func GetLiquidityPoolList(dbConnPgx utils.PgxIface, ids []int) ([]LiquidityPool,
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	liquidityPools, err := pgx.CollectRows(results, pgx.RowToStructByName[LiquidityPool])
 	if err != nil {
 		log.Println(err.Error())
@@ -208,7 +208,7 @@ func GetLiquidityPoolListByBaseAssetID(dbConnPgx utils.PgxIface, baseAssetID *in
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	liquidityPoolsWithTokens := make([]LiquidityPoolWithTokens, 0)
 	for results.Next() {
 		var liquidityPoolWithTokens LiquidityPoolWithTokens
@@ -326,7 +326,7 @@ func GetLiquidityPoolsByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Li
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	liquidityPools, err := pgx.CollectRows(results, pgx.RowToStructByName[LiquidityPool])
 	if err != nil {
 		log.Println(err.Error())
@@ -367,7 +367,7 @@ func UpdateLiquidityPool(dbConnPgx utils.PgxIface, liquidityPool *LiquidityPool)
 		quote_asset_id=$17,
 		quote_asset_chainlink_address_usd=$18
 		WHERE id=$19`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		liquidityPool.Name,                       //1
 		liquidityPool.AlternateName,              //2
@@ -611,7 +611,7 @@ func GetLiquidityPoolListByPagination(dbConnPgx utils.PgxIface, _start, _end *in
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	liquidityPools, err := pgx.CollectRows(results, pgx.RowToStructByName[LiquidityPool])
 	if err != nil {
 		log.Println(err)

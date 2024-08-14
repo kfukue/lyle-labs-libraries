@@ -35,7 +35,7 @@ func GetAllGethMinerTransactionInputsByMinerID(dbConnPgx utils.PgxIface, minerID
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethMinerTransactionInputs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMinerTransactionInput])
 	if err != nil {
 		log.Println(err)
@@ -67,7 +67,7 @@ func GetAllGethMinerTransactionInputsByTransactionInputID(dbConnPgx utils.PgxIfa
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethMinerTransactionInputs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMinerTransactionInput])
 	if err != nil {
 		log.Println(err)
@@ -119,7 +119,7 @@ func RemoveGethMinerTransactionInput(dbConnPgx utils.PgxIface, minerID, transact
 		return err
 	}
 	sql := `DELETE FROM geth_miners_transaction_inputs WHERE miner_id = $1 AND transaction_input_id =$2`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *minerID, *transactionInputID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -163,7 +163,7 @@ func GetGethMinerTransactionInputList(dbConnPgx utils.PgxIface, minerIDs, transa
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	minerTransactionInputs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMinerTransactionInput])
 	if err != nil {
 		log.Println(err)
@@ -191,7 +191,7 @@ func UpdateGethMinerTransactionInput(dbConnPgx utils.PgxIface, minerTransactionI
 		updated_by=$4, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE miner_id=$5 AND transaction_input_id=$6`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		minerTransactionInput.Name,               //1
 		minerTransactionInput.AlternateName,      //2
@@ -353,7 +353,7 @@ func GetMinerTransactionInputListByPagination(dbConnPgx utils.PgxIface, _start, 
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	minerTransactionInputs, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMinerTransactionInput])
 	if err != nil {
 		log.Println(err)

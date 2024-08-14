@@ -98,7 +98,7 @@ func GetTransactionStepsByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	transactionStepList, err := pgx.CollectRows(results, pgx.RowToStructByName[TransactionStep])
 	if err != nil {
 		log.Println(err)
@@ -117,7 +117,7 @@ func RemoveTransactionStep(dbConnPgx utils.PgxIface, transactionID, stepID *int)
 	}
 	sql := `DELETE FROM transaction_steps WHERE 
 		transaction_id = $1 AND step_id =$2`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *transactionID, *stepID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -134,7 +134,7 @@ func RemoveTransactionStepByUUID(dbConnPgx utils.PgxIface, transactionStepUUID s
 		return err
 	}
 	sql := `DELETE FROM transaction_steps WHERE text(uuid) = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, transactionStepUUID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -161,7 +161,7 @@ func GetTransactionStepList(dbConnPgx utils.PgxIface) ([]TransactionStep, error)
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	transactionSteps, err := pgx.CollectRows(results, pgx.RowToStructByName[TransactionStep])
 	if err != nil {
 		log.Println(err)
@@ -189,7 +189,7 @@ func UpdateTransactionStep(dbConnPgx utils.PgxIface, transactionStep *Transactio
 		updated_by=$4, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE transaction_id=$5 AND step_id=$6`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		transactionStep.Name,          //1
 		transactionStep.AlternateName, //2
@@ -224,7 +224,7 @@ func UpdateTransactionStepByUUID(dbConnPgx utils.PgxIface, transactionStep *Tran
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE text(uuid) = $5
 		`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		transactionStep.Name,          //1
 		transactionStep.AlternateName, //2
@@ -394,7 +394,7 @@ func GetTransactionStepListByPagination(dbConnPgx utils.PgxIface, _start, _end *
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	transactionSteps, err := pgx.CollectRows(results, pgx.RowToStructByName[TransactionStep])
 	if err != nil {
 		log.Println(err)

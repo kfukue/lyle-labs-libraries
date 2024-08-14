@@ -38,7 +38,7 @@ func GetAllGethTradeTaxTransfersByTradeID(dbConnPgx utils.PgxIface, gethTradeID 
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTradeTaxTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeTaxTransfer])
 	if err != nil {
 		log.Println(err)
@@ -91,7 +91,7 @@ func RemoveGethTradeTaxTransfer(dbConnPgx utils.PgxIface, gethTradeID, gethGethT
 		return err
 	}
 	sql := `DELETE FROM geth_trade_transfers WHERE geth_trade_id =$1 AND geth_transfer_id = $2`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethTradeID, *gethGethTransferID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -136,7 +136,7 @@ func GetGethTradeTaxTransferList(dbConnPgx utils.PgxIface, gethTradeIds []int, s
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTradeTaxTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeTaxTransfer])
 	if err != nil {
 		log.Println(err)
@@ -335,7 +335,7 @@ func GetGethTradeTaxTransferListByPagination(dbConnPgx utils.PgxIface, _start, _
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTradeTaxTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeTaxTransfer])
 	if err != nil {
 		log.Println(err)

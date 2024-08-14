@@ -37,7 +37,7 @@ func GetExchange(dbConnPgx utils.PgxIface, exchangeID *int) (*Exchange, error) {
 		return nil, err
 	}
 	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
-	defer row.Close()
+
 	exchange, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Exchange])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -57,7 +57,7 @@ func RemoveExchange(dbConnPgx utils.PgxIface, exchangeID *int) error {
 		return err
 	}
 	sql := `DELETE FROM exchanges WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *exchangeID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -92,7 +92,7 @@ func GetExchangeList(dbConnPgx utils.PgxIface, ids []int) ([]Exchange, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
 	if err != nil {
 		log.Println(err)
@@ -125,7 +125,7 @@ func GetExchangesByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Exchang
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
 	if err != nil {
 		log.Println(err)
@@ -158,7 +158,7 @@ func GetStartAndEndDateDiffExchanges(dbConnPgx utils.PgxIface, diffInDate *int) 
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
 	if err != nil {
 		log.Println(err)
@@ -191,7 +191,6 @@ func UpdateExchange(dbConnPgx utils.PgxIface, exchange *Exchange) error {
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$9`
 
-	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		exchange.Name,           //1
 		exchange.AlternateName,  //2
@@ -346,7 +345,7 @@ func UpdateExchangeChainByUUID(dbConnPgx utils.PgxIface, exchangeChain *Exchange
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE 
 		uuid=$5,`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		exchangeChain.ExchangeID,  //1
 		exchangeChain.ChainID,     //2
@@ -497,7 +496,7 @@ func GetExchangeListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _o
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	exchanges, err := pgx.CollectRows(results, pgx.RowToStructByName[Exchange])
 	if err != nil {
 		log.Println(err)

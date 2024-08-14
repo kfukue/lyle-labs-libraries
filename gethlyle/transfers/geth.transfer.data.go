@@ -122,7 +122,7 @@ func GetTransfersTransactionHashByUserAddress(dbConnPgx utils.PgxIface, userAddr
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	txnAddresses := make([]string, 0)
 	for results.Next() {
 		var txnAddress string
@@ -172,7 +172,7 @@ func GetDistinctAddressesFromAssetId(dbConnPgx utils.PgxIface, assetID *int) ([]
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethAddresses, err := pgx.CollectRows(results, pgx.RowToStructByName[gethlyleaddresses.GethAddress])
 	if err != nil {
 		log.Println(err.Error())
@@ -198,7 +198,7 @@ func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(dbConnPgx utils.Pgx
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	txnHashes := make([]string, 0)
 	for results.Next() {
 		var txnHash string
@@ -267,7 +267,7 @@ func GetGethTransferByFromTokenAddress(dbConnPgx utils.PgxIface, tokenAddressID 
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
 	if err != nil {
 		log.Println(err.Error())
@@ -317,7 +317,7 @@ func GetGethTransferByFromMakerAddressAndTokenAddressID(dbConnPgx utils.PgxIface
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
 	if err != nil {
 		log.Println(err.Error())
@@ -370,7 +370,7 @@ func GetGethTransferByFromMakerAddressAndTokenAddressIDAndBeforeBlockNumber(dbCo
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
 	if err != nil {
 		log.Println(err.Error())
@@ -423,7 +423,7 @@ func GetGethTransferByFromBaseAssetIDAndBeforeBlockNumber(dbConnPgx utils.PgxIfa
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
 	if err != nil {
 		log.Println(err.Error())
@@ -472,7 +472,7 @@ func GetGethTransfersByTxnHash(dbConnPgx utils.PgxIface, txnHash string, baseAss
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
 	if err != nil {
 		log.Println(err.Error())
@@ -521,7 +521,7 @@ func GetGethTransfersByTxnHashes(dbConnPgx utils.PgxIface, txnHashes []string, b
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
 	if err != nil {
 		log.Println(err.Error())
@@ -539,7 +539,7 @@ func RemoveGethTransfer(dbConnPgx utils.PgxIface, gethTransferID *int) error {
 		return err
 	}
 	sql := `DELETE FROM geth_transfers WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethTransferID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -556,7 +556,7 @@ func RemoveGethTransfersFromBaseAssetIDAndStartBlockNumber(dbConnPgx utils.PgxIf
 		return err
 	}
 	sql := `DELETE FROM geth_transfers WHERE base_asset_id = $1 AND block_number >=  $2`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID, *startBlockNumber); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -573,7 +573,7 @@ func RemoveGethTransfersFromBaseAssetID(dbConnPgx utils.PgxIface, baseAssetID *i
 		return err
 	}
 	sql := `DELETE FROM geth_transfers WHERE base_asset_id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -615,7 +615,7 @@ func GetGethTransferList(dbConnPgx utils.PgxIface) ([]GethTransfer, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
 	if err != nil {
 		log.Println(err.Error())
@@ -659,7 +659,7 @@ func UpdateGethTransfer(dbConnPgx utils.PgxIface, gethTransfer *GethTransfer) er
 		base_asset_id=$19,
 		transfer_type_id=$20
 		WHERE id=$21`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethTransfer.ChainID,             //1
 		gethTransfer.TokenAddress,        //2
@@ -881,7 +881,6 @@ func UpdateGethTransferAddresses(dbConnPgx utils.PgxIface, baseAssetID *int) err
 			AND gt.base_asset_id = $1
 			`
 
-	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
 		log.Println(fmt.Printf("UpdateGethTransferAddresses: Error at sql1 %v", err))
 		tx.Rollback(ctx)
@@ -944,7 +943,7 @@ func GetNullAddressStrsFromTransfers(dbConnPgx utils.PgxIface, baseAssetID *int)
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethNullAddressStrs := make([]string, 0)
 	for results.Next() {
 		var gethNullAddressStr string
@@ -970,7 +969,7 @@ func UpdateGethTransfersAssetIDs(dbConnPgx utils.PgxIface) error {
 			WHERE LOWER(gt.token_address) = LOWER(assets.contract_address) AND
 			gt.asset_id is NULL
 	`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -1033,7 +1032,7 @@ func GetGethTransferListByPagination(dbConnPgx utils.PgxIface, _start, _end *int
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTransfers, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransfer])
 	if err != nil {
 		log.Println(err)

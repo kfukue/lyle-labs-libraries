@@ -171,7 +171,7 @@ func GetGethSwapByStartAndEndDates(dbConnPgx utils.PgxIface, startDate, endDate 
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
 	if err != nil {
 		log.Println(err.Error())
@@ -227,7 +227,7 @@ func GetGethSwapByFromMakerAddress(dbConnPgx utils.PgxIface, makerAddress string
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
 	if err != nil {
 		log.Println(err.Error())
@@ -283,7 +283,7 @@ func GetGethSwapByFromMakerAddressId(dbConnPgx utils.PgxIface, makerAddressID *i
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
 	if err != nil {
 		log.Println(err.Error())
@@ -341,7 +341,7 @@ func GetGethSwapByFromMakerAddressIdAndBeforeBlockNumber(dbConnPgx utils.PgxIfac
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
 	if err != nil {
 		log.Println(err.Error())
@@ -399,7 +399,7 @@ func GetGethSwapByFromBaseAssetAndBeforeBlockNumber(dbConnPgx utils.PgxIface, ba
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
 	if err != nil {
 		log.Println(err.Error())
@@ -458,7 +458,7 @@ func GetGethSwapByTxnHash(dbConnPgx utils.PgxIface, txnHash string, baseAssetID 
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
 	if err != nil {
 		log.Println(err.Error())
@@ -518,7 +518,7 @@ func GetGethSwapsByTxnHashes(dbConnPgx utils.PgxIface, txnHashes []string, baseA
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
 	if err != nil {
 		log.Println(err.Error())
@@ -541,7 +541,7 @@ func GetDistinctTransactionHashesFromAssetIdAndStartingBlock(dbConnPgx utils.Pgx
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	txnHashes := make([]string, 0)
 	for results.Next() {
 		var txnHash string
@@ -586,7 +586,7 @@ func GetDistinctMakerAddressesFromBaseTokenAssetID(dbConnPgx utils.PgxIface, bas
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	makerAddresses := make([]int, 0)
 	for results.Next() {
 		var makerAddressID int
@@ -607,7 +607,7 @@ func RemoveGethSwap(dbConnPgx utils.PgxIface, gethSwapID *int) error {
 		return err
 	}
 	sql := `DELETE FROM geth_swaps WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethSwapID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -624,7 +624,7 @@ func RemoveGethSwapsFromAssetIDAndStartBlockNumber(dbConnPgx utils.PgxIface, bas
 		return err
 	}
 	sql := `DELETE FROM geth_swaps WHERE base_asset_id = $1 AND block_number >= $2`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID, *startBlockNumber); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -641,7 +641,7 @@ func DeleteGethSwapsByBaseAssetId(dbConnPgx utils.PgxIface, baseAssetID *int) er
 		return err
 	}
 	sql := `DELETE FROM geth_swaps WHERE base_asset_id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -692,7 +692,7 @@ func GetGethSwapList(dbConnPgx utils.PgxIface) ([]GethSwap, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
 	if err != nil {
 		log.Println(err.Error())
@@ -744,7 +744,7 @@ func UpdateGethSwap(dbConnPgx utils.PgxIface, gethSwap *GethSwap) error {
 		oracle_price_usd$27,
   		oracle_price_asset_id$28
 		WHERE id=$29`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethSwap.ChainID,             //1
 		gethSwap.ExchangeID,          //2
@@ -1014,7 +1014,7 @@ func GetNullAddressStrsFromSwaps(dbConnPgx utils.PgxIface, assetID *int) ([]stri
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethNullAddressStrs := make([]string, 0)
 	for results.Next() {
 		var gethNullAddressStr string
@@ -1042,7 +1042,7 @@ func UpdateGethSwapAddresses(dbConnPgx utils.PgxIface, baseAssetID *int) error {
 			AND gs.maker_address_id IS NULL
 			AND gs.base_asset_id = $1;
 	`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -1113,13 +1113,12 @@ func GetGethSwapListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _o
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethSwap])
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
 
 	return gethSwaps, nil
 }

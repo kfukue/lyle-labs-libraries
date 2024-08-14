@@ -103,7 +103,7 @@ func RemoveMarketDataJob(dbConnPgx utils.PgxIface, marketDataID, jobID *int) err
 		return err
 	}
 	sql := `DELETE FROM market_data_jobs WHERE market_data_id = $1 AND job_id =$2`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *marketDataID, *jobID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -139,7 +139,7 @@ func GetMarketDataJobList(dbConnPgx utils.PgxIface) ([]MarketDataJob, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	marketDataJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[MarketDataJob])
 	if err != nil {
 		log.Println(err.Error())
@@ -175,7 +175,7 @@ func UpdateMarketDataJob(dbConnPgx utils.PgxIface, marketDataJob *MarketDataJob)
 		updated_by=$12, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE market_data_id=$13 AND job_id=$14`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		marketDataJob.Name,           //1
 		marketDataJob.AlternateName,  //2
@@ -400,7 +400,7 @@ func GetMarketDataJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *in
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	marketDataJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[MarketDataJob])
 	if err != nil {
 		log.Println(err)

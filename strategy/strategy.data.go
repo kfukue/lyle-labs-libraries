@@ -54,7 +54,7 @@ func RemoveStrategy(dbConnPgx utils.PgxIface, strategyID *int) error {
 		return err
 	}
 	sql := `DELETE FROM strategies WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *strategyID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -89,7 +89,7 @@ func GetStrategies(dbConnPgx utils.PgxIface, ids []int) ([]Strategy, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	strategies, err := pgx.CollectRows(results, pgx.RowToStructByName[Strategy])
 	if err != nil {
 		log.Println(err)
@@ -121,7 +121,7 @@ func GetStrategiesByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Strate
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	strategies, err := pgx.CollectRows(results, pgx.RowToStructByName[Strategy])
 	if err != nil {
 		log.Println(err)
@@ -153,7 +153,7 @@ func GetStartAndEndDateDiffStrategies(dbConnPgx utils.PgxIface, diffInDate *int)
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	strategies, err := pgx.CollectRows(results, pgx.RowToStructByName[Strategy])
 	if err != nil {
 		log.Println(err)
@@ -184,7 +184,7 @@ func UpdateStrategy(dbConnPgx utils.PgxIface, strategy *Strategy) error {
 		updated_by=$7, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$8`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		strategy.Name,           //1
 		strategy.AlternateName,  //2
@@ -352,7 +352,7 @@ func GetStrategyListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _o
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	strategyList, err := pgx.CollectRows(results, pgx.RowToStructByName[Strategy])
 	if err != nil {
 		log.Println(err)

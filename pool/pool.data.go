@@ -58,7 +58,7 @@ func RemovePool(dbConnPgx utils.PgxIface, poolID *int) error {
 		return err
 	}
 	sql := `DELETE FROM pools WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *poolID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -97,7 +97,7 @@ func GetPools(dbConnPgx utils.PgxIface, ids []int) ([]Pool, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	pools, err := pgx.CollectRows(results, pgx.RowToStructByName[Pool])
 	if err != nil {
 		log.Println(err)
@@ -132,7 +132,7 @@ func GetPoolsByStrategyID(dbConnPgx utils.PgxIface, strategyID *int) ([]Pool, er
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	pools, err := pgx.CollectRows(results, pgx.RowToStructByName[Pool])
 	if err != nil {
 		log.Println(err)
@@ -168,7 +168,7 @@ func GetPoolsByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Pool, error
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	pools, err := pgx.CollectRows(results, pgx.RowToStructByName[Pool])
 	if err != nil {
 		log.Println(err)
@@ -204,7 +204,7 @@ func GetStartAndEndDateDiffPools(dbConnPgx utils.PgxIface, diffInDate *int) ([]P
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	pools, err := pgx.CollectRows(results, pgx.RowToStructByName[Pool])
 	if err != nil {
 		log.Println(err)
@@ -240,7 +240,7 @@ func UpdatePool(dbConnPgx utils.PgxIface, pool *Pool) error {
 		updated_by=$12, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$13`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		pool.TargetAssetID, //1
 		pool.StrategyID,    //2
@@ -441,7 +441,7 @@ func GetPoolListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	pools, err := pgx.CollectRows(results, pgx.RowToStructByName[Pool])
 	if err != nil {
 		log.Println(err)

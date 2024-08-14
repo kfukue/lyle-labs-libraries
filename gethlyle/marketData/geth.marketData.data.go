@@ -79,7 +79,7 @@ func GetGethMarketData(dbConnPgx utils.PgxIface, marketDataID *int) (*GethMarket
 		return nil, err
 	}
 	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
-	defer row.Close()
+
 	marketData, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethMarketData])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -99,7 +99,7 @@ func RemoveGethMarketData(dbConnPgx utils.PgxIface, marketDataID *int) error {
 		return err
 	}
 	sql := `DELETE FROM geth_market_data WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *marketDataID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -117,7 +117,7 @@ func RemoveGethMarketDataFromBaseAssetBetweenDates(dbConnPgx utils.PgxIface, ass
 		return err
 	}
 	sql := `DELETE FROM geth_market_data WHERE asset_id = $1 AND start_date BETWEEN $2 and $3`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *assetID, *startDate, *endDate); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -138,7 +138,7 @@ func RemoveGethMarketDataByMarketDataTypeIDFromBaseAssetBetweenDates(dbConnPgx u
 			start_date BETWEEN $1 and $2
 			AND market_data_type_id=$3
 			AND asset_id = $4`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *startDate, *endDate, *marketDataTypeID, *assetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -159,7 +159,7 @@ func RemoveGethMarketDataByMarketDataTypeIDFromBaseAssetAsOfDate(dbConnPgx utils
 			start_date = $1
 			AND market_data_type_id=$2
 			AND asset_id = $3`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *asOfDate, *marketDataTypeID, *assetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -210,7 +210,7 @@ func GetGethMarketDataList(dbConnPgx utils.PgxIface, ids []int) ([]GethMarketDat
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMarketData])
 	if err != nil {
 		log.Println(err)
@@ -258,7 +258,7 @@ func GetGethMarketDataListByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) (
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMarketData])
 	if err != nil {
 		log.Println(err)
@@ -306,7 +306,7 @@ func GetStartAndEndDateDiffGethMarketDataList(dbConnPgx utils.PgxIface, diffInDa
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMarketData])
 	if err != nil {
 		log.Println(err)
@@ -358,7 +358,7 @@ func UpdateGethMarketData(dbConnPgx utils.PgxIface, marketData *GethMarketData) 
 		updated_at=current_timestamp at time zone 'UTC',
 		geth_process_job_id = $23
 		WHERE id=$24`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 
 		marketData.Name,                             //1
@@ -649,7 +649,7 @@ func GetGethMarketDataListByPagination(dbConnPgx utils.PgxIface, _start, _end *i
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethMarketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMarketData])
 	if err != nil {
 		log.Println(err)

@@ -42,7 +42,7 @@ func GetChain(dbConnPgx utils.PgxIface, chainID *int) (*Chain, error) {
 		return nil, err
 	}
 	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
-	defer row.Close()
+
 	chain, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Chain])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -82,7 +82,7 @@ func GetChainByAddress(dbConnPgx utils.PgxIface, address string) (*Chain, error)
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer row.Close()
+
 	chain, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Chain])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -122,7 +122,7 @@ func GetChainByAlternateName(dbConnPgx utils.PgxIface, altenateName string) (*Ch
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer row.Close()
+
 	chain, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Chain])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -142,7 +142,7 @@ func RemoveChain(dbConnPgx utils.PgxIface, chainID *int) error {
 		return err
 	}
 	sql := `DELETE FROM chains WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *chainID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -183,7 +183,7 @@ func GetChainList(dbConnPgx utils.PgxIface, ids []int) ([]Chain, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	chains, err := pgx.CollectRows(results, pgx.RowToStructByName[Chain])
 	if err != nil {
 		log.Println(err)
@@ -239,7 +239,7 @@ func GetChainListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _orde
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	chains, err := pgx.CollectRows(results, pgx.RowToStructByName[Chain])
 	if err != nil {
 		log.Println(err)
@@ -292,7 +292,7 @@ func UpdateChain(dbConnPgx utils.PgxIface, chain *Chain) error {
 		rpc_url_prod=$12,
 		rpc_url_archive=$13
 		WHERE id=$14`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		chain.Name,             //1
 		chain.AlternateName,    //2

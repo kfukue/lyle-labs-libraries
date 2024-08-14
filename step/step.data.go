@@ -58,7 +58,7 @@ func RemoveStep(dbConnPgx utils.PgxIface, stepID *int) error {
 		return err
 	}
 	sql := `DELETE FROM steps WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *stepID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -97,7 +97,7 @@ func GetSteps(dbConnPgx utils.PgxIface, ids []int) ([]Step, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	steps, err := pgx.CollectRows(results, pgx.RowToStructByName[Step])
 	if err != nil {
 		log.Println(err)
@@ -133,7 +133,7 @@ func GetStepsByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Step, error
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	steps, err := pgx.CollectRows(results, pgx.RowToStructByName[Step])
 	if err != nil {
 		log.Println(err)
@@ -169,7 +169,7 @@ func GetStepsFromPoolID(dbConnPgx utils.PgxIface, poolID *int) ([]Step, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	steps, err := pgx.CollectRows(results, pgx.RowToStructByName[Step])
 	if err != nil {
 		log.Println(err)
@@ -205,7 +205,7 @@ func GetStartAndEndDateDiffSteps(dbConnPgx utils.PgxIface, diffInDate *int) ([]S
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	steps, err := pgx.CollectRows(results, pgx.RowToStructByName[Step])
 	if err != nil {
 		log.Println(err)
@@ -241,7 +241,7 @@ func UpdateStep(dbConnPgx utils.PgxIface, step *Step) error {
 		updated_by=$12, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$13`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		step.PoolID,        //1
 		step.ParentStepId,  //2
@@ -439,7 +439,7 @@ func GetStepListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	steps, err := pgx.CollectRows(results, pgx.RowToStructByName[Step])
 	if err != nil {
 		log.Println(err)

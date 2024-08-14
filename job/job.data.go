@@ -61,7 +61,7 @@ func RemoveJob(dbConnPgx utils.PgxIface, jobID *int) error {
 		return err
 	}
 	sql := `DELETE FROM jobs WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *jobID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -103,7 +103,7 @@ func GetJobList(dbConnPgx utils.PgxIface, ids []int) ([]Job, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	jobList, err := pgx.CollectRows(results, pgx.RowToStructByName[Job])
 	if err != nil {
 		log.Println(err.Error())
@@ -142,7 +142,7 @@ func GetJobListByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Job, erro
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	jobList, err := pgx.CollectRows(results, pgx.RowToStructByName[Job])
 	if err != nil {
 		log.Println(err.Error())
@@ -181,7 +181,7 @@ func GetStartAndEndDateDiffJobList(dbConnPgx utils.PgxIface, diffInDate *int) ([
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	jobList, err := pgx.CollectRows(results, pgx.RowToStructByName[Job])
 	if err != nil {
 		log.Println(err.Error())
@@ -223,7 +223,7 @@ func UpdateJob(dbConnPgx utils.PgxIface, job *Job) error {
 		updated_by=$14, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$15`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		job.Name,                             //1
 		job.AlternateName,                    //2
@@ -445,7 +445,7 @@ func GetJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order,
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	jobs, err := pgx.CollectRows(results, pgx.RowToStructByName[Job])
 	if err != nil {
 		log.Println(err)

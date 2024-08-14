@@ -125,7 +125,7 @@ func GetTransactionJobsByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]T
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	transactionJobList, err := pgx.CollectRows(results, pgx.RowToStructByName[TransactionJob])
 	if err != nil {
 		log.Println(err)
@@ -144,7 +144,7 @@ func RemoveTransactionJob(dbConnPgx utils.PgxIface, transactionID, jobID *int) e
 	}
 	sql := `DELETE FROM transaction_jobs WHERE 
 		transaction_id = $1 AND job_id =$2`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *transactionID, *jobID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -161,7 +161,7 @@ func RemoveTransactionJobByUUID(dbConnPgx utils.PgxIface, transactionJobUUID str
 		return err
 	}
 	sql := `DELETE FROM transaction_jobs WHERE text(uuid) = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, transactionJobUUID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -197,7 +197,7 @@ func GetTransactionJobList(dbConnPgx utils.PgxIface) ([]TransactionJob, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	transactionJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[TransactionJob])
 	if err != nil {
 		log.Println(err)
@@ -233,7 +233,7 @@ func UpdateTransactionJob(dbConnPgx utils.PgxIface, transactionJob *TransactionJ
 		updated_by=$12, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE transaction_id=$13 AND job_id=$14`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		transactionJob.Name,           //1
 		transactionJob.AlternateName,  //2
@@ -285,7 +285,7 @@ func UpdateTransactionJobByUUID(dbConnPgx utils.PgxIface, transactionJob *Transa
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE text(uuid) = $13
 		`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		transactionJob.Name,           //1
 		transactionJob.AlternateName,  //2
@@ -520,7 +520,7 @@ func GetTransactionJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *i
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	transactionJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[TransactionJob])
 	if err != nil {
 		log.Println(err)

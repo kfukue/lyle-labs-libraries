@@ -130,7 +130,6 @@ func RemoveAccount(dbConnPgx utils.PgxIface, accountID *int) error {
 		return err
 	}
 	sql := `DELETE FROM accounts WHERE id = $1`
-	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *accountID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -168,7 +167,6 @@ func GetAccountList(dbConnPgx utils.PgxIface, ids []int) ([]Account, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
 	accounts, err := pgx.CollectRows(results, pgx.RowToStructByName[Account])
 	if err != nil {
 		log.Println(err)
@@ -203,7 +201,6 @@ func UpdateAccount(dbConnPgx utils.PgxIface, account *Account) error {
 		updated_at=current_timestamp at time zone 'UTC',
 		chain_id = $10
 		WHERE id=$11`
-	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		account.Name,
 		account.AlternateName,
@@ -231,7 +228,6 @@ func InsertAccount(dbConnPgx utils.PgxIface, account *Account) (int, error) {
 		return -1, err
 	}
 	var ID int
-	//defer dbConnPgx.Close()
 
 	err = dbConnPgx.QueryRow(ctx, `INSERT INTO accounts
 	(
@@ -393,13 +389,11 @@ func GetAccountListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _or
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
 	accounts, err := pgx.CollectRows(results, pgx.RowToStructByName[Account])
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
 
 	return accounts, nil
 }

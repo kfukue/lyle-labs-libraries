@@ -59,7 +59,7 @@ func RemoveTransaction(dbConnPgx utils.PgxIface, transactionID *int) error {
 		return err
 	}
 	sql := `DELETE FROM transactions WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *transactionID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -98,7 +98,7 @@ func GetTransactions(dbConnPgx utils.PgxIface, ids []int) ([]Transaction, error)
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	transactionList, err := pgx.CollectRows(results, pgx.RowToStructByName[Transaction])
 	if err != nil {
 		log.Println(err.Error())
@@ -134,7 +134,7 @@ func GetTransactionsByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Tran
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	transactionList, err := pgx.CollectRows(results, pgx.RowToStructByName[Transaction])
 	if err != nil {
 		log.Println(err.Error())
@@ -170,7 +170,7 @@ func GetStartAndEndDateDiffTransactions(dbConnPgx utils.PgxIface, diffInDate *in
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	transactionList, err := pgx.CollectRows(results, pgx.RowToStructByName[Transaction])
 	if err != nil {
 		log.Println(err.Error())
@@ -208,7 +208,7 @@ func UpdateTransaction(dbConnPgx utils.PgxIface, transaction *Transaction) error
 		updated_by=$11, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$12`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		transaction.Name,          //1
 		transaction.AlternateName, //2
@@ -413,7 +413,7 @@ func GetTransactionsByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _o
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	transactions, err := pgx.CollectRows(results, pgx.RowToStructByName[Transaction])
 	if err != nil {
 		log.Println(err)

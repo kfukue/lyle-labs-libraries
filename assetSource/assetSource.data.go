@@ -39,7 +39,7 @@ func GetAllAssetSourceBySourceAndAssetType(dbConnPgx utils.PgxIface, sourceID, a
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assetSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetSource])
 	if err != nil {
 		log.Println(err)
@@ -72,7 +72,7 @@ func GetAssetSource(dbConnPgx utils.PgxIface, sourceID, assetID *int) (*AssetSou
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer row.Close()
+
 	assetSource, err := pgx.CollectOneRow(row, pgx.RowToStructByName[AssetSource])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -107,7 +107,7 @@ func GetAssetSourceByTicker(dbConnPgx utils.PgxIface, sourceID *int, sourceIdent
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer row.Close()
+
 	assetSource, err := pgx.CollectOneRow(row, pgx.RowToStructByName[AssetSource])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -127,7 +127,7 @@ func RemoveAssetSource(dbConnPgx utils.PgxIface, sourceID, assetID *int) error {
 		return err
 	}
 	sql := `DELETE FROM asset_sources WHERE source_id = $1 AND asset_id =$2`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *sourceID, *assetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -172,8 +172,7 @@ func GetAssetSourceList(dbConnPgx utils.PgxIface, assetIds []int, sourceIds []in
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
-	defer results.Close()
+
 	assetSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetSource])
 	if err != nil {
 		log.Println(err)
@@ -204,7 +203,6 @@ func UpdateAssetSource(dbConnPgx utils.PgxIface, assetSource *AssetSource) error
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE source_id=$7 AND asset_id=$8`
 
-	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		assetSource.Name,             //1
 		assetSource.AlternateName,    //2
@@ -379,7 +377,7 @@ func GetAssetSourceListByPagination(dbConnPgx utils.PgxIface, _start, _end *int,
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	assetSources, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetSource])
 	if err != nil {
 		log.Println(err)

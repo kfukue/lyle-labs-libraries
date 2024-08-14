@@ -38,7 +38,7 @@ func GetAllGethTradeSwapsByTradeID(dbConnPgx utils.PgxIface, gethTradeID *int) (
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTradeSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeSwap])
 	if err != nil {
 		log.Println(err)
@@ -89,7 +89,7 @@ func RemoveGethTradeSwap(dbConnPgx utils.PgxIface, gethTradeID, gethGethSwapID *
 		return err
 	}
 	sql := `DELETE FROM geth_trade_swaps WHERE geth_trade_id =$1 AND geth_swap_id = $2`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethTradeID, *gethGethSwapID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -133,7 +133,7 @@ func GetGethTradeSwapList(dbConnPgx utils.PgxIface, gethTradeIds []int, swapIds 
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTradeSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeSwap])
 	if err != nil {
 		log.Println(err)
@@ -336,7 +336,7 @@ func GetMissingTradesFromSwapsByBaseAssetID(dbConnPgx utils.PgxIface, baseAssetI
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[gethlyleswaps.GethSwap])
 	if err != nil {
 		log.Println(err)
@@ -369,7 +369,7 @@ func GetMissingTxnHashesFromSwapsByBaseAssetID(dbConnPgx utils.PgxIface, baseAss
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	txnHashes := make([]string, 0)
 	for results.Next() {
 		var txnHash string
@@ -489,7 +489,7 @@ func GetGethTradeSwapListByPagination(dbConnPgx utils.PgxIface, _start, _end *in
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethTradeSwaps, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTradeSwap])
 	if err != nil {
 		log.Println(err)

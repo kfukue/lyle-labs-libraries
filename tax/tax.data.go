@@ -60,7 +60,7 @@ func RemoveTax(dbConnPgx utils.PgxIface, taxID *int) error {
 		return err
 	}
 	sql := `DELETE FROM taxes WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *taxID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -101,7 +101,7 @@ func GetTaxes(dbConnPgx utils.PgxIface, ids []int) ([]Tax, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	taxes, err := pgx.CollectRows(results, pgx.RowToStructByName[Tax])
 	if err != nil {
 		log.Println(err)
@@ -140,7 +140,7 @@ func GetTaxesByAssetID(dbConnPgx utils.PgxIface, assetID *int) ([]Tax, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	taxes, err := pgx.CollectRows(results, pgx.RowToStructByName[Tax])
 	if err != nil {
 		log.Println(err)
@@ -178,7 +178,7 @@ func GetTaxesByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Tax, error)
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	taxes, err := pgx.CollectRows(results, pgx.RowToStructByName[Tax])
 	if err != nil {
 		log.Println(err)
@@ -215,7 +215,7 @@ func UpdateTax(dbConnPgx utils.PgxIface, tax *Tax) error {
 		updated_by=$13, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$14`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		tax.Name,               //1
 		tax.AlternateName,      //2
@@ -415,7 +415,7 @@ func GetTaxListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order,
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	taxes, err := pgx.CollectRows(results, pgx.RowToStructByName[Tax])
 	if err != nil {
 		log.Println(err)

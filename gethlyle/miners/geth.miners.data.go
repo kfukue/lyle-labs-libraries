@@ -43,7 +43,7 @@ func GetGethMiner(dbConnPgx utils.PgxIface, gethMinerID *int) (*GethMiner, error
 		return nil, err
 	}
 	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
-	defer row.Close()
+
 	gethMiner, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethMiner])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -63,7 +63,7 @@ func RemoveGethMiner(dbConnPgx utils.PgxIface, gethMinerID *int) error {
 		return err
 	}
 	sql := `DELETE FROM geth_miners WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethMinerID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -100,7 +100,7 @@ func GetGethMinerList(dbConnPgx utils.PgxIface) ([]GethMiner, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethMiners, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMiner])
 	if err != nil {
 		log.Println(err)
@@ -140,7 +140,7 @@ func GetGethMinerListByMiningAssetId(dbConnPgx utils.PgxIface, miningAssetID *in
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethMiners, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMiner])
 	if err != nil {
 		log.Println(err)
@@ -178,7 +178,7 @@ func UpdateGethMiner(dbConnPgx utils.PgxIface, gethMiner *GethMiner) error {
 		updated_by=$14,
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$15`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethMiner.Name,                //1
 		gethMiner.AlternateName,       //2
@@ -364,7 +364,7 @@ func UpdateGethMinerAddresses(dbConnPgx utils.PgxIface, gethMinerID *int) error 
 			AND gm.contract_address_id IS NULL
 			AND gm.id = $1
 			`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethMinerID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -432,7 +432,7 @@ func GetGethMinerListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethMiners, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMiner])
 	if err != nil {
 		log.Println(err.Error())

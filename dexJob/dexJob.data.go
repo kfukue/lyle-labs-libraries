@@ -41,7 +41,7 @@ func GetDexTxnJob(dbConnPgx utils.PgxIface, dexTxnID *int) (*DexTxnJob, error) {
 		return nil, err
 	}
 	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
-	defer row.Close()
+
 	dexTxnJob, err := pgx.CollectOneRow(row, pgx.RowToStructByName[DexTxnJob])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -78,7 +78,7 @@ func GetDexTxnJobByJobId(dbConnPgx utils.PgxIface, jobID *int) ([]DexTxnJob, err
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	dexTxnJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[DexTxnJob])
 	if err != nil {
 		log.Println(err)
@@ -112,7 +112,7 @@ func GetDexTxnJobList(dbConnPgx utils.PgxIface) ([]DexTxnJob, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	dexTxnJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[DexTxnJob])
 	if err != nil {
 		log.Println(err)
@@ -130,7 +130,7 @@ func RemoveDexTxnJob(dbConnPgx utils.PgxIface, dexTxnID *int) error {
 		return err
 	}
 	sql := `DELETE FROM dex_txn_jobs WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *dexTxnID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -163,7 +163,7 @@ func UpdateDexTxnJob(dbConnPgx utils.PgxIface, dexTxnJob *DexTxnJob) error {
 		updated_by=$10, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$11 `
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		dexTxnJob.Name,                        //1
 		dexTxnJob.AlternateName,               //2
@@ -358,7 +358,7 @@ func GetDexTxnJobListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	dexTxnJobs, err := pgx.CollectRows(results, pgx.RowToStructByName[DexTxnJob])
 	if err != nil {
 		log.Println(err)

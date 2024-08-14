@@ -55,7 +55,7 @@ func GetMarketData(dbConnPgx utils.PgxIface, marketDataID *int) (*MarketData, er
 		return nil, err
 	}
 	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
-	defer row.Close()
+
 	marketData, err := pgx.CollectOneRow(row, pgx.RowToStructByName[MarketData])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -75,7 +75,7 @@ func RemoveMarketData(dbConnPgx utils.PgxIface, marketDataID *int) error {
 		return err
 	}
 	sql := `DELETE FROM market_data WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *marketDataID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -102,7 +102,7 @@ func RemoveMarketDataFromBaseAssetBetweenDates(dbConnPgx utils.PgxIface, assetID
 		WHERE 
 			asset_id = $1
 			AND start_date BETWEEN $2 and $3`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *assetID, startDate, endDate); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -152,7 +152,7 @@ func GetMarketDataList(dbConnPgx utils.PgxIface, ids []int) ([]MarketData, error
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[MarketData])
 	if err != nil {
 		log.Println(err)
@@ -199,7 +199,7 @@ func GetMarketDataListByUUIDs(dbConnPgx utils.PgxIface, UUIDList []string) ([]Ma
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[MarketData])
 	if err != nil {
 		log.Println(err)
@@ -246,7 +246,7 @@ func GetStartAndEndDateDiffMarketDataList(dbConnPgx utils.PgxIface, diffInDate *
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[MarketData])
 	if err != nil {
 		log.Println(err)
@@ -297,7 +297,7 @@ func UpdateMarketData(dbConnPgx utils.PgxIface, marketData *MarketData) error {
 		updated_by=$22, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$23`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		marketData.Name,                             //1
 		marketData.AlternateName,                    //2
@@ -589,7 +589,7 @@ func GetMarketDataListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, 
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[MarketData])
 	if err != nil {
 		log.Println(err)

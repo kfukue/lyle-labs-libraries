@@ -140,7 +140,7 @@ func GetPositionByDatesAccountsForAllTradeableAssets(dbConnPgx utils.PgxIface, s
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	positions, err := pgx.CollectRows(results, pgx.RowToStructByName[Position])
 	if err != nil {
 		log.Println(err)
@@ -189,7 +189,7 @@ func GetPositionBetweenDatesAndAccountAllCurrentAssets(dbConnPgx utils.PgxIface,
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	positions, err := pgx.CollectRows(results, pgx.RowToStructByName[Position])
 	if err != nil {
 		log.Println(err)
@@ -207,7 +207,7 @@ func RemovePosition(dbConnPgx utils.PgxIface, positionID *int) error {
 		return err
 	}
 	sql := `DELETE FROM positions WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *positionID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -227,7 +227,7 @@ func RemovePositionByDateRangeAndAccount(dbConnPgx utils.PgxIface, startDate, en
 	sql := `DELETE FROM positions WHERE 
 	start_date BETWEEN $1 AND $2
 	AND	account_id = $3`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, startDate.Format(layoutPostgres), endDate.Format(layoutPostgres), *accountID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -244,7 +244,7 @@ func RemoveAllPositionByAccount(dbConnPgx utils.PgxIface, accountID *int) error 
 		return err
 	}
 	sql := `DELETE FROM positions WHERE account_id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *accountID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -287,7 +287,7 @@ func GetPositions(dbConnPgx utils.PgxIface, ids []int) ([]Position, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	positions, err := pgx.CollectRows(results, pgx.RowToStructByName[Position])
 	if err != nil {
 		log.Println(err)
@@ -371,7 +371,7 @@ func QueryPositions(dbConnPgx utils.PgxIface, positionQuery *PositionQuery) ([]P
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	positions, err := pgx.CollectRows(results, pgx.RowToStructByName[Position])
 	if err != nil {
 		log.Println(err)
@@ -411,7 +411,7 @@ func UpdatePosition(dbConnPgx utils.PgxIface, position *Position) error {
 		updated_by=$15, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$16`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		position.Name,                             //1
 		position.AlternateName,                    //2
@@ -639,7 +639,7 @@ func GetPositionListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _o
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	positions, err := pgx.CollectRows(results, pgx.RowToStructByName[Position])
 	if err != nil {
 		log.Println(err)

@@ -56,7 +56,7 @@ func RemovePortfolio(dbConnPgx utils.PgxIface, portfolioID *int) error {
 		return err
 	}
 	sql := `DELETE FROM portfolios WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *portfolioID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -95,7 +95,7 @@ func GetPortfolios(dbConnPgx utils.PgxIface, ids []int) ([]Portfolio, error) {
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	portfolios, err := pgx.CollectRows(results, pgx.RowToStructByName[Portfolio])
 	if err != nil {
 		log.Println(err)
@@ -129,7 +129,7 @@ func UpdatePortfolio(dbConnPgx utils.PgxIface, portfolio *Portfolio) error {
 		updated_by=$10, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$11`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		portfolio.Name,            //1
 		portfolio.AlternateName,   //2
@@ -320,7 +320,7 @@ func GetPortfolioListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	portfolios, err := pgx.CollectRows(results, pgx.RowToStructByName[Portfolio])
 	if err != nil {
 		log.Println(err)

@@ -36,7 +36,7 @@ func GetGethProcessJobTopic(dbConnPgx utils.PgxIface, gethProcessJobTopicID *int
 		return nil, err
 	}
 	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
-	defer row.Close()
+
 	gethProcessJobTopic, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethProcessJobTopic])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -68,7 +68,7 @@ func GetGethProcessJobTopicList(dbConnPgx utils.PgxIface) ([]GethProcessJobTopic
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethProcessJobTopics, err := pgx.CollectRows(results, pgx.RowToStructByName[GethProcessJobTopic])
 
 	return gethProcessJobTopics, nil
@@ -83,7 +83,7 @@ func RemoveGethProcessJobTopic(dbConnPgx utils.PgxIface, gethProcessJobTopicID *
 		return err
 	}
 	sql := `DELETE FROM geth_process_job_topics WHERE id = $1`
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethProcessJobTopicID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -113,7 +113,7 @@ func UpdateGethProcessJobTopic(dbConnPgx utils.PgxIface, gethProcessJobTopic *Ge
 		updated_by=$7, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$8 `
-	//defer dbConnPgx.Close()
+
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethProcessJobTopic.GethProcessJobID, //1
 		gethProcessJobTopic.Name,             //2
@@ -283,7 +283,7 @@ func GetGethProcessJobTopicListByPagination(dbConnPgx utils.PgxIface, _start, _e
 		log.Println(err.Error())
 		return nil, err
 	}
-	defer results.Close()
+
 	gethProcessJobTopicList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethProcessJobTopic])
 	if err != nil {
 		log.Println(err)
