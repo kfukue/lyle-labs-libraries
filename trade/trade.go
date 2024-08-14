@@ -22,8 +22,8 @@ type Trade struct {
 	AlternateName           string         `json:"alternateName" db:"alternate_name"`                    //12
 	TradeTypeID             *int           `json:"tradeTypeId" db:"trade_type_id"`                       //13
 	TradeDate               *time.Time     `json:"tradeDate" db:"trade_date"`                            //14
-	SettleDate              *time.Time     `json:"settleDate" db:"settle_date"`                          //15
-	TransferDate            *time.Time     `json:"transferDate" db:"transfer_date"`                      //16
+	SettleDate              time.Time      `json:"settleDate" db:"settle_date"`                          //15
+	TransferDate            time.Time      `json:"transferDate" db:"transfer_date"`                      //16
 	FromQuantity            *float64       `json:"fromQuantity" db:"from_quantity"`                      //17
 	ToQuantity              *float64       `json:"toQuantity" db:"to_quantity"`                          //18
 	Price                   *float64       `json:"price"  db:"price"`                                    //19
