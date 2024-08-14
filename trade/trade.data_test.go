@@ -97,8 +97,8 @@ var TestData1 = Trade{
 	AlternateName:           "",                                                               //12
 	TradeTypeID:             utils.Ptr[int](13),                                               //13
 	TradeDate:               utils.Ptr[time.Time](utils.SampleCreatedAtTime),                  //14
-	SettleDate:              utils.SampleCreatedAtTime,                                        //15
-	TransferDate:            utils.SampleCreatedAtTime,                                        //16
+	SettleDate:              utils.Ptr[time.Time](utils.SampleCreatedAtTime),                  //15
+	TransferDate:            utils.Ptr[time.Time](utils.SampleCreatedAtTime),                  //16
 	FromQuantity:            utils.Ptr[float64](0),                                            //17
 	ToQuantity:              utils.Ptr[float64](535.2),                                        //18
 	Price:                   utils.Ptr[float64](643.36),                                       //19
@@ -133,8 +133,8 @@ var TestData2 = Trade{
 	AlternateName:           "",                                                               //12
 	TradeTypeID:             utils.Ptr[int](2),                                                //13
 	TradeDate:               utils.Ptr[time.Time](utils.SampleCreatedAtTime),                  //14
-	SettleDate:              utils.SampleCreatedAtTime,                                        //15
-	TransferDate:            utils.SampleCreatedAtTime,                                        //16
+	SettleDate:              utils.Ptr[time.Time](utils.SampleCreatedAtTime),                  //15
+	TransferDate:            utils.Ptr[time.Time](utils.SampleCreatedAtTime),                  //16
 	FromQuantity:            utils.Ptr[float64](3425.2),                                       //17
 	ToQuantity:              utils.Ptr[float64](0),                                            //18
 	Price:                   utils.Ptr[float64](11111.2),                                      //19

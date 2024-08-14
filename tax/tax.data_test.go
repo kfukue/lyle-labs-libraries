@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5"
@@ -58,8 +59,8 @@ var TestData1 = Tax{
 	UUID:               "01ef85e8-2c26-441e-8c7f-71d79518ad72",                //2
 	Name:               "HAMS Contract Fee",                                   //3
 	AlternateName:      "HAMS Contract Fee",                                   //4
-	StartDate:          utils.SampleCreatedAtTime,                             //5
-	EndDate:            utils.SampleCreatedAtTime,                             //6
+	StartDate:          utils.Ptr[time.Time](utils.SampleCreatedAtTime),       //5
+	EndDate:            utils.Ptr[time.Time](utils.SampleCreatedAtTime),       //6
 	StartBlock:         utils.Ptr[int](17662040),                              //7
 	EndBlock:           nil,                                                   //8
 	TaxRate:            utils.Ptr[decimal.Decimal](decimal.NewFromFloat(5.0)), //9
@@ -80,8 +81,8 @@ var TestData2 = Tax{
 	UUID:               "4f0d5402-7a7c-402d-a7fc-c56a02b13e03",                 //2
 	Name:               "JP Sales Tax",                                         //3
 	AlternateName:      "Japan Sales Tax",                                      //4
-	StartDate:          utils.SampleCreatedAtTime,                              //5
-	EndDate:            utils.SampleCreatedAtTime,                              //6
+	StartDate:          utils.Ptr[time.Time](utils.SampleCreatedAtTime),        //5
+	EndDate:            utils.Ptr[time.Time](utils.SampleCreatedAtTime),        //6
 	StartBlock:         utils.Ptr[int](1),                                      //7
 	EndBlock:           nil,                                                    //8
 	TaxRate:            utils.Ptr[decimal.Decimal](decimal.NewFromFloat(10.0)), //9

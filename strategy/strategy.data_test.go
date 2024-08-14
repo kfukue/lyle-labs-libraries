@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5"
@@ -41,18 +42,18 @@ var DBColumnsInsertStrategies = []string{
 }
 
 var TestData1 = Strategy{
-	ID:             utils.Ptr[int](1),                      //1
-	UUID:           "01ef85e8-2c26-441e-8c7f-71d79518ad72", //2
-	Name:           "Velodrome",                            //3
-	AlternateName:  "Velodrome",                            //4
-	StartDate:      utils.SampleCreatedAtTime,              //5
-	EndDate:        utils.SampleCreatedAtTime,              //6
-	Description:    "",                                     //7
-	StrategyTypeID: utils.Ptr[int](1),                      //8
-	CreatedBy:      "SYSTEM",                               //9
-	CreatedAt:      utils.SampleCreatedAtTime,              //10
-	UpdatedBy:      "SYSTEM",                               //11
-	UpdatedAt:      utils.SampleCreatedAtTime,              //12
+	ID:             utils.Ptr[int](1),                               //1
+	UUID:           "01ef85e8-2c26-441e-8c7f-71d79518ad72",          //2
+	Name:           "Velodrome",                                     //3
+	AlternateName:  "Velodrome",                                     //4
+	StartDate:      utils.Ptr[time.Time](utils.SampleCreatedAtTime), //5
+	EndDate:        utils.Ptr[time.Time](utils.SampleCreatedAtTime), //6
+	Description:    "",                                              //7
+	StrategyTypeID: utils.Ptr[int](1),                               //8
+	CreatedBy:      "SYSTEM",                                        //9
+	CreatedAt:      utils.SampleCreatedAtTime,                       //10
+	UpdatedBy:      "SYSTEM",                                        //11
+	UpdatedAt:      utils.SampleCreatedAtTime,                       //12
 
 }
 
@@ -61,8 +62,8 @@ var TestData2 = Strategy{
 	UUID:           "4f0d5402-7a7c-402d-a7fc-c56a02b13e03",                   //2
 	Name:           "Vector Finance",                                         //3
 	AlternateName:  "Vector Finance",                                         //4
-	StartDate:      utils.SampleCreatedAtTime,                                //5
-	EndDate:        utils.SampleCreatedAtTime,                                //6
+	StartDate:      utils.Ptr[time.Time](utils.SampleCreatedAtTime),          //5
+	EndDate:        utils.Ptr[time.Time](utils.SampleCreatedAtTime),          //6
 	Description:    "Reinvest the proceeds back to the vector finance pools", //7
 	StrategyTypeID: utils.Ptr[int](2),                                        //8
 	CreatedBy:      "SYSTEM",                                                 //9

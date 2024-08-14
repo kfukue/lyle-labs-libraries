@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5"
@@ -57,8 +58,8 @@ var TestData1 = StepAsset{
 	UUID:            "01ef85e8-2c26-441e-8c7f-71d79518ad72",              //6
 	Name:            "Swap QI to USDC",                                   //7
 	AlternateName:   "Swap QI to USDC",                                   //8
-	StartDate:       utils.SampleCreatedAtTime,                           //9
-	EndDate:         utils.SampleCreatedAtTime,                           //10
+	StartDate:       utils.Ptr[time.Time](utils.SampleCreatedAtTime),     //9
+	EndDate:         utils.Ptr[time.Time](utils.SampleCreatedAtTime),     //10
 	Description:     "Swap reward to USDT using action parameter (in %)", //11
 	ActionParameter: utils.Ptr[float64](50),                              //12
 	CreatedBy:       "SYSTEM",                                            //13
@@ -77,8 +78,8 @@ var TestData2 = StepAsset{
 	UUID:            "4f0d5402-7a7c-402d-a7fc-c56a02b13e03",                   //6
 	Name:            "Reinvest USDT To USDT Pool Vector",                      //7
 	AlternateName:   "Reinvest USDT To USDT Pool Vector",                      //8
-	StartDate:       utils.SampleCreatedAtTime,                                //9
-	EndDate:         utils.SampleCreatedAtTime,                                //10
+	StartDate:       utils.Ptr[time.Time](utils.SampleCreatedAtTime),          //9
+	EndDate:         utils.Ptr[time.Time](utils.SampleCreatedAtTime),          //10
 	Description:     "Reinvest the USDT into Vector Finance stable coin pool", //11
 	ActionParameter: utils.Ptr[float64](100),                                  //12
 	CreatedBy:       "SYSTEM",                                                 //13

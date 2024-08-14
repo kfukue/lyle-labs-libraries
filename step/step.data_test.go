@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5"
@@ -49,22 +50,22 @@ var DBColumnsInsertSteps = []string{
 }
 
 var TestData1 = Step{
-	ID:            utils.Ptr[int](1),                      //1
-	PoolID:        utils.Ptr[int](1),                      //2
-	ParentStepId:  nil,                                    //3
-	UUID:          "01ef85e8-2c26-441e-8c7f-71d79518ad72", //4
-	Name:          "VELO/OP-LP-Claim",                     //5
-	AlternateName: "VELO/OP-LP-Claim",                     //6
-	StartDate:     utils.SampleCreatedAtTime,              //7
-	EndDate:       utils.SampleCreatedAtTime,              //8
-	Description:   "Claim Reward from VELO/OP LP.",        //9
-	ActionTypeID:  utils.Ptr[int](1),                      //10
-	FunctionName:  "claimVeloOpLpFromVelodrome",           //11
-	StepOrder:     utils.Ptr[int](1),                      //12
-	CreatedBy:     "SYSTEM",                               //13
-	CreatedAt:     utils.SampleCreatedAtTime,              //14
-	UpdatedBy:     "SYSTEM",                               //15
-	UpdatedAt:     utils.SampleCreatedAtTime,              //16
+	ID:            utils.Ptr[int](1),                               //1
+	PoolID:        utils.Ptr[int](1),                               //2
+	ParentStepId:  nil,                                             //3
+	UUID:          "01ef85e8-2c26-441e-8c7f-71d79518ad72",          //4
+	Name:          "VELO/OP-LP-Claim",                              //5
+	AlternateName: "VELO/OP-LP-Claim",                              //6
+	StartDate:     utils.Ptr[time.Time](utils.SampleCreatedAtTime), //7
+	EndDate:       utils.Ptr[time.Time](utils.SampleCreatedAtTime), //8
+	Description:   "Claim Reward from VELO/OP LP.",                 //9
+	ActionTypeID:  utils.Ptr[int](1),                               //10
+	FunctionName:  "claimVeloOpLpFromVelodrome",                    //11
+	StepOrder:     utils.Ptr[int](1),                               //12
+	CreatedBy:     "SYSTEM",                                        //13
+	CreatedAt:     utils.SampleCreatedAtTime,                       //14
+	UpdatedBy:     "SYSTEM",                                        //15
+	UpdatedAt:     utils.SampleCreatedAtTime,                       //16
 
 }
 
@@ -75,8 +76,8 @@ var TestData2 = Step{
 	UUID:          "4f0d5402-7a7c-402d-a7fc-c56a02b13e03",                   //4
 	Name:          "XPTP - 3 - Reinvest",                                    //5
 	AlternateName: "XPTP - 3 - Reinvest",                                    //6
-	StartDate:     utils.SampleCreatedAtTime,                                //7
-	EndDate:       utils.SampleCreatedAtTime,                                //8
+	StartDate:     utils.Ptr[time.Time](utils.SampleCreatedAtTime),          //7
+	EndDate:       utils.Ptr[time.Time](utils.SampleCreatedAtTime),          //8
 	Description:   "Reinvest the proceeds back to the vector finance pools", //9
 	ActionTypeID:  utils.Ptr[int](71),                                       //10
 	FunctionName:  "swapXPTPRewards",                                        //11

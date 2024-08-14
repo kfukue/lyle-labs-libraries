@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5"
@@ -51,44 +52,44 @@ var DBColumnsInsertStrategyMarketDataAssets = []string{
 }
 
 var TestData1 = StrategyMarketDataAsset{
-	ID:            utils.Ptr[int](1),                      //1
-	StrategyID:    utils.Ptr[int](1),                      //2
-	BaseAssetID:   utils.Ptr[int](1),                      //3
-	QuoteAssetID:  utils.Ptr[int](2),                      //4
-	UUID:          "01ef85e8-2c26-441e-8c7f-71d79518ad72", //5
-	Name:          "VELO/USD",                             //6
-	AlternateName: "VELO/USD",                             //7
-	StartDate:     utils.SampleCreatedAtTime,              //8
-	EndDate:       utils.SampleCreatedAtTime,              //9
-	Ticker:        "VELO/USD",                             //10
-	Description:   "",                                     //11
-	SourceID:      utils.Ptr[int](2),                      //12
-	FrequencyID:   utils.Ptr[int](2),                      //13
-	CreatedBy:     "SYSTEM",                               //14
-	CreatedAt:     utils.SampleCreatedAtTime,              //15
-	UpdatedBy:     "SYSTEM",                               //16
-	UpdatedAt:     utils.SampleCreatedAtTime,              //17
+	ID:            utils.Ptr[int](1),                               //1
+	StrategyID:    utils.Ptr[int](1),                               //2
+	BaseAssetID:   utils.Ptr[int](1),                               //3
+	QuoteAssetID:  utils.Ptr[int](2),                               //4
+	UUID:          "01ef85e8-2c26-441e-8c7f-71d79518ad72",          //5
+	Name:          "VELO/USD",                                      //6
+	AlternateName: "VELO/USD",                                      //7
+	StartDate:     utils.Ptr[time.Time](utils.SampleCreatedAtTime), //8
+	EndDate:       utils.Ptr[time.Time](utils.SampleCreatedAtTime), //9
+	Ticker:        "VELO/USD",                                      //10
+	Description:   "",                                              //11
+	SourceID:      utils.Ptr[int](2),                               //12
+	FrequencyID:   utils.Ptr[int](2),                               //13
+	CreatedBy:     "SYSTEM",                                        //14
+	CreatedAt:     utils.SampleCreatedAtTime,                       //15
+	UpdatedBy:     "SYSTEM",                                        //16
+	UpdatedAt:     utils.SampleCreatedAtTime,                       //17
 
 }
 
 var TestData2 = StrategyMarketDataAsset{
-	ID:            utils.Ptr[int](3),                      //1
-	StrategyID:    utils.Ptr[int](1),                      //2
-	BaseAssetID:   utils.Ptr[int](3),                      //3
-	QuoteAssetID:  utils.Ptr[int](2),                      //4
-	UUID:          "4f0d5402-7a7c-402d-a7fc-c56a02b13e03", //5
-	Name:          "VELO/USD",                             //6
-	AlternateName: "VELO/USD",                             //7
-	StartDate:     utils.SampleCreatedAtTime,              //8
-	EndDate:       utils.SampleCreatedAtTime,              //9
-	Ticker:        "OP/USD",                               //10
-	Description:   "",                                     //11
-	SourceID:      utils.Ptr[int](3),                      //12
-	FrequencyID:   utils.Ptr[int](1),                      //13
-	CreatedBy:     "SYSTEM",                               //14
-	CreatedAt:     utils.SampleCreatedAtTime,              //15
-	UpdatedBy:     "SYSTEM",                               //16
-	UpdatedAt:     utils.SampleCreatedAtTime,              //17
+	ID:            utils.Ptr[int](3),                               //1
+	StrategyID:    utils.Ptr[int](1),                               //2
+	BaseAssetID:   utils.Ptr[int](3),                               //3
+	QuoteAssetID:  utils.Ptr[int](2),                               //4
+	UUID:          "4f0d5402-7a7c-402d-a7fc-c56a02b13e03",          //5
+	Name:          "VELO/USD",                                      //6
+	AlternateName: "VELO/USD",                                      //7
+	StartDate:     utils.Ptr[time.Time](utils.SampleCreatedAtTime), //8
+	EndDate:       utils.Ptr[time.Time](utils.SampleCreatedAtTime), //9
+	Ticker:        "OP/USD",                                        //10
+	Description:   "",                                              //11
+	SourceID:      utils.Ptr[int](3),                               //12
+	FrequencyID:   utils.Ptr[int](1),                               //13
+	CreatedBy:     "SYSTEM",                                        //14
+	CreatedAt:     utils.SampleCreatedAtTime,                       //15
+	UpdatedBy:     "SYSTEM",                                        //16
+	UpdatedAt:     utils.SampleCreatedAtTime,                       //17
 }
 var TestAllData = []StrategyMarketDataAsset{TestData1, TestData2}
 
