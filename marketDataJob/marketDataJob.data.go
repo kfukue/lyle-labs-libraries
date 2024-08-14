@@ -286,7 +286,7 @@ func InsertMarketDataJobList(dbConnPgx utils.PgxIface, marketDataJobList []Marke
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range marketDataJobList {
+	for i := range marketDataJobList {
 		marketDataJob := marketDataJobList[i]
 
 		uuidString := &pgtype.UUID{}

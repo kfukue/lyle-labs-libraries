@@ -341,7 +341,7 @@ func InsertPools(dbConnPgx utils.PgxIface, pools []Pool) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range pools {
+	for i := range pools {
 		pool := pools[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(pool.UUID)

@@ -492,7 +492,7 @@ func InsertLiquidityPools(dbConnPgx utils.PgxIface, liquidityPools []LiquidityPo
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range liquidityPools {
+	for i := range liquidityPools {
 		liquidityPool := liquidityPools[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(liquidityPool.UUID)

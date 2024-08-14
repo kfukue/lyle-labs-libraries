@@ -505,14 +505,11 @@ func InsertGethMarketDataList(dbConnPgx utils.PgxIface, marketDataList []GethMar
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range marketDataList {
+	for i := range marketDataList {
 		marketData := marketDataList[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(marketData.UUID)
-		startDate := &pgtype.Date{}
-		startDate.Time = marketData.StartDate
-		endDate := &pgtype.Date{}
-		endDate.Time = marketData.EndDate
+
 		sparkline := marketData.Sparkline7d
 		sparklineArray := make([]*decimal.Decimal, len(sparkline))
 		if len(sparkline) > 0 {

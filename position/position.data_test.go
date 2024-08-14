@@ -506,8 +506,6 @@ func TestRemovePositionOnFailureAtBegin(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	targetData := TestData1
-	targetData.ID = utils.Ptr[int](-1)
 	positionID := -1
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("Failure at begin"))
 	err = RemovePosition(mock, &positionID)

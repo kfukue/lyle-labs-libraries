@@ -201,7 +201,7 @@ func InsertStructuredValues(dbConnPgx utils.PgxIface, structuredValues []Structu
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range structuredValues {
+	for i := range structuredValues {
 		structuredValue := structuredValues[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(structuredValue.UUID)

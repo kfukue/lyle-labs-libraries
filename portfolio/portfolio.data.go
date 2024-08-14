@@ -223,7 +223,7 @@ func InsertPortfolios(dbConnPgx utils.PgxIface, portfolios []Portfolio) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range portfolios {
+	for i := range portfolios {
 		portfolio := portfolios[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(portfolio.UUID)

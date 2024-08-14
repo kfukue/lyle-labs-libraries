@@ -273,11 +273,11 @@ func UpdateStrategyMarketDataAsset(dbConnPgx utils.PgxIface, strategyMarketDataA
 func InsertStrategyMarketDataAsset(dbConnPgx utils.PgxIface, strategyMarketDataAsset *StrategyMarketDataAsset) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	tx, err := dbConnPgx.Begin(ctx)
+	defer cancel()
 	if err != nil {
 		log.Printf("Error in InsertStrategyMarketDataAsset DbConn.Begin   %s", err.Error())
 		return -1, err
 	}
-	defer cancel()
 	var insertID int
 	err = dbConnPgx.QueryRow(ctx, `INSERT INTO strategy_market_data_assets 
 	(
@@ -348,7 +348,7 @@ func InsertStrategyMarketDataAssets(dbConnPgx utils.PgxIface, strategyMarketData
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range strategyMarketDataAssets {
+	for i := range strategyMarketDataAssets {
 		strategyMarketDataAsset := strategyMarketDataAssets[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(strategyMarketDataAsset.UUID)

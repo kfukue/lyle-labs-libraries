@@ -339,7 +339,7 @@ func InsertSteps(dbConnPgx utils.PgxIface, steps []Step) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range steps {
+	for i := range steps {
 		step := steps[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(step.UUID)

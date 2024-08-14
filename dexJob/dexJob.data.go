@@ -258,7 +258,7 @@ func InsertDexTxnJobList(dbConnPgx utils.PgxIface, dexTxnJobList []DexTxnJob) er
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range dexTxnJobList {
+	for i := range dexTxnJobList {
 		dexTxnJob := dexTxnJobList[i]
 
 		uuidString := &pgtype.UUID{}

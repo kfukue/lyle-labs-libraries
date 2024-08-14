@@ -84,7 +84,7 @@ func RemoveMarketData(dbConnPgx utils.PgxIface, marketDataID *int) error {
 }
 
 func RemoveMarketDataFromBaseAssetBetweenDates(dbConnPgx utils.PgxIface, assetID *int, startDate, endDate time.Time) error {
-	log.Println(fmt.Sprintf("start : %s end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres)))
+	log.Printf("start : %s end : %s", startDate.Format(utils.LayoutPostgres), endDate.Format(utils.LayoutPostgres))
 	err := marketdataquote.RemoveMarketDataQuoteFromBaseAssetBetweenDates(dbConnPgx, assetID, startDate, endDate)
 	if err != nil {
 		log.Println(err.Error())
@@ -438,14 +438,11 @@ func InsertMarketDataList(dbConnPgx utils.PgxIface, marketDataList []MarketData)
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range marketDataList {
+	for i := range marketDataList {
 		marketData := marketDataList[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(marketData.UUID)
-		startDate := &pgtype.Date{}
-		startDate.Time = marketData.StartDate
-		endDate := &pgtype.Date{}
-		endDate.Time = marketData.EndDate
+
 		openUSD := utils.ConvertFloatToDecimal(marketData.OpenUSD)
 		closeUSD := utils.ConvertFloatToDecimal(marketData.CloseUSD)
 		highUSD := utils.ConvertFloatToDecimal(marketData.HighUSD)
@@ -464,8 +461,6 @@ func InsertMarketDataList(dbConnPgx utils.PgxIface, marketDataList []MarketData)
 				sparklineArray[i] = utils.ConvertFloatToDecimal(x)
 			}
 		}
-		nowDate := &pgtype.Date{}
-		nowDate.Time = now
 		row := []interface{}{
 			marketData.Name,              //1
 			uuidString,                   //2

@@ -303,7 +303,7 @@ func InsertStepAssets(dbConnPgx utils.PgxIface, stepAssets []StepAsset) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range stepAssets {
+	for i := range stepAssets {
 		stepAsset := stepAssets[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(stepAsset.UUID)

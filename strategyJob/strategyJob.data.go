@@ -290,7 +290,7 @@ func InsertStrategyJobList(dbConnPgx utils.PgxIface, strategyJobList []StrategyJ
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range strategyJobList {
+	for i := range strategyJobList {
 		strategyJob := strategyJobList[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(strategyJob.UUID)

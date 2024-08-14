@@ -313,7 +313,7 @@ func InsertTransactions(dbConnPgx utils.PgxIface, transactions []Transaction) er
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range transactions {
+	for i := range transactions {
 		transaction := transactions[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(transaction.UUID)

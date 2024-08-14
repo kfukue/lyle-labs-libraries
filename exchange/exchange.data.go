@@ -277,7 +277,7 @@ func InsertExchanges(dbConnPgx utils.PgxIface, exchanges []Exchange) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range exchanges {
+	for i := range exchanges {
 		exchange := exchanges[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(exchange.UUID)
@@ -416,7 +416,7 @@ func InsertExchangeChains(dbConnPgx utils.PgxIface, exchangeChains []ExchangeCha
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range exchangeChains {
+	for i := range exchangeChains {
 		exchangeChain := exchangeChains[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(exchangeChain.UUID)

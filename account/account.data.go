@@ -297,7 +297,7 @@ func InsertAccounts(dbConnPgx utils.PgxIface, accounts []Account) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range accounts {
+	for i := range accounts {
 		account := accounts[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(account.UUID)

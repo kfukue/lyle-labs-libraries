@@ -527,7 +527,7 @@ func InsertPositions(dbConnPgx utils.PgxIface, positions []Position) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range positions {
+	for i := range positions {
 		position := positions[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(position.UUID)

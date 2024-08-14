@@ -335,7 +335,7 @@ func InsertJobList(dbConnPgx utils.PgxIface, jobList []Job) error {
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range jobList {
+	for i := range jobList {
 		job := jobList[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(job.UUID)

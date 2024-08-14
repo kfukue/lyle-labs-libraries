@@ -387,7 +387,7 @@ func InsertMarketDataQuoteList(dbConnPgx utils.PgxIface, marketDataQuoteList []M
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
 	rows := [][]interface{}{}
-	for i, _ := range marketDataQuoteList {
+	for i := range marketDataQuoteList {
 		marketDataQuote := marketDataQuoteList[i]
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(marketDataQuote.UUID)
