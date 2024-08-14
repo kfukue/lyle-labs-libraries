@@ -19,7 +19,7 @@ type PgxIface interface {
 	QueryRow(context.Context, string, ...interface{}) pgx.Row
 	Query(context.Context, string, ...interface{}) (pgx.Rows, error)
 	Ping(context.Context) error
-	Prepare(context.Context, string, string) (*pgconn.StatementDescription, error)
+	// Prepare(context.Context, string, string) (*pgconn.StatementDescription, error)
 
 	Close()
 }
