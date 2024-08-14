@@ -28,12 +28,12 @@ func GetChain(dbConnPgx utils.PgxIface, chainID *int) (*Chain, error) {
 	created_at, 
 	updated_by, 
 	updated_at,
-	COALESCE(rpc_url, '') ,
+	COALESCE(rpc_url, '') as rpc_url,
 	chain_id,
-	COALESCE(block_explorer_url, ''),
-	COALESCE(rpc_url_dev, ''),
-	COALESCE(rpc_url_prod, ''),
-	COALESCE(rpc_url_archive, '')
+	COALESCE(block_explorer_url, '') as block_explorer_url,
+	COALESCE(rpc_url_dev, '') as rpc_url_dev,
+	COALESCE(rpc_url_prod, '') as rpc_url_prod,
+	COALESCE(rpc_url_archive, '') as rpc_url_archive
 	FROM chains 
 	WHERE id = $1
 	`, *chainID)
@@ -69,12 +69,12 @@ func GetChainByAddress(dbConnPgx utils.PgxIface, address string) (*Chain, error)
 	created_at, 
 	updated_by, 
 	updated_at,
-	COALESCE(rpc_url, '') ,
+	COALESCE(rpc_url, '') as rpc_url,
 	chain_id,
-	COALESCE(block_explorer_url, ''),
-	COALESCE(rpc_url_dev, ''),
-	COALESCE(rpc_url_prod, ''),
-	COALESCE(rpc_url_archive, '')
+	COALESCE(block_explorer_url, '') as block_explorer_url,
+	COALESCE(rpc_url_dev, '') as rpc_url_dev,
+	COALESCE(rpc_url_prod, '') as rpc_url_prod,
+	COALESCE(rpc_url_archive, '') as rpc_url_archive
 	FROM chains 
 	WHERE address = $1
 	`, address)
@@ -109,12 +109,12 @@ func GetChainByAlternateName(dbConnPgx utils.PgxIface, altenateName string) (*Ch
 	created_at, 
 	updated_by, 
 	updated_at,
-	COALESCE(rpc_url, '') ,
+	COALESCE(rpc_url, '') as rpc_url,
 	chain_id,
-	COALESCE(block_explorer_url, ''),
-	COALESCE(rpc_url_dev, ''),
-	COALESCE(rpc_url_prod, ''),
-	COALESCE(rpc_url_archive, '')
+	COALESCE(block_explorer_url, '') as block_explorer_url,
+	COALESCE(rpc_url_dev, '') as rpc_url_dev,
+	COALESCE(rpc_url_prod, '') as rpc_url_prod,
+	COALESCE(rpc_url_archive, '') as rpc_url_archive
 	FROM chains 
 	WHERE alternate_name = $1
 	`, altenateName)
@@ -166,12 +166,12 @@ func GetChainList(dbConnPgx utils.PgxIface, ids []int) ([]Chain, error) {
 	created_at, 
 	updated_by, 
 	updated_at,
-	COALESCE(rpc_url, ''),
+	COALESCE(rpc_url, '') as rpc_url,
 	chain_id,
-	COALESCE(block_explorer_url, ''),
-	COALESCE(rpc_url_dev, ''),
-	COALESCE(rpc_url_prod, ''),
-	COALESCE(rpc_url_archive, '')
+	COALESCE(block_explorer_url, '') as block_explorer_url,
+	COALESCE(rpc_url_dev, '') as rpc_url_dev,
+	COALESCE(rpc_url_prod, '') as rpc_url_prod,
+	COALESCE(rpc_url_archive, '') as rpc_url_archive
 	FROM chains`
 	if len(ids) > 0 {
 		strIds := utils.SplitToString(ids, ",")
@@ -209,12 +209,12 @@ func GetChainListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _orde
 	created_at, 
 	updated_by, 
 	updated_at,
-	COALESCE(rpc_url, ''),
+	COALESCE(rpc_url, '') as rpc_url,
 	chain_id,
-	COALESCE(block_explorer_url, ''),
-	COALESCE(rpc_url_dev, ''),
-	COALESCE(rpc_url_prod, ''),
-	COALESCE(rpc_url_archive, '')
+	COALESCE(block_explorer_url, '') as block_explorer_url,
+	COALESCE(rpc_url_dev, '') as rpc_url_dev,
+	COALESCE(rpc_url_prod, '') as rpc_url_prod,
+	COALESCE(rpc_url_archive, '') as rpc_url_archive
 	FROM chains
 	`
 	if len(_filters) > 0 {
