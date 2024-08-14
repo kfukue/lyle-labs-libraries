@@ -607,7 +607,7 @@ func RemoveGethSwap(dbConnPgx utils.PgxIface, gethSwapID *int) error {
 		return err
 	}
 	sql := `DELETE FROM geth_swaps WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethSwapID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -624,7 +624,7 @@ func RemoveGethSwapsFromAssetIDAndStartBlockNumber(dbConnPgx utils.PgxIface, bas
 		return err
 	}
 	sql := `DELETE FROM geth_swaps WHERE base_asset_id = $1 AND block_number >= $2`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID, *startBlockNumber); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -641,7 +641,7 @@ func DeleteGethSwapsByBaseAssetId(dbConnPgx utils.PgxIface, baseAssetID *int) er
 		return err
 	}
 	sql := `DELETE FROM geth_swaps WHERE base_asset_id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -744,7 +744,7 @@ func UpdateGethSwap(dbConnPgx utils.PgxIface, gethSwap *GethSwap) error {
 		oracle_price_usd$27,
   		oracle_price_asset_id$28
 		WHERE id=$29`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethSwap.ChainID,             //1
 		gethSwap.ExchangeID,          //2
@@ -1042,7 +1042,7 @@ func UpdateGethSwapAddresses(dbConnPgx utils.PgxIface, baseAssetID *int) error {
 			AND gs.maker_address_id IS NULL
 			AND gs.base_asset_id = $1;
 	`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
 		tx.Rollback(ctx)
 		return err

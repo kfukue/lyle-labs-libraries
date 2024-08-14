@@ -141,7 +141,7 @@ func RemoveMarketDataQuoteFromBaseAssetBetweenDates(dbConnPgx utils.PgxIface, as
 			WHERE asset_id = $1
 			AND start_date BETWEEN $2 and $3
 		);`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *assetID, startDate, endDate); err != nil {
 		tx.Rollback(ctx)
 		return err

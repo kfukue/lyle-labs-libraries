@@ -309,7 +309,7 @@ func RemoveGethTransaction(dbConnPgx utils.PgxIface, gethTransactionID *int) err
 		return err
 	}
 	sql := `DELETE FROM geth_transactions WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethTransactionID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -326,7 +326,7 @@ func RemoveGethTransactionsFromChainIDAndStartBlockNumber(dbConnPgx utils.PgxIfa
 		return err
 	}
 	sql := `DELETE FROM geth_transactions WHERE chain_id = $1 AND block_number >=  $2`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *chainID, *startBlockNumber); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -343,7 +343,7 @@ func RemoveGethTransactionsFromChainID(dbConnPgx utils.PgxIface, chainID *int) e
 		return err
 	}
 	sql := `DELETE FROM geth_transactions WHERE chain_id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *chainID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -429,7 +429,7 @@ func UpdateGethTransaction(dbConnPgx utils.PgxIface, gethTransaction *GethTransa
 		updated_at=current_timestamp at time zone 'UTC',
 		WHERE id=$20`
 
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethTransaction.ChainID,                     //1
 		gethTransaction.ExchangeID,                  //2
@@ -643,7 +643,7 @@ func UpdateGethTransactionAddresses(dbConnPgx utils.PgxIface) error {
 			WHERE LOWER(gt.from_address) = LOWER(ga.address_str)
 			AND gt.from_address_id IS NULL
 			`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql); err != nil {
 		tx.Rollback(ctx)
 		return err

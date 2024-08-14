@@ -60,7 +60,7 @@ func RemoveTax(dbConnPgx utils.PgxIface, taxID *int) error {
 		return err
 	}
 	sql := `DELETE FROM taxes WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *taxID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -215,7 +215,7 @@ func UpdateTax(dbConnPgx utils.PgxIface, tax *Tax) error {
 		updated_by=$13, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$14`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		tax.Name,               //1
 		tax.AlternateName,      //2

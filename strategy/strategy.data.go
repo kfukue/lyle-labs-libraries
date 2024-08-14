@@ -54,7 +54,7 @@ func RemoveStrategy(dbConnPgx utils.PgxIface, strategyID *int) error {
 		return err
 	}
 	sql := `DELETE FROM strategies WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *strategyID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -184,7 +184,7 @@ func UpdateStrategy(dbConnPgx utils.PgxIface, strategy *Strategy) error {
 		updated_by=$7, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$8`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		strategy.Name,           //1
 		strategy.AlternateName,  //2

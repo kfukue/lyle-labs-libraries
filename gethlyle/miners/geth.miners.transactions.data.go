@@ -174,7 +174,7 @@ func RemoveGethMinerTransaction(dbConnPgx utils.PgxIface, minerID, transactionID
 		return err
 	}
 	sql := `DELETE FROM geth_miners_transactions WHERE miner_id = $1 AND transaction_id =$2`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *minerID, *transactionID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -246,7 +246,7 @@ func UpdateGethMinerTransaction(dbConnPgx utils.PgxIface, minerTransactionInput 
 		updated_by=$4, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE miner_id=$5 AND transaction_id=$6`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		minerTransactionInput.Name,          //1
 		minerTransactionInput.AlternateName, //2
@@ -378,7 +378,7 @@ func RemoveAllTransactionsAndTransactionInputs(dbConnPgx utils.PgxIface) error {
 	}
 	sql := `DELETE FROM geth_miners_transactions;
 		DELETE FROM geth_transactions;`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql); err != nil {
 		tx.Rollback(ctx)
 		return err

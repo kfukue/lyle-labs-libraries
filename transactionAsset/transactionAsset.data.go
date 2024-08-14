@@ -128,7 +128,7 @@ func RemoveTransactionAsset(dbConnPgx utils.PgxIface, transactionID, assetID *in
 		return err
 	}
 	sql := `DELETE FROM transaction_assets WHERE transaction_id = $1 AND asset_id = $2`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *transactionID, *assetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -145,7 +145,7 @@ func RemoveTransactionAssetByUUID(dbConnPgx utils.PgxIface, transactionAssetUUID
 		return err
 	}
 	sql := `DELETE FROM transaction_assets WHERE text(uuid) = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, transactionAssetUUID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -208,7 +208,7 @@ func UpdateTransactionAsset(dbConnPgx utils.PgxIface, transactionAsset *Transact
 		updated_by=$8, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE transaction_id=$9 AND asset_id=$10`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		transactionAsset.Name,                  //1
 		transactionAsset.AlternateName,         //2
@@ -251,7 +251,7 @@ func UpdateTransactionAssetByUUID(dbConnPgx utils.PgxIface, transactionAsset *Tr
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE text(uuid) = $9
 		`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		transactionAsset.Name,                  //1
 		transactionAsset.AlternateName,         //2

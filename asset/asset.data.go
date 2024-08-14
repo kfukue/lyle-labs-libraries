@@ -298,7 +298,7 @@ func RemoveAsset(dbConnPgx utils.PgxIface, assetID *int) error {
 		return err
 	}
 	sql := `DELETE FROM assets WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *assetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -1050,7 +1050,7 @@ func UpdateAsset(dbConnPgx utils.PgxIface, asset *Asset) error {
 		import_geth = $18,
 		import_geth_initial = $19
 		WHERE id=$20`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		asset.Name,                //1
 		asset.AlternateName,       //2

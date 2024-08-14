@@ -539,7 +539,7 @@ func RemoveGethTransfer(dbConnPgx utils.PgxIface, gethTransferID *int) error {
 		return err
 	}
 	sql := `DELETE FROM geth_transfers WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethTransferID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -556,7 +556,7 @@ func RemoveGethTransfersFromBaseAssetIDAndStartBlockNumber(dbConnPgx utils.PgxIf
 		return err
 	}
 	sql := `DELETE FROM geth_transfers WHERE base_asset_id = $1 AND block_number >=  $2`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID, *startBlockNumber); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -573,7 +573,7 @@ func RemoveGethTransfersFromBaseAssetID(dbConnPgx utils.PgxIface, baseAssetID *i
 		return err
 	}
 	sql := `DELETE FROM geth_transfers WHERE base_asset_id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -659,7 +659,7 @@ func UpdateGethTransfer(dbConnPgx utils.PgxIface, gethTransfer *GethTransfer) er
 		base_asset_id=$19,
 		transfer_type_id=$20
 		WHERE id=$21`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethTransfer.ChainID,             //1
 		gethTransfer.TokenAddress,        //2
@@ -881,7 +881,7 @@ func UpdateGethTransferAddresses(dbConnPgx utils.PgxIface, baseAssetID *int) err
 			AND gt.base_asset_id = $1
 			`
 
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
 		log.Println(fmt.Printf("UpdateGethTransferAddresses: Error at sql1 %v", err))
 		tx.Rollback(ctx)
@@ -970,7 +970,7 @@ func UpdateGethTransfersAssetIDs(dbConnPgx utils.PgxIface) error {
 			WHERE LOWER(gt.token_address) = LOWER(assets.contract_address) AND
 			gt.asset_id is NULL
 	`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql); err != nil {
 		tx.Rollback(ctx)
 		return err

@@ -58,7 +58,7 @@ func RemoveStep(dbConnPgx utils.PgxIface, stepID *int) error {
 		return err
 	}
 	sql := `DELETE FROM steps WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *stepID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -241,7 +241,7 @@ func UpdateStep(dbConnPgx utils.PgxIface, step *Step) error {
 		updated_by=$12, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$13`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		step.PoolID,        //1
 		step.ParentStepId,  //2

@@ -91,7 +91,7 @@ func RemoveGethTransactionInput(dbConnPgx utils.PgxIface, gethTransactionInputID
 		return err
 	}
 	sql := `DELETE FROM geth_transaction_inputs WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethTransactionInputID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -153,7 +153,7 @@ func UpdateGethTransactionInput(dbConnPgx utils.PgxIface, gethTransactionInput *
 		updated_by=$7,
 		updated_at=current_timestamp at time zone 'UTC',
 		WHERE id=$8`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethTransactionInput.Name,            //1
 		gethTransactionInput.AlternateName,   //2

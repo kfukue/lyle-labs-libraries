@@ -418,7 +418,7 @@ func RemoveGethTrade(dbConnPgx utils.PgxIface, gethTradeID *int) error {
 		return err
 	}
 	sql := `DELETE FROM geth_trades WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethTradeID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -435,7 +435,7 @@ func DeleteGethTradesByBaseAssetId(dbConnPgx utils.PgxIface, baseAssetID *int) e
 		return err
 	}
 	sql := `DELETE FROM geth_trades WHERE base_asset_id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -532,7 +532,7 @@ func UpdateGethTrade(dbConnPgx utils.PgxIface, gethTrade *GethTrade) error {
 		oracle_price_usd=$24,
 		oracle_price_asset_id=$25
 		WHERE id=$26`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 
 		gethTrade.Name,                   //1

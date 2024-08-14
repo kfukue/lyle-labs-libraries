@@ -49,7 +49,7 @@ func RemoveStructuredValueType(dbConnPgx utils.PgxIface, structuredValueTypeID *
 		return err
 	}
 	sql := `DELETE FROM structured_value_types WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *structuredValueTypeID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -107,7 +107,7 @@ func UpdateStructuredValueType(dbConnPgx utils.PgxIface, structuredValueType *St
 		updated_by=$3, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$4`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		structuredValueType.Name,          //1
 		structuredValueType.AlternateName, //2

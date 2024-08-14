@@ -89,7 +89,7 @@ func RemoveGethTradeSwap(dbConnPgx utils.PgxIface, gethTradeID, gethGethSwapID *
 		return err
 	}
 	sql := `DELETE FROM geth_trade_swaps WHERE geth_trade_id =$1 AND geth_swap_id = $2`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethTradeID, *gethGethSwapID); err != nil {
 		tx.Rollback(ctx)
 		return err

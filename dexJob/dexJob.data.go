@@ -130,7 +130,7 @@ func RemoveDexTxnJob(dbConnPgx utils.PgxIface, dexTxnID *int) error {
 		return err
 	}
 	sql := `DELETE FROM dex_txn_jobs WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *dexTxnID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -163,7 +163,7 @@ func UpdateDexTxnJob(dbConnPgx utils.PgxIface, dexTxnJob *DexTxnJob) error {
 		updated_by=$10, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$11 `
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		dexTxnJob.Name,                        //1
 		dexTxnJob.AlternateName,               //2

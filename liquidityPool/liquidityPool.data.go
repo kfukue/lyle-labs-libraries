@@ -66,7 +66,7 @@ func RemoveLiquidityPool(dbConnPgx utils.PgxIface, liquidityPoolID *int) error {
 		return err
 	}
 	sql := `DELETE FROM liquidity_pools WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *liquidityPoolID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -367,7 +367,7 @@ func UpdateLiquidityPool(dbConnPgx utils.PgxIface, liquidityPool *LiquidityPool)
 		quote_asset_id=$17,
 		quote_asset_chainlink_address_usd=$18
 		WHERE id=$19`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		liquidityPool.Name,                       //1
 		liquidityPool.AlternateName,              //2

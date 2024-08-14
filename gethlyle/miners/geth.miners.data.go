@@ -63,7 +63,7 @@ func RemoveGethMiner(dbConnPgx utils.PgxIface, gethMinerID *int) error {
 		return err
 	}
 	sql := `DELETE FROM geth_miners WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethMinerID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -178,7 +178,7 @@ func UpdateGethMiner(dbConnPgx utils.PgxIface, gethMiner *GethMiner) error {
 		updated_by=$14,
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$15`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethMiner.Name,                //1
 		gethMiner.AlternateName,       //2
@@ -364,7 +364,7 @@ func UpdateGethMinerAddresses(dbConnPgx utils.PgxIface, gethMinerID *int) error 
 			AND gm.contract_address_id IS NULL
 			AND gm.id = $1
 			`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethMinerID); err != nil {
 		tx.Rollback(ctx)
 		return err

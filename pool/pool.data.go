@@ -58,7 +58,7 @@ func RemovePool(dbConnPgx utils.PgxIface, poolID *int) error {
 		return err
 	}
 	sql := `DELETE FROM pools WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *poolID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -240,7 +240,7 @@ func UpdatePool(dbConnPgx utils.PgxIface, pool *Pool) error {
 		updated_by=$12, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$13`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		pool.TargetAssetID, //1
 		pool.StrategyID,    //2

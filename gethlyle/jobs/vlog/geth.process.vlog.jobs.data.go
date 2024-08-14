@@ -106,7 +106,7 @@ func RemoveGethProcessVlogJob(dbConnPgx utils.PgxIface, gethProcessVlogJobID *in
 		return err
 	}
 	sql := `DELETE FROM geth_process_vlog_jobs WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethProcessVlogJobID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -146,7 +146,7 @@ func UpdateGethProcessVlogJob(dbConnPgx utils.PgxIface, gethProcessVlogJob *Geth
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$17 `
 
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethProcessVlogJob.GethProcessJobID,         //1
 		gethProcessVlogJob.Name,                     //2

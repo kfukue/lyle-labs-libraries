@@ -103,7 +103,7 @@ func RemoveStrategyJob(dbConnPgx utils.PgxIface, strategyID, jobID *int) error {
 	}
 	sql := `DELETE FROM strategy_jobs WHERE 
 		strategy_id = $1 AND job_id =$2`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *strategyID, *jobID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -177,7 +177,7 @@ func UpdateStrategyJob(dbConnPgx utils.PgxIface, strategyJob *StrategyJob) error
 		updated_by=$13, 
 		updated_at=current_timestamp at time zone 'UTC'	
 		WHERE strategy_id=$14 AND job_id=$15`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		strategyJob.Name,                             //1
 		strategyJob.AlternateName,                    //2

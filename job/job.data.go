@@ -61,7 +61,7 @@ func RemoveJob(dbConnPgx utils.PgxIface, jobID *int) error {
 		return err
 	}
 	sql := `DELETE FROM jobs WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *jobID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -223,7 +223,7 @@ func UpdateJob(dbConnPgx utils.PgxIface, job *Job) error {
 		updated_by=$14, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$15`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		job.Name,                             //1
 		job.AlternateName,                    //2

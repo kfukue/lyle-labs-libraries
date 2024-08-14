@@ -58,7 +58,7 @@ func RemoveStepAsset(dbConnPgx utils.PgxIface, stepAssetID *int) error {
 		return err
 	}
 	sql := `DELETE FROM step_assets WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *stepAssetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -205,7 +205,7 @@ func UpdateStepAsset(dbConnPgx utils.PgxIface, stepAsset *StepAsset) error {
 		updated_by=$12, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$13`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		stepAsset.StepID,          //1
 		stepAsset.AssetID,         //2

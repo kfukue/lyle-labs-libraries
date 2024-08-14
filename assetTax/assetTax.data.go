@@ -91,7 +91,7 @@ func RemoveAssetTax(dbConnPgx utils.PgxIface, taxID, assetID *int) error {
 		return err
 	}
 	sql := `DELETE FROM asset_taxes WHERE tax_id = $1 AND asset_id =$2`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *taxID, *assetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -166,7 +166,7 @@ func UpdateAssetTax(dbConnPgx utils.PgxIface, assetTax *AssetTax) error {
 		updated_by=$6, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE tax_id=$7 AND asset_id=$8`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		assetTax.Name,            //1
 		assetTax.AlternateName,   //2

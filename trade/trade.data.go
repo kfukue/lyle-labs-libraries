@@ -300,7 +300,7 @@ func RemoveTrade(dbConnPgx utils.PgxIface, tradeID *int) error {
 		return err
 	}
 	sql := `DELETE FROM trades WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *tradeID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -402,7 +402,7 @@ func UpdateTrade(dbConnPgx utils.PgxIface, trade *Trade) error {
 		updated_by=$28, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$29`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		trade.ParentTradeID,           //1
 		trade.FromAccountID,           //2

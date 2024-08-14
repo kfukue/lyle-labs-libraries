@@ -173,7 +173,7 @@ func RemoveGethAddress(dbConnPgx utils.PgxIface, gethAddressID *int) error {
 		return err
 	}
 	sql := `DELETE FROM geth_addresses WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethAddressID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -202,7 +202,7 @@ func UpdateGethAddress(dbConnPgx utils.PgxIface, gethAddress *GethAddress) error
 		updated_by=$6, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$7 `
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethAddress.Name,          //1
 		gethAddress.AlternateName, //2

@@ -144,7 +144,7 @@ func RemoveGethProcessJob(dbConnPgx utils.PgxIface, gethProcessJobID *int) error
 		return err
 	}
 	sql := `DELETE FROM geth_process_jobs WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethProcessJobID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -180,7 +180,7 @@ func UpdateGethProcessJob(dbConnPgx utils.PgxIface, gethProcessJob *GethProcessJ
 		updated_at=current_timestamp at time zone 'UTC',
 		asset_id =$13
 		WHERE id=$14 `
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		gethProcessJob.Name,             //1
 		gethProcessJob.AlternateName,    //2

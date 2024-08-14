@@ -130,7 +130,7 @@ func RemoveAccount(dbConnPgx utils.PgxIface, accountID *int) error {
 		return err
 	}
 	sql := `DELETE FROM accounts WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *accountID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -203,7 +203,7 @@ func UpdateAccount(dbConnPgx utils.PgxIface, account *Account) error {
 		updated_at=current_timestamp at time zone 'UTC',
 		chain_id = $10
 		WHERE id=$11`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		account.Name,
 		account.AlternateName,
@@ -231,7 +231,7 @@ func InsertAccount(dbConnPgx utils.PgxIface, account *Account) (int, error) {
 		return -1, err
 	}
 	var ID int
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 
 	err = dbConnPgx.QueryRow(ctx, `INSERT INTO accounts
 	(

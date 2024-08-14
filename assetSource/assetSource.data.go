@@ -127,7 +127,7 @@ func RemoveAssetSource(dbConnPgx utils.PgxIface, sourceID, assetID *int) error {
 		return err
 	}
 	sql := `DELETE FROM asset_sources WHERE source_id = $1 AND asset_id =$2`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *sourceID, *assetID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -204,7 +204,7 @@ func UpdateAssetSource(dbConnPgx utils.PgxIface, assetSource *AssetSource) error
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE source_id=$7 AND asset_id=$8`
 
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		assetSource.Name,             //1
 		assetSource.AlternateName,    //2

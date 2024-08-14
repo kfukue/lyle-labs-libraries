@@ -75,7 +75,7 @@ func RemoveMarketData(dbConnPgx utils.PgxIface, marketDataID *int) error {
 		return err
 	}
 	sql := `DELETE FROM market_data WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *marketDataID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -102,7 +102,7 @@ func RemoveMarketDataFromBaseAssetBetweenDates(dbConnPgx utils.PgxIface, assetID
 		WHERE 
 			asset_id = $1
 			AND start_date BETWEEN $2 and $3`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *assetID, startDate, endDate); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -297,7 +297,7 @@ func UpdateMarketData(dbConnPgx utils.PgxIface, marketData *MarketData) error {
 		updated_by=$22, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$23`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		marketData.Name,                             //1
 		marketData.AlternateName,                    //2

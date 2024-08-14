@@ -142,7 +142,7 @@ func RemoveChain(dbConnPgx utils.PgxIface, chainID *int) error {
 		return err
 	}
 	sql := `DELETE FROM chains WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *chainID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -292,7 +292,7 @@ func UpdateChain(dbConnPgx utils.PgxIface, chain *Chain) error {
 		rpc_url_prod=$12,
 		rpc_url_archive=$13
 		WHERE id=$14`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		chain.Name,             //1
 		chain.AlternateName,    //2

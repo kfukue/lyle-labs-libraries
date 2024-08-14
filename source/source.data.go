@@ -52,7 +52,7 @@ func RemoveSource(dbConnPgx utils.PgxIface, sourceID *int) error {
 		return err
 	}
 	sql := `DELETE FROM sources WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *sourceID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -116,7 +116,7 @@ func UpdateSource(dbConnPgx utils.PgxIface, source *Source) error {
 		updated_by=$6, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$7`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		source.Name,          //1
 		source.AlternateName, //2

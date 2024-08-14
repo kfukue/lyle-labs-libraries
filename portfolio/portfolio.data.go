@@ -56,7 +56,7 @@ func RemovePortfolio(dbConnPgx utils.PgxIface, portfolioID *int) error {
 		return err
 	}
 	sql := `DELETE FROM portfolios WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *portfolioID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -129,7 +129,7 @@ func UpdatePortfolio(dbConnPgx utils.PgxIface, portfolio *Portfolio) error {
 		updated_by=$10, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$11`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		portfolio.Name,            //1
 		portfolio.AlternateName,   //2

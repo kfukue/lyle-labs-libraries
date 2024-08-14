@@ -57,7 +57,7 @@ func RemoveExchange(dbConnPgx utils.PgxIface, exchangeID *int) error {
 		return err
 	}
 	sql := `DELETE FROM exchanges WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *exchangeID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -191,7 +191,7 @@ func UpdateExchange(dbConnPgx utils.PgxIface, exchange *Exchange) error {
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$9`
 
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		exchange.Name,           //1
 		exchange.AlternateName,  //2
@@ -346,7 +346,7 @@ func UpdateExchangeChainByUUID(dbConnPgx utils.PgxIface, exchangeChain *Exchange
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE 
 		uuid=$5,`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		exchangeChain.ExchangeID,  //1
 		exchangeChain.ChainID,     //2

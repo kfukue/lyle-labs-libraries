@@ -81,7 +81,7 @@ func RemoveSourceJob(dbConnPgx utils.PgxIface, sourceID, jobID *int) error {
 	}
 	sql := `DELETE FROM source_jobs WHERE 
 		source_id = $1 AND job_id =$2`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *sourceID, *jobID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -132,7 +132,7 @@ func UpdateSourceJob(dbConnPgx utils.PgxIface, sourceJob *SourceJob) error {
 		updated_by=$2, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE source_id=$7 AND job_id=$8`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		sourceJob.Description, //1
 		sourceJob.UpdatedBy,   //2

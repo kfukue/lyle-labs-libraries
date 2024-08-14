@@ -207,7 +207,7 @@ func RemovePosition(dbConnPgx utils.PgxIface, positionID *int) error {
 		return err
 	}
 	sql := `DELETE FROM positions WHERE id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *positionID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -227,7 +227,7 @@ func RemovePositionByDateRangeAndAccount(dbConnPgx utils.PgxIface, startDate, en
 	sql := `DELETE FROM positions WHERE 
 	start_date BETWEEN $1 AND $2
 	AND	account_id = $3`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, startDate.Format(layoutPostgres), endDate.Format(layoutPostgres), *accountID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -244,7 +244,7 @@ func RemoveAllPositionByAccount(dbConnPgx utils.PgxIface, accountID *int) error 
 		return err
 	}
 	sql := `DELETE FROM positions WHERE account_id = $1`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *accountID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -411,7 +411,7 @@ func UpdatePosition(dbConnPgx utils.PgxIface, position *Position) error {
 		updated_by=$15, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE id=$16`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		position.Name,                             //1
 		position.AlternateName,                    //2

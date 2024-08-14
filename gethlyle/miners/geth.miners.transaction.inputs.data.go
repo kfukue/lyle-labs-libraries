@@ -119,7 +119,7 @@ func RemoveGethMinerTransactionInput(dbConnPgx utils.PgxIface, minerID, transact
 		return err
 	}
 	sql := `DELETE FROM geth_miners_transaction_inputs WHERE miner_id = $1 AND transaction_input_id =$2`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql, *minerID, *transactionInputID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -191,7 +191,7 @@ func UpdateGethMinerTransactionInput(dbConnPgx utils.PgxIface, minerTransactionI
 		updated_by=$4, 
 		updated_at=current_timestamp at time zone 'UTC'
 		WHERE miner_id=$5 AND transaction_input_id=$6`
-	defer dbConnPgx.Close()
+	//defer dbConnPgx.Close()
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		minerTransactionInput.Name,               //1
 		minerTransactionInput.AlternateName,      //2
