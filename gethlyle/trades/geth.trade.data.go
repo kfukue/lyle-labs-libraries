@@ -344,6 +344,7 @@ func GetNetTransfersByTxnHashAndAddressStrs(dbConnPgx utils.PgxIface, txnHash, a
 			&netTransferByAddress.ImportGeth,
 			&netTransferByAddress.ImportGethInitial,
 		)
+		netTransfersByAddress = append(netTransfersByAddress, netTransferByAddress)
 	}
 	return netTransfersByAddress, nil
 }
@@ -434,6 +435,7 @@ func GetFromNetTransfersByTxnHashesAndAddressStrs(dbConnPgx utils.PgxIface, txnH
 			&netTransferByAddress.ImportGeth,
 			&netTransferByAddress.ImportGethInitial,
 		)
+		netTransfersByAddress = append(netTransfersByAddress, netTransferByAddress)
 	}
 	return netTransfersByAddress, nil
 }
