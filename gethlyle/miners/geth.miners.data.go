@@ -360,9 +360,10 @@ func UpdateGethMinerAddresses(dbConnPgx utils.PgxIface, gethMinerID *int) error 
 	}
 	sql := `UPDATE geth_miners SET 
 		contract_address_id = ga.id from geth_addresses as ga
-			WHERE LOWER(gm.contract_address) = LOWER(ga.address_str)
-			AND gm.contract_address_id IS NULL
+		WHERE
+			gm.contract_address_id IS NULL
 			AND gm.id = $1
+			AND LOWER(gm.contract_address) = LOWER(ga.address_str)
 			`
 
 	if _, err := dbConnPgx.Exec(ctx, sql, *gethMinerID); err != nil {
@@ -372,9 +373,10 @@ func UpdateGethMinerAddresses(dbConnPgx utils.PgxIface, gethMinerID *int) error 
 	sql2 := `UPDATE geth_miners SET 
 			UPDATE geth_miners as gm SET
 			developer_address_id = ga.id from geth_addresses as ga
-			WHERE LOWER(gm.developer_address) = LOWER(ga.address_str)
-			AND gm.developer_address_id IS NULL
-			AND gm.id = $1
+			WHERE 
+				gm.developer_address_id IS NULL
+				AND gm.id = $1
+				AND LOWER(gm.developer_address) = LOWER(ga.address_str)
 			`
 	if _, err := dbConnPgx.Exec(ctx, sql2, *gethMinerID); err != nil {
 		tx.Rollback(ctx)

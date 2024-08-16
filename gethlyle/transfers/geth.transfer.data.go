@@ -876,9 +876,10 @@ func UpdateGethTransferAddresses(dbConnPgx utils.PgxIface, baseAssetID *int) err
 	}
 	sql := `UPDATE geth_transfers as gt SET
 			sender_address_id = ga.id from geth_addresses as ga
-			WHERE LOWER(gt.sender_address) = LOWER(ga.address_str)
-			AND gt.sender_address_id IS NULL
-			AND gt.base_asset_id = $1
+			WHERE 
+				gt.sender_address_id IS NULL
+				AND	gt.base_asset_id = $1
+				AND LOWER(gt.sender_address) = LOWER(ga.address_str)
 			`
 
 	if _, err := dbConnPgx.Exec(ctx, sql, *baseAssetID); err != nil {
@@ -888,9 +889,10 @@ func UpdateGethTransferAddresses(dbConnPgx utils.PgxIface, baseAssetID *int) err
 	}
 	sql2 := `UPDATE geth_transfers as gt SET
 			to_address_id = ga.id from geth_addresses as ga
-			WHERE LOWER(gt.to_address) = LOWER(ga.address_str)
-			AND gt.to_address_id IS NULL
-			AND gt.base_asset_id = $1
+			WHERE
+				gt.to_address_id IS NULL
+				AND	gt.base_asset_id = $1
+				AND LOWER(gt.to_address) = LOWER(ga.address_str)
 			`
 	if _, err := dbConnPgx.Exec(ctx, sql2, *baseAssetID); err != nil {
 		log.Println(fmt.Printf("UpdateGethTransferAddresses: Error at sql2 %v", err))
@@ -900,9 +902,10 @@ func UpdateGethTransferAddresses(dbConnPgx utils.PgxIface, baseAssetID *int) err
 	sql3 := `UPDATE geth_transfers as gt SET
 			asset_id = assets.id
 			from assets as assets
-			WHERE LOWER(gt.token_address) = LOWER(assets.contract_address)
-			AND gt.asset_id IS NULL
-			AND gt.base_asset_id = $1
+			WHERE
+				gt.asset_id IS NULL
+				AND	gt.base_asset_id = $1
+				AND LOWER(gt.token_address) = LOWER(assets.contract_address)
 	`
 	if _, err := dbConnPgx.Exec(ctx, sql3, *baseAssetID); err != nil {
 		log.Println(fmt.Printf("UpdateGethTransferAddresses: Error at sql3 %v", err))

@@ -639,8 +639,9 @@ func UpdateGethTransactionAddresses(dbConnPgx utils.PgxIface) error {
 	}
 	sql := `UPDATE geth_transactions as gt SET
 			from_address_id = ga.id from geth_addresses as ga
-			WHERE LOWER(gt.from_address) = LOWER(ga.address_str)
-			AND gt.from_address_id IS NULL
+			WHERE 
+				gt.from_address_id IS NULL
+				AND LOWER(gt.from_address) = LOWER(ga.address_str)
 			`
 
 	if _, err := dbConnPgx.Exec(ctx, sql); err != nil {
@@ -650,8 +651,9 @@ func UpdateGethTransactionAddresses(dbConnPgx utils.PgxIface) error {
 
 	sql2 := `UPDATE geth_transactions as gt SET
 			to_address_id = ga.id from geth_addresses as ga
-			WHERE LOWER(gt.to_address) = LOWER(ga.address_str)
-			AND gt.to_address_id IS NULL
+			WHERE 
+				gt.to_address_id IS NULL
+				AND LOWER(gt.to_address) = LOWER(ga.address_str)
 			`
 	if _, err := dbConnPgx.Exec(ctx, sql2); err != nil {
 		tx.Rollback(ctx)
