@@ -87,6 +87,7 @@ func EndOfMonthDate(t time.Time) time.Time {
 	currentYear, currentMonth := t.Year(), t.Month()
 	firstDay := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, time.UTC)
 	lastDay := firstDay.AddDate(0, 1, 0).Add(time.Nanosecond * -1)
+	lastDay = ConvertDateToUTCZero(lastDay)
 	return lastDay
 }
 
