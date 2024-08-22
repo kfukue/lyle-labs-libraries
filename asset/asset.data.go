@@ -40,7 +40,9 @@ func GetAsset(dbConnPgx utils.PgxIface, assetID *int) (*Asset, error) {
 	contract_address,
 	starting_block_number,
 	import_geth,
-	import_geth_initial
+	import_geth_initial,
+	chainlink_usd_address,
+	chainlink_usd_chain_id
 	FROM assets 
 	WHERE id = $1`, *assetID)
 	if err != nil {
@@ -86,7 +88,9 @@ func GetAssetByTicker(dbConnPgx utils.PgxIface, ticker string) (*Asset, error) {
 	contract_address,
 	starting_block_number,
 	import_geth,
-	import_geth_initial
+	import_geth_initial,
+	chainlink_usd_address,
+	chainlink_usd_chain_id
 	FROM assets 
 	WHERE ticker = $1`, ticker)
 	if err != nil {
@@ -132,7 +136,9 @@ func GetAssetByContractAddress(dbConnPgx utils.PgxIface, contractAddress string)
 	contract_address,
 	starting_block_number,
 	import_geth,
-	import_geth_initial
+	import_geth_initial,
+	chainlink_usd_address,
+	chainlink_usd_chain_id
 	FROM assets 
 	WHERE contract_address = $1`, contractAddress)
 	if err != nil {
@@ -178,7 +184,9 @@ func GetAssetByCusip(dbConnPgx utils.PgxIface, cusip string) (*Asset, error) {
 	contract_address,
 	starting_block_number,
 	import_geth,
-	import_geth_initial
+	import_geth_initial,
+	chainlink_usd_address,
+	chainlink_usd_chain_id
 	FROM assets 
 	WHERE cusip = $1`, cusip)
 	if err != nil {
@@ -224,7 +232,9 @@ func GetAssetByBaseAndQuoteID(dbConnPgx utils.PgxIface, baseAssetID *int, quoteA
 	contract_address,
 	starting_block_number,
 	import_geth,
-	import_geth_initial
+	import_geth_initial,
+	chainlink_usd_address,
+	chainlink_usd_chain_id
 	FROM assets 
 	WHERE base_asset_id = $1 
 	AND quote_asset_id = $2`,
@@ -271,7 +281,9 @@ func GetGethImportAssets(dbConnPgx utils.PgxIface) ([]Asset, error) {
 	contract_address,
 	starting_block_number,
 	import_geth,
-	import_geth_initial
+	import_geth_initial,
+	chainlink_usd_address,
+	chainlink_usd_chain_id
 	FROM assets 
 	WHERE import_geth = TRUE
 	`)
@@ -332,7 +344,9 @@ func GetCurrentTradingAssets(dbConnPgx utils.PgxIface) ([]Asset, error) {
 	contract_address,
 	starting_block_number,
 	import_geth,
-	import_geth_initial
+	import_geth_initial,
+	chainlink_usd_address,
+	chainlink_usd_chain_id
 	FROM public.get_current_assets`)
 	if err != nil {
 		log.Println(err.Error())
@@ -375,7 +389,9 @@ func GetCryptoAssets(dbConnPgx utils.PgxIface) ([]Asset, error) {
 	contract_address,
 	starting_block_number,
 	import_geth,
-	import_geth_initial
+	import_geth_initial,
+	chainlink_usd_address,
+	chainlink_usd_chain_id
 	FROM assets
 	where asset_type_id = 1
 	`)
@@ -420,6 +436,8 @@ func GetAssetsByAssetTypeAndSource(dbConnPgx utils.PgxIface, assetTypeID *int, s
 		assets.starting_block_number,
 		assets.import_geth,
 		assets.import_geth_initial,
+		assets.chainlink_usd_address,
+		assets.chainlink_usd_chain_id,
 		assetSources.source_id,
 		assetSources.source_identifier
 		FROM assets assets
@@ -464,6 +482,8 @@ func GetAssetsByAssetTypeAndSource(dbConnPgx utils.PgxIface, assetTypeID *int, s
 			&asset.StartingBlockNumber,
 			&asset.ImportGeth,
 			&asset.ImportGethInitial,
+			&asset.ChainlinkUSDAddress,
+			&asset.ChainlinkUSDChainID,
 			&asset.SourceID,
 			&asset.SourceIdentifier,
 		)
@@ -497,10 +517,12 @@ func GetCryptoAssetsBySourceId(dbConnPgx utils.PgxIface, sourceID *int, excludeI
 	assets.is_default_quote,
 	assets.ignore_market_data,
 	assets.decimals,
-	contract_address,
-	starting_block_number,
-	import_geth,
-	import_geth_initial,
+	assets.contract_address,
+	assets.starting_block_number,
+	assets.import_geth,
+	assets.import_geth_initial,
+	assets.chainlink_usd_address,
+	assets.chainlink_usd_chain_id,
 	assetSources.source_id,
 	assetSources.source_identifier
 	FROM assets assets
@@ -545,6 +567,8 @@ func GetCryptoAssetsBySourceId(dbConnPgx utils.PgxIface, sourceID *int, excludeI
 			&asset.StartingBlockNumber,
 			&asset.ImportGeth,
 			&asset.ImportGethInitial,
+			&asset.ChainlinkUSDAddress,
+			&asset.ChainlinkUSDChainID,
 			&asset.SourceID,
 			&asset.SourceIdentifier,
 		)
@@ -596,6 +620,8 @@ func GetAssetWithSourceByAssetIdAndSourceID(dbConnPgx utils.PgxIface, assetID, s
 	assets.starting_block_number,
 	assets.import_geth,
 	assets.import_geth_initial,
+	assets.chainlink_usd_address,
+	assets.chainlink_usd_chain_id,
 	assetSources.source_id as source_id,
 	assetSources.source_identifier as source_identifier
 	FROM assets assets
@@ -634,6 +660,8 @@ func GetAssetWithSourceByAssetIdAndSourceID(dbConnPgx utils.PgxIface, assetID, s
 		&assetWithSources.Asset.StartingBlockNumber,
 		&assetWithSources.Asset.ImportGeth,
 		&assetWithSources.Asset.ImportGethInitial,
+		&assetWithSources.ChainlinkUSDAddress,
+		&assetWithSources.ChainlinkUSDChainID,
 		&assetWithSources.SourceID,
 		&assetWithSources.SourceIdentifier,
 	)
@@ -674,6 +702,8 @@ func GetAssetWithSourceByAssetIdsAndSourceID(dbConnPgx utils.PgxIface, assetIDs 
 	assets.starting_block_number,
 	assets.import_geth,
 	assets.import_geth_initial,
+	assets.chainlink_usd_address,
+	assets.chainlink_usd_chain_id,
 	assetSources.source_id,
 	assetSources.source_identifier
 	FROM assets assets
@@ -719,6 +749,8 @@ func GetAssetWithSourceByAssetIdsAndSourceID(dbConnPgx utils.PgxIface, assetIDs 
 			&asset.Asset.StartingBlockNumber,
 			&asset.Asset.ImportGeth,
 			&asset.Asset.ImportGethInitial,
+			&asset.Asset.ChainlinkUSDAddress,
+			&asset.Asset.ChainlinkUSDChainID,
 			&asset.SourceID,
 			&asset.SourceIdentifier,
 		)
@@ -755,7 +787,9 @@ func GetAssetList(dbConnPgx utils.PgxIface, ids []int) ([]Asset, error) {
 	contract_address,
 	starting_block_number,
 	import_geth,
-	import_geth_initial
+	import_geth_initial,
+	chainlink_usd_address,
+	chainlink_usd_chain_id
 	FROM assets`
 	if len(ids) > 0 {
 		strIds := utils.SplitToString(ids, ",")
@@ -803,7 +837,9 @@ func GetAssetsByChainId(dbConnPgx utils.PgxIface, chainID *int) ([]Asset, error)
 	contract_address,
 	starting_block_number,
 	import_geth,
-	import_geth_initial
+	import_geth_initial,
+	chainlink_usd_address,
+	chainlink_usd_chain_id
 	FROM assets
 	WHERE chain_id = $1`, *chainID)
 	if err != nil {
@@ -848,7 +884,9 @@ func GetAssetListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _orde
 	contract_address,
 	starting_block_number,
 	import_geth,
-	import_geth_initial
+	import_geth_initial,
+	chainlink_usd_address,
+	chainlink_usd_chain_id
 	FROM assets
 	`
 	if len(_filters) > 0 {
@@ -925,6 +963,8 @@ func GetDefaultQuoteAssetListBySourceID(dbConnPgx utils.PgxIface, sourceID *int)
 	assets.starting_block_number,
 	assets.import_geth,
 	assets.import_geth_initial,
+	assets.chainlink_usd_address,
+	assets.chainlink_usd_chain_id
 	assetSources.source_id,
 	assetSources.source_identifier
 	FROM get_default_quotes assets
@@ -964,6 +1004,8 @@ func GetDefaultQuoteAssetListBySourceID(dbConnPgx utils.PgxIface, sourceID *int)
 			&asset.StartingBlockNumber,
 			&asset.ImportGeth,
 			&asset.ImportGethInitial,
+			&asset.ChainlinkUSDAddress,
+			&asset.ChainlinkUSDChainID,
 			&asset.SourceID,
 			&asset.SourceIdentifier,
 		)
@@ -1000,7 +1042,9 @@ func GetDefaultQuoteAssetList(dbConnPgx utils.PgxIface) ([]Asset, error) {
 	contract_address,
 	starting_block_number,
 	import_geth,
-	import_geth_initial
+	import_geth_initial,
+	chainlink_usd_address,
+	chainlink_usd_chain_id
 	FROM get_default_quotes`)
 	if err != nil {
 		log.Println(err.Error())
@@ -1047,8 +1091,10 @@ func UpdateAsset(dbConnPgx utils.PgxIface, asset *Asset) error {
 		contract_address=$16,
 		starting_block_number=$17,
 		import_geth = $18,
-		import_geth_initial = $19
-		WHERE id=$20`
+		import_geth_initial = $19,
+		chainlink_usd_address= $20,
+		chainlink_usd_chain_id= $21
+		WHERE id=$22`
 
 	if _, err := dbConnPgx.Exec(ctx, sql,
 		asset.Name,                //1
@@ -1070,7 +1116,9 @@ func UpdateAsset(dbConnPgx utils.PgxIface, asset *Asset) error {
 		asset.StartingBlockNumber, //17
 		asset.ImportGeth,          //18
 		asset.ImportGethInitial,   //19
-		asset.ID,                  //20
+		asset.ChainlinkUSDAddress, //20
+		asset.ChainlinkUSDChainID, //21
+		asset.ID,                  //22
 	); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -1111,7 +1159,9 @@ func InsertAsset(dbConnPgx utils.PgxIface, asset *Asset) (int, error) {
 		contract_address,
 		starting_block_number,
 		import_geth,
-		import_geth_initial
+		import_geth_initial,
+		chainlink_usd_address,
+		chainlink_usd_chain_id
 		) VALUES (
 			$1,
 			uuid_generate_v4(), 
@@ -1135,7 +1185,9 @@ func InsertAsset(dbConnPgx utils.PgxIface, asset *Asset) (int, error) {
 			$16,
 			$17,
 			$18,
-			$19
+			$19,
+			$20,
+			$21
 		)
 		RETURNING id`,
 		asset.Name,                //1
@@ -1157,6 +1209,8 @@ func InsertAsset(dbConnPgx utils.PgxIface, asset *Asset) (int, error) {
 		asset.StartingBlockNumber, //17
 		asset.ImportGeth,          //18
 		asset.ImportGethInitial,   //19
+		asset.ChainlinkUSDAddress, //20
+		asset.ChainlinkUSDChainID, //21
 	).Scan(&insertID)
 
 	if err != nil {
@@ -1207,6 +1261,8 @@ func InsertAssets(dbConnPgx utils.PgxIface, assets []Asset) error {
 			asset.StartingBlockNumber, //21
 			asset.ImportGeth,          //22
 			asset.ImportGethInitial,   //23
+			asset.ChainlinkUSDAddress, //24
+			asset.ChainlinkUSDChainID, //25
 
 		}
 		rows = append(rows, row)
@@ -1215,29 +1271,31 @@ func InsertAssets(dbConnPgx utils.PgxIface, assets []Asset) error {
 		ctx,
 		pgx.Identifier{"assets"},
 		[]string{
-			"uuid",                  //1
-			"name",                  //2
-			"alternate_name",        //3
-			"cusip",                 //4
-			"ticker",                //5
-			"base_asset_id",         //6
-			"quote_asset_id",        //7
-			"description",           //8
-			"asset_type_id",         //9
-			"created_by",            //10
-			"created_at",            //11
-			"updated_by",            //12
-			"updated_at",            //13
-			"chain_id",              //14
-			"category_id",           //15
-			"sub_category_id",       //16
-			"is_default_quote",      //17
-			"ignore_market_data",    //18
-			"decimals",              //19
-			"contract_address",      //20
-			"starting_block_number", //21
-			"import_geth",           //22
-			"import_geth_initial",   //23
+			"uuid",                   //1
+			"name",                   //2
+			"alternate_name",         //3
+			"cusip",                  //4
+			"ticker",                 //5
+			"base_asset_id",          //6
+			"quote_asset_id",         //7
+			"description",            //8
+			"asset_type_id",          //9
+			"created_by",             //10
+			"created_at",             //11
+			"updated_by",             //12
+			"updated_at",             //13
+			"chain_id",               //14
+			"category_id",            //15
+			"sub_category_id",        //16
+			"is_default_quote",       //17
+			"ignore_market_data",     //18
+			"decimals",               //19
+			"contract_address",       //20
+			"starting_block_number",  //21
+			"import_geth",            //22
+			"import_geth_initial",    //23
+			"chainlink_usd_address",  //24
+			"chainlink_usd_chain_id", //25
 		},
 		pgx.CopyFromRows(rows),
 	)

@@ -1352,7 +1352,9 @@ func TestUpdateAsset(t *testing.T) {
 		targetData.StartingBlockNumber, //17
 		targetData.ImportGeth,          //18
 		targetData.ImportGethInitial,   //19
-		targetData.ID,                  //20
+		targetData.ChainlinkUSDAddress, //20
+		targetData.ChainlinkUSDChainID, //21
+		targetData.ID,                  //22
 	).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	mock.ExpectCommit()
 	err = UpdateAsset(mock, &targetData)
@@ -1429,7 +1431,9 @@ func TestUpdateAssetOnFailure(t *testing.T) {
 		targetData.StartingBlockNumber, //17
 		targetData.ImportGeth,          //18
 		targetData.ImportGethInitial,   //19
-		targetData.ID,                  //20
+		targetData.ChainlinkUSDAddress, //20
+		targetData.ChainlinkUSDChainID, //21
+		targetData.ID,                  //22
 	).WillReturnError(fmt.Errorf("Cannot have -1 as ID"))
 
 	mock.ExpectRollback()
@@ -1471,6 +1475,8 @@ func TestInsertAsset(t *testing.T) {
 		targetData.StartingBlockNumber, //17
 		targetData.ImportGeth,          //18
 		targetData.ImportGethInitial,   //19
+		targetData.ChainlinkUSDAddress, //20
+		targetData.ChainlinkUSDChainID, //21
 	).WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit()
 	newID, err := InsertAsset(mock, &targetData)
@@ -1534,6 +1540,8 @@ func TestInsertAssetOnFailure(t *testing.T) {
 		targetData.StartingBlockNumber, //17
 		targetData.ImportGeth,          //18
 		targetData.ImportGethInitial,   //19
+		targetData.ChainlinkUSDAddress, //20
+		targetData.ChainlinkUSDChainID, //21
 	).WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()
 	newID, err := InsertAsset(mock, &targetData)
@@ -1578,6 +1586,8 @@ func TestInsertAssetOnFailureOnCommit(t *testing.T) {
 		targetData.StartingBlockNumber, //17
 		targetData.ImportGeth,          //18
 		targetData.ImportGethInitial,   //19
+		targetData.ChainlinkUSDAddress, //20
+		targetData.ChainlinkUSDChainID, //21
 	).WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("Random SQL Error"))
 	mock.ExpectRollback()

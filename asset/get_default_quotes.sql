@@ -22,6 +22,8 @@
     assets.contract_address,
     assets.starting_block_number,
     assets.import_geth,
-   import_geth_initial
+    assets.import_geth_initial,
+    assets.chainlink_usd_address,
+    assets.chainlink_usd_chain_id 
    FROM assets
   WHERE assets.is_default_quote = true;

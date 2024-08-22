@@ -24,6 +24,8 @@ CREATE TABLE assets
   starting_block_number NUMERIC NULL,
   import_geth BOOLEAN NOT NULL DEFAULT FALSE,
   import_geth_initial BOOLEAN NOT NULL DEFAULT FALSE,
+  chainlink_usd_address VARCHAR(255) NULL,
+  chainlink_usd_chain_id INT NULL,
   PRIMARY KEY(id),
   CONSTRAINT fk_base_asset FOREIGN KEY(base_asset_id) REFERENCES assets(id),
   CONSTRAINT fk_quote_asset FOREIGN KEY(quote_asset_id) REFERENCES assets(id),
@@ -31,6 +33,7 @@ CREATE TABLE assets
   CONSTRAINT fk_structured_value_category FOREIGN KEY(category_id) REFERENCES structured_values(id),
   CONSTRAINT fk_structured_value__sub_category FOREIGN KEY(sub_category_id) REFERENCES structured_values(id),
   CONSTRAINT fk_chain FOREIGN KEY(chain_id) REFERENCES chains(id)
+  CONSTRAINT fk_chain FOREIGN KEY(chainlink_usd_chain_id) REFERENCES chains(id)
 );
 
 -- new columns 2022-07-02
@@ -73,7 +76,16 @@ ALTER TABLE assets
   ADD  import_geth_initial BOOLEAN NOT NULL DEFAULT FALSE;
   COMMIT
 -- end
--- add indexes
+
+--new column chainlink address and chain id
+-- 2024-08-22
+ROLLBACK
+START TRANSACTION;
+ALTER TABLE assets
+  ADD  chainlink_usd_address VARCHAR(255) NULL,
+ADD  chainlink_usd_chain_id INT NULL;
+  COMMIT
+-- end
 
 CREATE INDEX assets_id ON assets(id);
 CREATE INDEX assets_address ON assets(contract_address);

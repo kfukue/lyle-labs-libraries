@@ -31,6 +31,8 @@ type Asset struct {
 	StartingBlockNumber *uint64   `json:"startingBlockNumber" db:"starting_block_number"`
 	ImportGeth          *bool     `json:"importGeth" db:"import_geth"`
 	ImportGethInitial   *bool     `json:"importGethInitial" db:"import_geth_initial"`
+	ChainlinkUSDAddress string    `json:"chainlinkUSDAddress" db:"chainlink_usd_address"`
+	ChainlinkUSDChainID *int      `json:"chainlinkUSDChainId" db:"chainlink_usd_chain_id"`
 }
 
 // Asset

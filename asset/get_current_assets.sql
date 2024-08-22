@@ -22,7 +22,9 @@
     assets.contract_address,
     assets.starting_block_number,
     assets.import_geth,
-	  import_geth_initial
+	  import_geth_initial,
+    chainlink_usd_address,
+    chainlink_usd_chain_id 
    FROM assets
   WHERE (assets.id IN ( SELECT DISTINCT assets_1.id
            FROM trades

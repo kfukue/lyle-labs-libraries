@@ -186,34 +186,36 @@ func AddGethTradeToMockRows(mock pgxmock.PgxPoolIface, dataList []GethTrade) *pg
 }
 
 var DBColumnsNetTransferByAddress = []string{
-	"txn_hash",              //1
-	"address_str",           //2
-	"asset_id",              //3
-	"net_amount",            //4
-	"id",                    //5
-	"uuid",                  //6
-	"name",                  //7
-	"alternate_name",        //8
-	"cusip",                 //9
-	"ticker",                //10
-	"base_asset_id",         //11
-	"quote_asset_id",        //12
-	"description",           //13
-	"asset_type_id",         //14
-	"created_by",            //15
-	"created_at",            //16
-	"updated_by",            //17
-	"updated_at",            //18
-	"chain_id",              //19
-	"category_id",           //20
-	"sub_category_id",       //21
-	"is_default_quote",      //22
-	"ignore_market_data",    //23
-	"decimals",              //24
-	"contract_address",      //25
-	"starting_block_number", //26
-	"import_geth",           //27
-	"import_geth_initial",   //28
+	"txn_hash",               //1
+	"address_str",            //2
+	"asset_id",               //3
+	"net_amount",             //4
+	"id",                     //5
+	"uuid",                   //6
+	"name",                   //7
+	"alternate_name",         //8
+	"cusip",                  //9
+	"ticker",                 //10
+	"base_asset_id",          //11
+	"quote_asset_id",         //12
+	"description",            //13
+	"asset_type_id",          //14
+	"created_by",             //15
+	"created_at",             //16
+	"updated_by",             //17
+	"updated_at",             //18
+	"chain_id",               //19
+	"category_id",            //20
+	"sub_category_id",        //21
+	"is_default_quote",       //22
+	"ignore_market_data",     //23
+	"decimals",               //24
+	"contract_address",       //25
+	"starting_block_number",  //26
+	"import_geth",            //27
+	"import_geth_initial",    //28
+	"chainlink_usd_address",  //29
+	"chainlink_usd_chain_id", //30
 }
 
 var TestData1NetTransferByAddress = NetTransferByAddress{
@@ -264,6 +266,9 @@ func AddNetTransferByAddressToMockRows(mock pgxmock.PgxPoolIface, dataList []Net
 			data.StartingBlockNumber, //26
 			data.ImportGeth,          //27
 			data.ImportGethInitial,   //28
+			data.ChainlinkUSDAddress, //29
+			data.ChainlinkUSDChainID, //30
+
 		)
 	}
 	return rows
