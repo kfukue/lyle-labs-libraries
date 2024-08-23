@@ -964,7 +964,7 @@ func GetDefaultQuoteAssetListBySourceID(dbConnPgx utils.PgxIface, sourceID *int)
 	assets.import_geth,
 	assets.import_geth_initial,
 	assets.chainlink_usd_address,
-	assets.chainlink_usd_chain_id
+	assets.chainlink_usd_chain_id,
 	assetSources.source_id,
 	assetSources.source_identifier
 	FROM get_default_quotes assets
