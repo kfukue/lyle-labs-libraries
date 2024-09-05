@@ -41,8 +41,3 @@ type GethSwap struct {
 	OraclePriceUSD     *decimal.Decimal `json:"oraclePriceUsd" db:"oracle_price_usd"`          //32
 	OraclePriceAssetID *int             `json:"oraclePriceAssetId" db:"oracle_price_asset_id"` //33
 }
-
-type GethSwapAddress struct {
-	MakerAddress   string `json:"makerAddress" db:"maker_address"`      //1
-	MakerAddressID *int   `json:"makerAddressId" db:"maker_address_id"` //2
-}
