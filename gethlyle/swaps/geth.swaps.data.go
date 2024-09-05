@@ -570,11 +570,13 @@ func GetHighestBlockFromBaseAssetId(dbConnPgx utils.PgxIface, assetID *int) (*ui
 	return &maxBlockNumber, nil
 }
 
-func GetDistinctMakerAddressesFromBaseTokenAssetID(dbConnPgx utils.PgxIface, baseAssetID *int) ([]int, error) {
+func GetDistinctMakerAddressesFromBaseTokenAssetID(dbConnPgx utils.PgxIface, baseAssetID *int) ([]GethSwapAddress, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := dbConnPgx.Query(ctx, `SELECT
-		DISTINCT maker_address_id
+		DISTINCT 
+			maker_address_id,
+			maker_address
 		FROM geth_swaps
 		WHERE
 		base_asset_id = $1
@@ -587,13 +589,14 @@ func GetDistinctMakerAddressesFromBaseTokenAssetID(dbConnPgx utils.PgxIface, bas
 		return nil, err
 	}
 
-	makerAddresses := make([]int, 0)
+	makerAddresses := make([]GethSwapAddress, 0)
 	for results.Next() {
-		var makerAddressID int
+		var makerAddress GethSwapAddress
 		results.Scan(
-			&makerAddressID,
+			&makerAddress.MakerAddressID,
+			&makerAddress.MakerAddress,
 		)
-		makerAddresses = append(makerAddresses, makerAddressID)
+		makerAddresses = append(makerAddresses, makerAddress)
 	}
 	return makerAddresses, nil
 }
