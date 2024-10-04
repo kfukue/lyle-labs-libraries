@@ -782,9 +782,21 @@ func TestGetDistinctMakerAddressesFromBaseTokenAssetID(t *testing.T) {
 	}
 	defer mock.Close()
 	baseAssetID := TestData1.BaseAssetID
-	makerAddressIDResults := []int{*TestData1.MakerAddressID, *TestData2.MakerAddressID}
-	mockRows := mock.NewRows([]string{"maker_address_id"}).AddRow(*TestData1.MakerAddressID).AddRow(*TestData2.MakerAddressID)
-	mock.ExpectQuery("^SELECT (.+) FROM geth_swaps").WithArgs(*baseAssetID).WillReturnRows(mockRows)
+	makerAddressIDResults := make([]GethSwapAddress, 0)
+	address1 := GethSwapAddress{
+		MakerAddress:   TestData1.MakerAddress,
+		MakerAddressID: TestData1.MakerAddressID,
+	}
+	makerAddressIDResults = append(makerAddressIDResults, address1)
+	address2 := GethSwapAddress{
+		MakerAddress:   TestData2.MakerAddress,
+		MakerAddressID: TestData2.MakerAddressID,
+	}
+	makerAddressIDResults = append(makerAddressIDResults, address2)
+	rows := mock.NewRows([]string{"maker_address_id", "maker_address"})
+	rows.AddRow(address1.MakerAddressID, address1.MakerAddress)
+	rows.AddRow(address2.MakerAddressID, address2.MakerAddress)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_swaps").WithArgs(*baseAssetID).WillReturnRows(rows)
 	foundMakerAddressIDs, err := GetDistinctMakerAddressesFromBaseTokenAssetID(mock, baseAssetID)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetDistinctMakerAddressesFromBaseTokenAssetID", err)

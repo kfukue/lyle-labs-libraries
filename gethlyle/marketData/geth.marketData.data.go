@@ -90,7 +90,7 @@ func GetGethMarketData(dbConnPgx utils.PgxIface, marketDataID *int) (*GethMarket
 	return &marketData, nil
 }
 
-func GetGethMarketDataByStartDateAndMarketDataTypeID(dbConnPgx utils.PgxIface, startDate *time.Time, marketDataTypeID *int) (*GethMarketData, error) {
+func GetGethMarketDataByAssetID(dbConnPgx utils.PgxIface, startDate *time.Time, assetID, marketDataTypeID *int) (*GethMarketData, error) {
 	startDateStr := startDate.Format(utils.LayoutISO) // strip time
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -125,7 +125,8 @@ func GetGethMarketDataByStartDateAndMarketDataTypeID(dbConnPgx utils.PgxIface, s
 		geth_process_job_id
 	FROM geth_market_data 
 	WHERE start_date = $1
-	AND market_data_type_id =$2`, startDateStr, *marketDataTypeID)
+	AND asset_id = $2
+	AND market_data_type_id =$3`, startDateStr, *assetID, *marketDataTypeID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
