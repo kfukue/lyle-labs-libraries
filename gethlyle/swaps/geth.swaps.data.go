@@ -591,7 +591,6 @@ func GetDistinctMakerAddressesFromBaseTokenAssetID(dbConnPgx utils.PgxIface, bas
 
 	makerAddresses := make([]GethSwapAddress, 0)
 	for results.Next() {
-		// var makerAddress GethSwapAddress
 		var makerAddress GethSwapAddress
 		results.Scan(
 			&makerAddress.MakerAddressID,
