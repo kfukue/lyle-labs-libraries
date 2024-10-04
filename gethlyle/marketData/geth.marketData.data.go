@@ -90,6 +90,58 @@ func GetGethMarketData(dbConnPgx utils.PgxIface, marketDataID *int) (*GethMarket
 	return &marketData, nil
 }
 
+func GetGethMarketDataByStartDateAndMarketDataTypeID(dbConnPgx utils.PgxIface, startDate *time.Time, marketDataTypeID *int) (*GethMarketData, error) {
+	startDateStr := startDate.Format(utils.LayoutISO) // strip time
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	row, err := dbConnPgx.Query(ctx, `SELECT 
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		start_date,
+		end_date,
+		asset_id,
+		open_usd,
+		close_usd,
+		high_usd,
+		low_usd,
+		price_usd,
+		volume_usd,
+		market_cap_usd,
+		ticker,
+		description,
+		interval_id,
+		market_data_type_id,
+		source_id,
+		total_supply,
+		max_supply,
+		circulating_supply,
+		sparkline_7d,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at,
+		geth_process_job_id
+	FROM geth_market_data 
+	WHERE start_date = $1
+	AND market_data_type_id =$2`, startDateStr, *marketDataTypeID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	// from https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
+
+	marketData, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethMarketData])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &marketData, nil
+}
+
 func RemoveGethMarketData(dbConnPgx utils.PgxIface, marketDataID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()

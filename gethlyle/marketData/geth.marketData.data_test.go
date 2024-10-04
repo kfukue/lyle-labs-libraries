@@ -344,6 +344,100 @@ func TestGetGethMarketDataForCollectRowsErr(t *testing.T) {
 	}
 }
 
+func TestGetGethMarketDataByStartDateAndMarketDataTypeID(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	targetData := TestData2
+	dataList := []GethMarketData{targetData}
+	startDate := targetData.StartDate
+	startDateStr := startDate.Format(utils.LayoutISO)
+	marketDataTypeID := targetData.MarketDataTypeID
+	mockRows := AddGethMarketDataToMockRows(mock, dataList)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_market_data").WithArgs(startDateStr, *marketDataTypeID).WillReturnRows(mockRows)
+	foundMarketData, err := GetGethMarketDataByStartDateAndMarketDataTypeID(mock, &startDate, marketDataTypeID)
+	if err != nil {
+		t.Fatalf("an error '%s' in GetGethMarketDataByStartDateAndMarketDataTypeID", err)
+	}
+	if cmp.Equal(*foundMarketData, targetData) == false {
+		t.Errorf("Expected GethMarketData From Method GetGethMarketDataByStartDateAndMarketDataTypeID: %v is different from actual %v", foundMarketData, targetData)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethMarketDataByStartDateAndMarketDataTypeIDForErrNoRows(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	startDate := utils.SampleCreatedAtTime
+	startDateStr := startDate.Format(utils.LayoutISO)
+	marketDataTypeID := 999
+	noRows := pgxmock.NewRows(DBColumns)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_market_data").WithArgs(startDateStr, marketDataTypeID).WillReturnRows(noRows)
+	foundMarketData, err := GetGethMarketDataByStartDateAndMarketDataTypeID(mock, &startDate, &marketDataTypeID)
+	if err != nil {
+		t.Fatalf("an error '%s' in GetGethMarketDataByStartDateAndMarketDataTypeID", err)
+	}
+	if foundMarketData != nil {
+		t.Errorf("Expected GethMarketData From Method GetGethMarketDataByStartDateAndMarketDataTypeID: to be empty but got this: %v", foundMarketData)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethMarketDataByStartDateAndMarketDataTypeIDForErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	startDate := utils.SampleCreatedAtTime
+	startDateStr := startDate.Format(utils.LayoutISO)
+	marketDataTypeID := -1
+	mock.ExpectQuery("^SELECT (.+) FROM geth_market_data").WithArgs(startDateStr, marketDataTypeID).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
+	foundMarketData, err := GetGethMarketDataByStartDateAndMarketDataTypeID(mock, &startDate, &marketDataTypeID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethMarketDataByStartDateAndMarketDataTypeID", err)
+	}
+	if foundMarketData != nil {
+		t.Errorf("Expected GethMarketData From Method GetGethMarketDataByStartDateAndMarketDataTypeID: to be empty but got this: %v", foundMarketData)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetGethMarketDataByStartDateAndMarketDataTypeIDForCollectRowsErr(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	startDate := utils.SampleCreatedAtTime
+	startDateStr := startDate.Format(utils.LayoutISO)
+	marketDataTypeID := -1
+
+	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_market_data").WithArgs(startDateStr, marketDataTypeID).WillReturnRows(differentModelRows)
+	foundMarketData, err := GetGethMarketDataByStartDateAndMarketDataTypeID(mock, &startDate, &marketDataTypeID)
+	if err == nil {
+		t.Fatalf("expected an error '%s' in GetGethMarketDataByStartDateAndMarketDataTypeID", err)
+	}
+	if foundMarketData != nil {
+		t.Errorf("Expected foundMarketData From Method GetGethMarketDataByStartDateAndMarketDataTypeID: to be empty but got this: %v", foundMarketData)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRemoveGethMarketData(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
