@@ -26,7 +26,7 @@ CREATE TABLE assets
   import_geth_initial BOOLEAN NOT NULL DEFAULT FALSE,
   chainlink_usd_address VARCHAR(255) NULL,
   chainlink_usd_chain_id INT NULL,
-  total_supply INT NULL,
+  total_supply NUMERIC NULL,
   PRIMARY KEY(id),
   CONSTRAINT fk_base_asset FOREIGN KEY(base_asset_id) REFERENCES assets(id),
   CONSTRAINT fk_quote_asset FOREIGN KEY(quote_asset_id) REFERENCES assets(id),
@@ -101,6 +101,6 @@ CREATE INDEX assets_asset_type ON assets(asset_type_id);
 ROLLBACK
 START TRANSACTION;
 ALTER TABLE assets
-ADD  total_supply INT NULL;
+ADD  total_supply NUMERIC NULL;
   COMMIT
 -- end

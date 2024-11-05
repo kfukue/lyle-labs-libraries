@@ -3,6 +3,7 @@ package asset
 import (
 	"github.com/kfukue/lyle-labs-libraries/v2/utils"
 	"github.com/pashagolub/pgxmock/v4"
+	"github.com/shopspring/decimal"
 )
 
 var DBColumns = []string{
@@ -96,6 +97,8 @@ var DBColumnsAssetWithSources = []string{
 	"assetSources.source_identifier", //29
 }
 
+var decimalSampleValue = decimal.NewFromInt(1000000000)
+
 var TestData1 = Asset{
 	ID:                  utils.Ptr[int](1),                                               //1
 	UUID:                "880607ab-2833-4ad7-a231-b983a61c7b39",                          //2
@@ -123,7 +126,7 @@ var TestData1 = Asset{
 	ImportGethInitial:   nil,                                                             //24
 	ChainlinkUSDAddress: utils.Ptr[string]("0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"), //25
 	ChainlinkUSDChainID: utils.Ptr[int](1),                                               //26
-	TotalSupply:         utils.Ptr[int](1000000000),                                      //27
+	TotalSupply:         &decimalSampleValue,                                             //27
 }
 
 var TestData2 = Asset{
@@ -153,7 +156,7 @@ var TestData2 = Asset{
 	ImportGethInitial:   nil,                                                             //24
 	ChainlinkUSDAddress: utils.Ptr[string]("0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"), //25
 	ChainlinkUSDChainID: utils.Ptr[int](1),                                               //26
-	TotalSupply:         utils.Ptr[int](1000000000),                                      //27
+	TotalSupply:         &decimalSampleValue,                                             //27
 }
 var TestAllData = []Asset{TestData1, TestData2}
 

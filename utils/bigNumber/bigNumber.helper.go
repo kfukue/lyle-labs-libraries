@@ -18,6 +18,15 @@ func ConvertToBigInt(b *big.Int) (*BigInt, error) {
 	}
 	return nil, nil
 }
+
+func ConvertToBigIntFromStr(b string) (*BigInt, error) {
+	var convertedBigInt BigInt
+	if b != "" {
+		err := convertedBigInt.Scan(b)
+		return &convertedBigInt, err
+	}
+	return nil, nil
+}
 func (b *BigInt) Value() (driver.Value, error) {
 	if b != nil {
 		return (*big.Int)(b).String(), nil
