@@ -216,6 +216,7 @@ var DBColumnsNetTransferByAddress = []string{
 	"import_geth_initial",    //28
 	"chainlink_usd_address",  //29
 	"chainlink_usd_chain_id", //30
+	"total_supply",           //31
 }
 
 var TestData1NetTransferByAddress = NetTransferByAddress{
@@ -268,6 +269,7 @@ func AddNetTransferByAddressToMockRows(mock pgxmock.PgxPoolIface, dataList []Net
 			data.ImportGethInitial,   //28
 			data.ChainlinkUSDAddress, //29
 			data.ChainlinkUSDChainID, //30
+			data.TotalSupply,         //31
 
 		)
 	}

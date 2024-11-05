@@ -32,6 +32,7 @@ var DBColumns = []string{
 	"import_geth_initial",    //24
 	"chainlink_usd_address",  //25
 	"chainlink_usd_chain_id", //26
+	"total_supply",           //27
 }
 
 var DBColumnsInsertAssets = []string{
@@ -60,6 +61,7 @@ var DBColumnsInsertAssets = []string{
 	"import_geth_initial",    //23
 	"chainlink_usd_address",  //24
 	"chainlink_usd_chain_id", //25
+	"total_supply",           //26
 }
 
 var DBColumnsAssetWithSources = []string{
@@ -89,8 +91,9 @@ var DBColumnsAssetWithSources = []string{
 	"import_geth_initial",            //24
 	"chainlink_usd_address",          //25
 	"chainlink_usd_chain_id",         //26
-	"assetSources.source_id",         //27
-	"assetSources.source_identifier", //28
+	"total_supply",                   //27
+	"assetSources.source_id",         //28
+	"assetSources.source_identifier", //29
 }
 
 var TestData1 = Asset{
@@ -120,6 +123,7 @@ var TestData1 = Asset{
 	ImportGethInitial:   nil,                                                             //24
 	ChainlinkUSDAddress: utils.Ptr[string]("0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"), //25
 	ChainlinkUSDChainID: utils.Ptr[int](1),                                               //26
+	TotalSupply:         utils.Ptr[int](1000000000),                                      //27
 }
 
 var TestData2 = Asset{
@@ -149,6 +153,7 @@ var TestData2 = Asset{
 	ImportGethInitial:   nil,                                                             //24
 	ChainlinkUSDAddress: utils.Ptr[string]("0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"), //25
 	ChainlinkUSDChainID: utils.Ptr[int](1),                                               //26
+	TotalSupply:         utils.Ptr[int](1000000000),                                      //27
 }
 var TestAllData = []Asset{TestData1, TestData2}
 
@@ -182,6 +187,7 @@ func AddAssetToMockRows(mock pgxmock.PgxPoolIface, dataList []Asset) *pgxmock.Ro
 			data.ImportGethInitial,   //24
 			data.ChainlinkUSDAddress, //25
 			data.ChainlinkUSDChainID, //26
+			data.TotalSupply,         //27
 		)
 	}
 	return rows
@@ -231,8 +237,9 @@ func AddAssetWithSourcesToMockRows(mock pgxmock.PgxPoolIface, dataList []AssetWi
 			data.ImportGethInitial,   //24
 			data.ChainlinkUSDAddress, //25
 			data.ChainlinkUSDChainID, //26
-			data.SourceID,            //27
-			data.SourceIdentifier,    //28
+			data.TotalSupply,         //27
+			data.SourceID,            //28
+			data.SourceIdentifier,    //29
 		)
 	}
 	return rows

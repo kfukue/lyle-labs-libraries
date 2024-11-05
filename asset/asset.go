@@ -33,6 +33,7 @@ type Asset struct {
 	ImportGethInitial   *bool     `json:"importGethInitial" db:"import_geth_initial"`      //24
 	ChainlinkUSDAddress *string   `json:"chainlinkUSDAddress" db:"chainlink_usd_address"`  //25
 	ChainlinkUSDChainID *int      `json:"chainlinkUSDChainId" db:"chainlink_usd_chain_id"` //26
+	TotalSupply         *int      `json:"totalSupply" db:"total_supply"`                   //27
 }
 
 // Asset

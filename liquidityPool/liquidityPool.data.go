@@ -175,6 +175,7 @@ func GetLiquidityPoolListByBaseAssetID(dbConnPgx utils.PgxIface, baseAssetID *in
 	token0.import_geth_initial as token0_import_geth_initial,
 	token0.chainlink_usd_address as token0_chainlink_usd_address,
 	token0.chainlink_usd_chain_id as token0_chainlink_usd_chain_id,
+	token0.total_supply as token0_total_supply,
 	--asset 1
 	token1.id as token1_id,
 	token1.uuid as token1_uuid, 
@@ -201,7 +202,8 @@ func GetLiquidityPoolListByBaseAssetID(dbConnPgx utils.PgxIface, baseAssetID *in
 	token1.import_geth as token1_import_geth,
 	token1.import_geth_initial as token1_import_geth_initial,
 	token1.chainlink_usd_address as token1_chainlink_usd_address,
-	token1.chainlink_usd_chain_id as token1_chainlink_usd_chain_id
+	token1.chainlink_usd_chain_id as token1_chainlink_usd_chain_id,
+	token1.total_supply as token1_total_supply
 	FROM liquidity_pools lp
 	LEFT JOIN assets token0 ON lp.token0_id = token0.id
 	LEFT JOIN assets token1 ON lp.token1_id = token1.id
@@ -267,6 +269,7 @@ func GetLiquidityPoolListByBaseAssetID(dbConnPgx utils.PgxIface, baseAssetID *in
 			&liquidityPoolWithTokens.Token0.ImportGethInitial,
 			&liquidityPoolWithTokens.Token0.ChainlinkUSDAddress,
 			&liquidityPoolWithTokens.Token0.ChainlinkUSDChainID,
+			&liquidityPoolWithTokens.Token0.TotalSupply,
 			//token 1
 			&liquidityPoolWithTokens.Token1.ID,
 			&liquidityPoolWithTokens.Token1.UUID,
@@ -294,6 +297,7 @@ func GetLiquidityPoolListByBaseAssetID(dbConnPgx utils.PgxIface, baseAssetID *in
 			&liquidityPoolWithTokens.Token1.ImportGethInitial,
 			&liquidityPoolWithTokens.Token1.ChainlinkUSDAddress,
 			&liquidityPoolWithTokens.Token1.ChainlinkUSDChainID,
+			&liquidityPoolWithTokens.Token1.TotalSupply,
 		)
 		liquidityPoolsWithTokens = append(liquidityPoolsWithTokens, liquidityPoolWithTokens)
 	}

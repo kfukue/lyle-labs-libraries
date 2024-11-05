@@ -345,6 +345,7 @@ func GetNetTransfersByTxnHashAndAddressStrs(dbConnPgx utils.PgxIface, txnHash, a
 			&netTransferByAddress.ImportGethInitial,
 			&netTransferByAddress.ChainlinkUSDAddress,
 			&netTransferByAddress.ChainlinkUSDChainID,
+			&netTransferByAddress.TotalSupply,
 		)
 		netTransfersByAddress = append(netTransfersByAddress, netTransferByAddress)
 	}
@@ -438,6 +439,7 @@ func GetFromNetTransfersByTxnHashesAndAddressStrs(dbConnPgx utils.PgxIface, txnH
 			&netTransferByAddress.ImportGethInitial,
 			&netTransferByAddress.ChainlinkUSDAddress,
 			&netTransferByAddress.ChainlinkUSDChainID,
+			&netTransferByAddress.TotalSupply,
 		)
 		netTransfersByAddress = append(netTransfersByAddress, netTransferByAddress)
 	}

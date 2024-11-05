@@ -198,32 +198,34 @@ var DBColumnsLiquidityPoolWithTokens = []string{
 	"import_geth_initial",               //47
 	"chainlink_usd_address",             //48
 	"chainlink_usd_chain_id",            //49
-	"id",                                //50 //Token1 Asset
-	"uuid",                              //51
-	"name",                              //52
-	"alternate_name",                    //53
-	"cusip",                             //54
-	"ticker",                            //55
-	"base_asset_id",                     //56
-	"quote_asset_id",                    //57
-	"description",                       //58
-	"asset_type_id",                     //59
-	"created_by",                        //60
-	"created_at",                        //61
-	"updated_by",                        //62
-	"updated_at",                        //63
-	"chain_id",                          //64
-	"category_id",                       //65
-	"sub_category_id",                   //66
-	"is_default_quote",                  //67
-	"ignore_market_data",                //68
-	"decimals",                          //69
-	"contract_address",                  //70
-	"starting_block_number",             //71
-	"import_geth",                       //72
-	"import_geth_initial",               //73
-	"chainlink_usd_address",             //74
-	"chainlink_usd_chain_id",            //75
+	"total_supply",                      //50
+	"id",                                //51 //Token1 Asset
+	"uuid",                              //52
+	"name",                              //53
+	"alternate_name",                    //54
+	"cusip",                             //55
+	"ticker",                            //56
+	"base_asset_id",                     //57
+	"quote_asset_id",                    //58
+	"description",                       //59
+	"asset_type_id",                     //60
+	"created_by",                        //61
+	"created_at",                        //62
+	"updated_by",                        //63
+	"updated_at",                        //64
+	"chain_id",                          //65
+	"category_id",                       //66
+	"sub_category_id",                   //67
+	"is_default_quote",                  //68
+	"ignore_market_data",                //69
+	"decimals",                          //70
+	"contract_address",                  //71
+	"starting_block_number",             //72
+	"import_geth",                       //73
+	"import_geth_initial",               //74
+	"chainlink_usd_address",             //75
+	"chainlink_usd_chain_id",            //76
+	"total_supply",                      //77
 }
 
 func AddLiquidityPoolWithTokensToMockRows(mock pgxmock.PgxPoolIface, dataList []LiquidityPoolWithTokens) *pgxmock.Rows {
@@ -279,32 +281,34 @@ func AddLiquidityPoolWithTokensToMockRows(mock pgxmock.PgxPoolIface, dataList []
 			data.Token0.ImportGethInitial,                 //47
 			data.Token0.ChainlinkUSDAddress,               //48
 			data.Token0.ChainlinkUSDChainID,               //49
-			data.Token1.ID,                                //token1 50
-			data.Token1.UUID,                              //51
-			data.Token1.Name,                              //52
-			data.Token1.AlternateName,                     //53
-			data.Token1.Cusip,                             //54
-			data.Token1.Ticker,                            //55
-			data.Token1.BaseAssetID,                       //56
-			data.Token1.QuoteAssetID,                      //57
-			data.Token1.Description,                       //58
-			data.Token1.AssetTypeID,                       //59
-			data.Token1.CreatedBy,                         //60
-			data.Token1.CreatedAt,                         //61
-			data.Token1.UpdatedBy,                         //62
-			data.Token1.UpdatedAt,                         //63
-			data.Token1.ChainID,                           //64
-			data.Token1.CategoryID,                        //65
-			data.Token1.SubCategoryID,                     //66
-			data.Token1.IsDefaultQuote,                    //67
-			data.Token1.IgnoreMarketData,                  //68
-			data.Token1.Decimals,                          //69
-			data.Token1.ContractAddress,                   //70
-			data.Token1.StartingBlockNumber,               //71
-			data.Token1.ImportGeth,                        //72
-			data.Token1.ImportGethInitial,                 //73
-			data.Token1.ChainlinkUSDAddress,               //74
-			data.Token1.ChainlinkUSDChainID,               //75
+			data.Token0.TotalSupply,                       //50
+			data.Token1.ID,                                //token1 51
+			data.Token1.UUID,                              //52
+			data.Token1.Name,                              //53
+			data.Token1.AlternateName,                     //54
+			data.Token1.Cusip,                             //55
+			data.Token1.Ticker,                            //56
+			data.Token1.BaseAssetID,                       //57
+			data.Token1.QuoteAssetID,                      //58
+			data.Token1.Description,                       //59
+			data.Token1.AssetTypeID,                       //60
+			data.Token1.CreatedBy,                         //61
+			data.Token1.CreatedAt,                         //62
+			data.Token1.UpdatedBy,                         //63
+			data.Token1.UpdatedAt,                         //64
+			data.Token1.ChainID,                           //65
+			data.Token1.CategoryID,                        //66
+			data.Token1.SubCategoryID,                     //67
+			data.Token1.IsDefaultQuote,                    //68
+			data.Token1.IgnoreMarketData,                  //69
+			data.Token1.Decimals,                          //70
+			data.Token1.ContractAddress,                   //71
+			data.Token1.StartingBlockNumber,               //72
+			data.Token1.ImportGeth,                        //73
+			data.Token1.ImportGethInitial,                 //74
+			data.Token1.ChainlinkUSDAddress,               //75
+			data.Token1.ChainlinkUSDChainID,               //76
+			data.Token1.TotalSupply,                       //77
 		)
 	}
 	return rows
