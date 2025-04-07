@@ -40,7 +40,7 @@ CREATE TABLE geth_transactions
   native_asset_id INT NOT NULL,
   geth_process_job_id INT NULL,
   value NUMERIC NULL,
-  geth_transction_input_id INT NULL,
+  geth_transaction_input_id INT NULL,
   status_id INT NOT NULL,
   description TEXT NULL,
   created_by VARCHAR(255) NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE geth_transactions
   CONSTRAINT fk_to_address FOREIGN KEY(to_address_id) REFERENCES geth_addresses(id),
   CONSTRAINT fk_interacted_contract_address FOREIGN KEY(interacted_contract_address_id) REFERENCES geth_addresses(id),
   CONSTRAINT fk_geth_process_jobs FOREIGN KEY(geth_process_job_id) REFERENCES geth_process_jobs(id),
-  CONSTRAINT fk_geth_transaction_input FOREIGN KEY(geth_transction_input_id) REFERENCES geth_transaction_inputs(id),
+  CONSTRAINT fk_geth_transaction_input FOREIGN KEY(geth_transaction_input_id) REFERENCES geth_transaction_inputs(id),
   CONSTRAINT fk_statuses FOREIGN KEY(status_id) REFERENCES structured_values(id)
 );
 

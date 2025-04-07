@@ -24,7 +24,7 @@ type GethTransaction struct {
 	NativeAssetID               *int             `json:"nativeAssetId" db:"native_asset_id"`                              //15
 	GethProcessJobID            *int             `json:"gethProcessJobId" db:"geth_process_job_id"`                       //16
 	Value                       *decimal.Decimal `json:"value" db:"value"`                                                //17
-	GethTransctionInputId       *int             `json:"gethTransctionInputId" db:"geth_transction_input_id"`             //18
+	GethTransctionInputId       *int             `json:"gethTransctionInputId" db:"geth_transaction_input_id"`            //18
 	StatusID                    *int             `json:"statusId" db:"status_id"`                                         //19
 	Description                 string           `json:"description" db:"description"`                                    //20
 	CreatedBy                   string           `json:"createdBy" db:"created_by"`                                       //21

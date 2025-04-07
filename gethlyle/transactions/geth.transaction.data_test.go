@@ -32,7 +32,7 @@ var DBColumns = []string{
 	"native_asset_id",                //15
 	"geth_process_job_id",            //16
 	"value",                          //17
-	"geth_transction_input_id",       //18
+	"geth_transaction_input_id",      //18
 	"status_id",                      //19
 	"description",                    //20
 	"created_by",                     //21
@@ -57,7 +57,7 @@ var DBColumnsInsertGethTransactions = []string{
 	"native_asset_id",                //14
 	"geth_process_job_id",            //15
 	"value",                          //16
-	"geth_transction_input_id",       //17
+	"geth_transaction_input_id",      //17
 	"status_id",                      //18
 	"description",                    //19
 	"created_by",                     //20
