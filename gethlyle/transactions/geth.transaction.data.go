@@ -157,7 +157,7 @@ func GetGethTransactionByFromAddressAndBeforeBlockNumber(dbConnPgx utils.PgxIfac
 	return gethTransactions, nil
 }
 
-func GetGethTransactionsByTxnHash(dbConnPgx utils.PgxIface, txnHash string) ([]GethTransaction, error) {
+func GetGethTransactionByTxnHash(dbConnPgx utils.PgxIface, txnHash string) (*GethTransaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	results, err := dbConnPgx.Query(ctx, `
@@ -196,13 +196,14 @@ func GetGethTransactionsByTxnHash(dbConnPgx utils.PgxIface, txnHash string) ([]G
 		log.Println(err.Error())
 		return nil, err
 	}
-
-	gethTransactions, err := pgx.CollectRows(results, pgx.RowToStructByName[GethTransaction])
-	if err != nil {
+	gethTransaction, err := pgx.CollectOneRow(results, pgx.RowToStructByName[GethTransaction])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return gethTransactions, nil
+	return &gethTransaction, nil
 }
 
 func GetGethTransactionsByTxnHashes(dbConnPgx utils.PgxIface, txnHashes []string) ([]GethTransaction, error) {
