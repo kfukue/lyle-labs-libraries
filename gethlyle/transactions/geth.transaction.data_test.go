@@ -381,19 +381,39 @@ func TestGetGethTransactionsByTxnHash(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
 	}
 	defer mock.Close()
-	dataList := TestAllData
+	targetData := TestData1
+	dataList := []GethTransaction{targetData}
 	mockRows := AddGethTransactionToMockRows(mock, dataList)
 	txnHash := TestData1.TxnHash
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(txnHash).WillReturnRows(mockRows)
-	foundGethTransactionList, err := GetGethTransactionsByTxnHash(mock, txnHash)
+	foundGethTransaction, err := GetGethTransactionByTxnHash(mock, txnHash)
 	if err != nil {
-		t.Fatalf("an error '%s' in GetGethTransactionsByTxnHash", err)
+		t.Fatalf("expected an error '%s' in GetGethTransaction", err)
 	}
-	testMarketDataList := TestAllData
-	for i, foundGethTransaction := range foundGethTransactionList {
-		if cmp.Equal(foundGethTransaction, testMarketDataList[i]) == false {
-			t.Errorf("Expected GethTransaction From Method GetGethTransactionsByTxnHash: %v is different from actual %v", foundGethTransaction, testMarketDataList[i])
-		}
+	if cmp.Equal(*foundGethTransaction, targetData) == false {
+		t.Errorf("Expected foundGethTransaction From Method GetGethTransactionByTxnHash: to be empty but got this: %v", foundGethTransaction)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There awere unfulfilled expectations: %s", err)
+	}
+
+}
+
+func TestGetGethTransactionByTxnHashForErrNoRows(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub databse connection", err)
+	}
+	defer mock.Close()
+	txnHash := TestData1.TxnHash
+	noRows := pgxmock.NewRows(DBColumns)
+	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(txnHash).WillReturnRows(noRows)
+	foundGethTransaction, err := GetGethTransactionByTxnHash(mock, txnHash)
+	if err != nil {
+		t.Fatalf("an error '%s' in GetGethTransactionByTxnHash", err)
+	}
+	if foundGethTransaction != nil {
+		t.Errorf("Expected GethTransaction From Method GetGethTransactionByTxnHash: to be empty but got this: %v", foundGethTransaction)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -408,12 +428,12 @@ func TestGetGethTransactionsByTxnHashForErr(t *testing.T) {
 	defer mock.Close()
 	txnHash := "0x-invalid"
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(txnHash).WillReturnError(pgx.ScanArgError{Err: errors.New("Random SQL Error")})
-	foundGethTransactionList, err := GetGethTransactionsByTxnHash(mock, txnHash)
+	foundGethTransaction, err := GetGethTransactionByTxnHash(mock, txnHash)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethTransactionsByTxnHash", err)
 	}
-	if len(foundGethTransactionList) != 0 {
-		t.Errorf("Expected From Method GetGethTransactionsByTxnHash: to be empty but got this: %v", foundGethTransactionList)
+	if foundGethTransaction != nil {
+		t.Errorf("Expected GethTransaction From Method GetGethTransactionByTxnHash: to be empty but got this: %v", foundGethTransaction)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
@@ -429,12 +449,12 @@ func TestGetGethTransactionsByTxnHashForCollectRowsErr(t *testing.T) {
 	txnHash := "0x-invalid"
 	differentModelRows := mock.NewRows([]string{"diff_model_id"}).AddRow(1)
 	mock.ExpectQuery("^SELECT (.+) FROM geth_transactions").WithArgs(txnHash).WillReturnRows(differentModelRows)
-	foundGethTransactionList, err := GetGethTransactionsByTxnHash(mock, txnHash)
+	foundGethTransaction, err := GetGethTransactionByTxnHash(mock, txnHash)
 	if err == nil {
 		t.Fatalf("expected an error '%s' in GetGethTransactionsByTxnHash", err)
 	}
-	if foundGethTransactionList != nil {
-		t.Errorf("Expected foundGethTransactionList From Method GetGethTransactionsByTxnHash: to be empty but got this: %v", foundGethTransactionList)
+	if foundGethTransaction != nil {
+		t.Errorf("Expected foundGethTransaction From Method GetGethTransactionsByTxnHash: to be empty but got this: %v", foundGethTransaction)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There awere unfulfilled expectations: %s", err)
