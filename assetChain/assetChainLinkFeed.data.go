@@ -1,4 +1,4 @@
-package assetchainlinkfeed
+package assetchain
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/kfukue/lyle-labs-libraries/v2/utils"
 )
 
-func GetAssetChainLinkFeed(dbConnPgx utils.PgxIface, assetID, chainID *int) (*AssetChainLinkFeed, error) {
+func GetAssetChain(dbConnPgx utils.PgxIface, assetID, chainID *int) (*AssetChain, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	row, err := dbConnPgx.Query(ctx, `SELECT 
@@ -28,7 +28,7 @@ func GetAssetChainLinkFeed(dbConnPgx utils.PgxIface, assetID, chainID *int) (*As
 		log.Println(err.Error())
 		return nil, err
 	}
-	feed, err := pgx.CollectOneRow(row, pgx.RowToStructByName[AssetChainLinkFeed])
+	feed, err := pgx.CollectOneRow(row, pgx.RowToStructByName[AssetChain])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
@@ -38,7 +38,7 @@ func GetAssetChainLinkFeed(dbConnPgx utils.PgxIface, assetID, chainID *int) (*As
 	return &feed, nil
 }
 
-func GetAssetChainLinkFeedList(dbConnPgx utils.PgxIface, assetIDs, chainIDs []int) ([]AssetChainLinkFeed, error) {
+func GetAssetChainList(dbConnPgx utils.PgxIface, assetIDs, chainIDs []int) ([]AssetChain, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	sql := `SELECT 
@@ -70,7 +70,7 @@ func GetAssetChainLinkFeedList(dbConnPgx utils.PgxIface, assetIDs, chainIDs []in
 		log.Println(err.Error())
 		return nil, err
 	}
-	feeds, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetChainLinkFeed])
+	feeds, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetChain])
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -78,12 +78,12 @@ func GetAssetChainLinkFeedList(dbConnPgx utils.PgxIface, assetIDs, chainIDs []in
 	return feeds, nil
 }
 
-func InsertAssetChainLinkFeed(dbConnPgx utils.PgxIface, feed *AssetChainLinkFeed) error {
+func InsertAssetChain(dbConnPgx utils.PgxIface, feed *AssetChain) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in InsertAssetChainLinkFeed DbConn.Begin   %s", err.Error())
+		log.Printf("Error in InsertAssetChain DbConn.Begin   %s", err.Error())
 		return err
 	}
 	err = dbConnPgx.QueryRow(ctx, `INSERT INTO asset_chain_link_data_feed  
@@ -109,15 +109,15 @@ func InsertAssetChainLinkFeed(dbConnPgx utils.PgxIface, feed *AssetChainLinkFeed
 	return nil
 }
 
-func UpdateAssetChainLinkFeed(dbConnPgx utils.PgxIface, feed *AssetChainLinkFeed) error {
+func UpdateAssetChain(dbConnPgx utils.PgxIface, feed *AssetChain) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	if feed.AssetID == nil || feed.ChainID == nil {
-		return errors.New("AssetChainLinkFeed has invalid ID")
+		return errors.New("AssetChain has invalid ID")
 	}
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in UpdateAssetChainLinkFeed DbConn.Begin   %s", err.Error())
+		log.Printf("Error in UpdateAssetChain DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `UPDATE asset_chain_link_data_feed SET 
@@ -137,12 +137,12 @@ func UpdateAssetChainLinkFeed(dbConnPgx utils.PgxIface, feed *AssetChainLinkFeed
 	return tx.Commit(ctx)
 }
 
-func RemoveAssetChainLinkFeed(dbConnPgx utils.PgxIface, assetID, chainID *int) error {
+func RemoveAssetChain(dbConnPgx utils.PgxIface, assetID, chainID *int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
-		log.Printf("Error in RemoveAssetChainLinkFeed DbConn.Begin   %s", err.Error())
+		log.Printf("Error in RemoveAssetChain DbConn.Begin   %s", err.Error())
 		return err
 	}
 	sql := `DELETE FROM asset_chain_link_data_feed WHERE asset_id = $1 AND chain_id = $2`
@@ -153,7 +153,7 @@ func RemoveAssetChainLinkFeed(dbConnPgx utils.PgxIface, assetID, chainID *int) e
 	return tx.Commit(ctx)
 }
 
-func InsertAssetChainLinkFeeds(dbConnPgx utils.PgxIface, feeds []AssetChainLinkFeed) error {
+func InsertAssetChains(dbConnPgx utils.PgxIface, feeds []AssetChain) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	loc, _ := time.LoadLocation("UTC")
@@ -186,7 +186,7 @@ func InsertAssetChainLinkFeeds(dbConnPgx utils.PgxIface, feeds []AssetChainLinkF
 		},
 		pgx.CopyFromRows(rows),
 	)
-	log.Println(fmt.Printf("InsertAssetChainLinkFeeds: copy count: %d", copyCount))
+	log.Println(fmt.Printf("InsertAssetChains: copy count: %d", copyCount))
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -194,7 +194,7 @@ func InsertAssetChainLinkFeeds(dbConnPgx utils.PgxIface, feeds []AssetChainLinkF
 	return nil
 }
 
-func GetAssetChainLinkFeedListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]AssetChainLinkFeed, error) {
+func GetAssetChainListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, _order, _sort string, _filters []string) ([]AssetChain, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
@@ -231,7 +231,7 @@ func GetAssetChainLinkFeedListByPagination(dbConnPgx utils.PgxIface, _start, _en
 		return nil, err
 	}
 
-	feeds, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetChainLinkFeed])
+	feeds, err := pgx.CollectRows(results, pgx.RowToStructByName[AssetChain])
 	if err != nil {
 		log.Println(err)
 		return nil, err

@@ -1,4 +1,4 @@
-package assetchainlinkfeed
+package assetchain
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-var TestFeed1 = AssetChainLinkFeed{
+var TestFeed1 = AssetChain{
 	AssetID:                          ptr(1),
 	ChainID:                          ptr(1),
 	ChainlinkDataFeedContractAddress: "0x1234567890abcdef",
@@ -18,7 +18,7 @@ var TestFeed1 = AssetChainLinkFeed{
 	UpdatedAt:                        time.Now(),
 }
 
-var TestFeed2 = AssetChainLinkFeed{
+var TestFeed2 = AssetChain{
 	AssetID:                          ptr(2),
 	ChainID:                          ptr(1),
 	ChainlinkDataFeedContractAddress: "0xabcdef1234567890",
@@ -28,7 +28,7 @@ var TestFeed2 = AssetChainLinkFeed{
 	UpdatedAt:                        time.Now(),
 }
 
-var TestFeeds = []AssetChainLinkFeed{TestFeed1, TestFeed2}
+var TestFeeds = []AssetChain{TestFeed1, TestFeed2}
 
 var columns = []string{
 	"asset_id",
@@ -42,28 +42,28 @@ var columns = []string{
 
 func ptr(i int) *int { return &i }
 
-func TestGetAssetChainLinkFeed(t *testing.T) {
+func TestGetAssetChain(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer mock.Close()
 	target := TestFeed1
-	mockRows := AddAssetChainLinkFeedToMockRows(mock, []AssetChainLinkFeed{target})
+	mockRows := AddAssetChainToMockRows(mock, []AssetChain{target})
 	mock.ExpectQuery("^SELECT (.+) FROM asset_chain_link_data_feed").WithArgs(*target.AssetID, *target.ChainID).WillReturnRows(mockRows)
-	found, err := GetAssetChainLinkFeed(mock, target.AssetID, target.ChainID)
+	found, err := GetAssetChain(mock, target.AssetID, target.ChainID)
 	if err != nil {
-		t.Fatalf("an error '%s' in GetAssetChainLinkFeed", err)
+		t.Fatalf("an error '%s' in GetAssetChain", err)
 	}
 	if found == nil || *found.AssetID != *target.AssetID || *found.ChainID != *target.ChainID {
-		t.Errorf("Expected AssetChainLinkFeed: %v, got: %v", target, found)
+		t.Errorf("Expected AssetChain: %v, got: %v", target, found)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There were unfulfilled expectations: %s", err)
 	}
 }
 
-func TestGetAssetChainLinkFeedForNoRows(t *testing.T) {
+func TestGetAssetChainForNoRows(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -72,9 +72,9 @@ func TestGetAssetChainLinkFeedForNoRows(t *testing.T) {
 	assetID := 999
 	chainID := 999
 	mock.ExpectQuery("^SELECT (.+) FROM asset_chain_link_data_feed").WithArgs(assetID, chainID).WillReturnRows(pgxmock.NewRows(columns))
-	found, err := GetAssetChainLinkFeed(mock, &assetID, &chainID)
+	found, err := GetAssetChain(mock, &assetID, &chainID)
 	if err != nil {
-		t.Fatalf("an error '%s' in GetAssetChainLinkFeed", err)
+		t.Fatalf("an error '%s' in GetAssetChain", err)
 	}
 	if found != nil {
 		t.Errorf("Expected nil, got: %v", found)
@@ -84,17 +84,17 @@ func TestGetAssetChainLinkFeedForNoRows(t *testing.T) {
 	}
 }
 
-func TestGetAssetChainLinkFeedList(t *testing.T) {
+func TestGetAssetChainList(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer mock.Close()
-	mockRows := AddAssetChainLinkFeedToMockRows(mock, TestFeeds)
+	mockRows := AddAssetChainToMockRows(mock, TestFeeds)
 	mock.ExpectQuery("^SELECT (.+) FROM asset_chain_link_data_feed").WillReturnRows(mockRows)
-	feeds, err := GetAssetChainLinkFeedList(mock, []int{1, 2}, []int{1})
+	feeds, err := GetAssetChainList(mock, []int{1, 2}, []int{1})
 	if err != nil {
-		t.Fatalf("an error '%s' in GetAssetChainLinkFeedList", err)
+		t.Fatalf("an error '%s' in GetAssetChainList", err)
 	}
 	if len(feeds) != len(TestFeeds) {
 		t.Errorf("Expected %d feeds, got %d", len(TestFeeds), len(feeds))
@@ -104,7 +104,7 @@ func TestGetAssetChainLinkFeedList(t *testing.T) {
 	}
 }
 
-func TestInsertAssetChainLinkFeed(t *testing.T) {
+func TestInsertAssetChain(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -120,16 +120,16 @@ func TestInsertAssetChainLinkFeed(t *testing.T) {
 		target.UpdatedBy,
 	).WillReturnRows(pgxmock.NewRows([]string{"asset_id", "chain_id"}).AddRow(*target.AssetID, *target.ChainID))
 	mock.ExpectCommit()
-	err = InsertAssetChainLinkFeed(mock, &target)
+	err = InsertAssetChain(mock, &target)
 	if err != nil {
-		t.Fatalf("an error '%s' in InsertAssetChainLinkFeed", err)
+		t.Fatalf("an error '%s' in InsertAssetChain", err)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There were unfulfilled expectations: %s", err)
 	}
 }
 
-func TestUpdateAssetChainLinkFeed(t *testing.T) {
+func TestUpdateAssetChain(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -144,16 +144,16 @@ func TestUpdateAssetChainLinkFeed(t *testing.T) {
 		target.ChainID,
 	).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	mock.ExpectCommit()
-	err = UpdateAssetChainLinkFeed(mock, &target)
+	err = UpdateAssetChain(mock, &target)
 	if err != nil {
-		t.Fatalf("an error '%s' in UpdateAssetChainLinkFeed", err)
+		t.Fatalf("an error '%s' in UpdateAssetChain", err)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There were unfulfilled expectations: %s", err)
 	}
 }
 
-func TestRemoveAssetChainLinkFeed(t *testing.T) {
+func TestRemoveAssetChain(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -163,16 +163,16 @@ func TestRemoveAssetChainLinkFeed(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("^DELETE FROM asset_chain_link_data_feed").WithArgs(*target.AssetID, *target.ChainID).WillReturnResult(pgxmock.NewResult("DELETE", 1))
 	mock.ExpectCommit()
-	err = RemoveAssetChainLinkFeed(mock, target.AssetID, target.ChainID)
+	err = RemoveAssetChain(mock, target.AssetID, target.ChainID)
 	if err != nil {
-		t.Fatalf("an error '%s' in RemoveAssetChainLinkFeed", err)
+		t.Fatalf("an error '%s' in RemoveAssetChain", err)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There were unfulfilled expectations: %s", err)
 	}
 }
 
-func AddAssetChainLinkFeedToMockRows(mock pgxmock.PgxPoolIface, dataList []AssetChainLinkFeed) *pgxmock.Rows {
+func AddAssetChainToMockRows(mock pgxmock.PgxPoolIface, dataList []AssetChain) *pgxmock.Rows {
 	rows := mock.NewRows(columns)
 	for _, data := range dataList {
 		rows.AddRow(
@@ -188,38 +188,38 @@ func AddAssetChainLinkFeedToMockRows(mock pgxmock.PgxPoolIface, dataList []Asset
 	return rows
 }
 
-func TestInsertAssetChainLinkFeeds(t *testing.T) {
+func TestInsertAssetChains(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer mock.Close()
 	mock.ExpectCopyFrom(pgx.Identifier{"asset_chain_link_data_feed"}, columns)
-	err = InsertAssetChainLinkFeeds(mock, TestFeeds)
+	err = InsertAssetChains(mock, TestFeeds)
 	if err != nil {
-		t.Fatalf("an error '%s' in InsertAssetChainLinkFeeds", err)
+		t.Fatalf("an error '%s' in InsertAssetChains", err)
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("There were unfulfilled expectations: %s", err)
 	}
 }
 
-func TestGetAssetChainLinkFeedListByPagination(t *testing.T) {
+func TestGetAssetChainListByPagination(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer mock.Close()
-	mockRows := AddAssetChainLinkFeedToMockRows(mock, TestFeeds)
+	mockRows := AddAssetChainToMockRows(mock, TestFeeds)
 	mock.ExpectQuery("^SELECT (.+) FROM asset_chain_link_data_feed").WillReturnRows(mockRows)
 	_start := 0
 	_end := 10
 	_order := "asset_id"
 	_sort := "ASC"
 	filters := []string{}
-	feeds, err := GetAssetChainLinkFeedListByPagination(mock, &_start, &_end, _order, _sort, filters)
+	feeds, err := GetAssetChainListByPagination(mock, &_start, &_end, _order, _sort, filters)
 	if err != nil {
-		t.Fatalf("an error '%s' in GetAssetChainLinkFeedListByPagination", err)
+		t.Fatalf("an error '%s' in GetAssetChainListByPagination", err)
 	}
 	if len(feeds) != len(TestFeeds) {
 		t.Errorf("Expected %d feeds, got %d", len(TestFeeds), len(feeds))
