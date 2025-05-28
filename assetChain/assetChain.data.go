@@ -22,7 +22,7 @@ func GetAssetChain(dbConnPgx utils.PgxIface, assetID, chainID *int) (*AssetChain
 		created_at,
 		updated_by,
 		updated_at
-		FROM asset_chain_link_data_feed 
+		FROM asset_chains 
 		WHERE asset_id = $1 AND chain_id = $2`, *assetID, *chainID)
 	if err != nil {
 		log.Println(err.Error())
@@ -49,7 +49,7 @@ func GetAssetChainList(dbConnPgx utils.PgxIface, assetIDs, chainIDs []int) ([]As
 		created_at,
 		updated_by,
 		updated_at
-		FROM asset_chain_link_data_feed`
+		FROM asset_chains`
 	if len(assetIDs) > 0 || len(chainIDs) > 0 {
 		additionalQuery := ` WHERE`
 		if len(assetIDs) > 0 {
@@ -86,7 +86,7 @@ func InsertAssetChain(dbConnPgx utils.PgxIface, feed *AssetChain) error {
 		log.Printf("Error in InsertAssetChain DbConn.Begin   %s", err.Error())
 		return err
 	}
-	err = dbConnPgx.QueryRow(ctx, `INSERT INTO asset_chain_link_data_feed  
+	err = dbConnPgx.QueryRow(ctx, `INSERT INTO asset_chains  
 		(asset_id, chain_id, chainlink_data_feed_contract_address, created_by, created_at, updated_by, updated_at)
 		VALUES ($1, $2, $3, $4, current_timestamp at time zone 'UTC', $5, current_timestamp at time zone 'UTC')`,
 		feed.AssetID,
@@ -120,7 +120,7 @@ func UpdateAssetChain(dbConnPgx utils.PgxIface, feed *AssetChain) error {
 		log.Printf("Error in UpdateAssetChain DbConn.Begin   %s", err.Error())
 		return err
 	}
-	sql := `UPDATE asset_chain_link_data_feed SET 
+	sql := `UPDATE asset_chains SET 
 		chainlink_data_feed_contract_address=$1,
 		updated_by=$2,
 		updated_at=current_timestamp at time zone 'UTC'
@@ -145,7 +145,7 @@ func RemoveAssetChain(dbConnPgx utils.PgxIface, assetID, chainID *int) error {
 		log.Printf("Error in RemoveAssetChain DbConn.Begin   %s", err.Error())
 		return err
 	}
-	sql := `DELETE FROM asset_chain_link_data_feed WHERE asset_id = $1 AND chain_id = $2`
+	sql := `DELETE FROM asset_chains WHERE asset_id = $1 AND chain_id = $2`
 	if _, err := dbConnPgx.Exec(ctx, sql, *assetID, *chainID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -174,7 +174,7 @@ func InsertAssetChains(dbConnPgx utils.PgxIface, feeds []AssetChain) error {
 	}
 	copyCount, err := dbConnPgx.CopyFrom(
 		ctx,
-		pgx.Identifier{"asset_chain_link_data_feed"},
+		pgx.Identifier{"asset_chains"},
 		[]string{
 			"asset_id",                             //1
 			"chain_id",                             //2
@@ -206,7 +206,7 @@ func GetAssetChainListByPagination(dbConnPgx utils.PgxIface, _start, _end *int, 
 		created_at,
 		updated_by,
 		updated_at
-		FROM asset_chain_link_data_feed 
+		FROM asset_chains 
 	`
 	if len(_filters) > 0 {
 		sql += "WHERE "

@@ -1,5 +1,5 @@
--- SQL schema for asset_chain_link_data_feed association table
-CREATE TABLE IF NOT EXISTS asset_chain (
+-- SQL schema for asset_chains association table
+CREATE TABLE IF NOT EXISTS asset_chains (
     asset_id INT NOT NULL,
     chain_id INT NOT NULL,
     chainlink_data_feed_contract_address TEXT NOT NULL,
@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS asset_chain (
 ); 
 
 
-CREATE INDEX asset_chain_asset_id ON asset_chain(asset_id);
-CREATE INDEX asset_chain_chain_id ON asset_chain(chain_id);
+CREATE INDEX asset_chain_asset_id ON asset_chains(asset_id);
+CREATE INDEX asset_chain_chain_id ON asset_chains(chain_id);
 
 
 

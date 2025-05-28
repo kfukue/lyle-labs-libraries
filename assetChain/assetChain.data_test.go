@@ -50,7 +50,7 @@ func TestGetAssetChain(t *testing.T) {
 	defer mock.Close()
 	target := TestFeed1
 	mockRows := AddAssetChainToMockRows(mock, []AssetChain{target})
-	mock.ExpectQuery("^SELECT (.+) FROM asset_chain_link_data_feed").WithArgs(*target.AssetID, *target.ChainID).WillReturnRows(mockRows)
+	mock.ExpectQuery("^SELECT (.+) FROM asset_chains").WithArgs(*target.AssetID, *target.ChainID).WillReturnRows(mockRows)
 	found, err := GetAssetChain(mock, target.AssetID, target.ChainID)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetAssetChain", err)
@@ -71,7 +71,7 @@ func TestGetAssetChainForNoRows(t *testing.T) {
 	defer mock.Close()
 	assetID := 999
 	chainID := 999
-	mock.ExpectQuery("^SELECT (.+) FROM asset_chain_link_data_feed").WithArgs(assetID, chainID).WillReturnRows(pgxmock.NewRows(columns))
+	mock.ExpectQuery("^SELECT (.+) FROM asset_chains").WithArgs(assetID, chainID).WillReturnRows(pgxmock.NewRows(columns))
 	found, err := GetAssetChain(mock, &assetID, &chainID)
 	if err != nil {
 		t.Fatalf("an error '%s' in GetAssetChain", err)
@@ -91,7 +91,7 @@ func TestGetAssetChainList(t *testing.T) {
 	}
 	defer mock.Close()
 	mockRows := AddAssetChainToMockRows(mock, TestFeeds)
-	mock.ExpectQuery("^SELECT (.+) FROM asset_chain_link_data_feed").WillReturnRows(mockRows)
+	mock.ExpectQuery("^SELECT (.+) FROM asset_chains").WillReturnRows(mockRows)
 	feeds, err := GetAssetChainList(mock, []int{1, 2}, []int{1})
 	if err != nil {
 		t.Fatalf("an error '%s' in GetAssetChainList", err)
@@ -112,7 +112,7 @@ func TestInsertAssetChain(t *testing.T) {
 	defer mock.Close()
 	target := TestFeed1
 	mock.ExpectBegin()
-	mock.ExpectQuery("^INSERT INTO asset_chain_link_data_feed").WithArgs(
+	mock.ExpectQuery("^INSERT INTO asset_chains").WithArgs(
 		target.AssetID,
 		target.ChainID,
 		target.ChainlinkDataFeedContractAddress,
@@ -137,7 +137,7 @@ func TestUpdateAssetChain(t *testing.T) {
 	defer mock.Close()
 	target := TestFeed1
 	mock.ExpectBegin()
-	mock.ExpectExec("^UPDATE asset_chain_link_data_feed").WithArgs(
+	mock.ExpectExec("^UPDATE asset_chains").WithArgs(
 		target.ChainlinkDataFeedContractAddress,
 		target.UpdatedBy,
 		target.AssetID,
@@ -161,7 +161,7 @@ func TestRemoveAssetChain(t *testing.T) {
 	defer mock.Close()
 	target := TestFeed1
 	mock.ExpectBegin()
-	mock.ExpectExec("^DELETE FROM asset_chain_link_data_feed").WithArgs(*target.AssetID, *target.ChainID).WillReturnResult(pgxmock.NewResult("DELETE", 1))
+	mock.ExpectExec("^DELETE FROM asset_chains").WithArgs(*target.AssetID, *target.ChainID).WillReturnResult(pgxmock.NewResult("DELETE", 1))
 	mock.ExpectCommit()
 	err = RemoveAssetChain(mock, target.AssetID, target.ChainID)
 	if err != nil {
@@ -194,7 +194,7 @@ func TestInsertAssetChains(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer mock.Close()
-	mock.ExpectCopyFrom(pgx.Identifier{"asset_chain_link_data_feed"}, columns)
+	mock.ExpectCopyFrom(pgx.Identifier{"asset_chains"}, columns)
 	err = InsertAssetChains(mock, TestFeeds)
 	if err != nil {
 		t.Fatalf("an error '%s' in InsertAssetChains", err)
@@ -211,7 +211,7 @@ func TestGetAssetChainListByPagination(t *testing.T) {
 	}
 	defer mock.Close()
 	mockRows := AddAssetChainToMockRows(mock, TestFeeds)
-	mock.ExpectQuery("^SELECT (.+) FROM asset_chain_link_data_feed").WillReturnRows(mockRows)
+	mock.ExpectQuery("^SELECT (.+) FROM asset_chains").WillReturnRows(mockRows)
 	_start := 0
 	_end := 10
 	_order := "asset_id"
