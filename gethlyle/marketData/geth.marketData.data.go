@@ -40,6 +40,56 @@ func GetMinAndMaxDatesFromGethMarketByAssetID(dbConnPgx utils.PgxIface, assetID,
 	return minDate, maxDate, nil
 }
 
+func GetGethMarketDataListByAssetIDMarketDataTypeIDAndDateRange(dbConnPgx utils.PgxIface, assetID *int, marketDataTypeID *int, startDate, endDate *time.Time) ([]GethMarketData, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+	sql := `SELECT 
+		id,
+		uuid, 
+		name, 
+		alternate_name, 
+		start_date,
+		end_date,
+		asset_id,
+		open_usd,
+		close_usd,
+		high_usd,
+		low_usd,
+		price_usd,
+		volume_usd,
+		market_cap_usd,
+		ticker,
+		description,
+		interval_id,
+		market_data_type_id,
+		source_id,
+		total_supply,
+		max_supply,
+		circulating_supply,
+		sparkline_7d,
+		created_by, 
+		created_at, 
+		updated_by, 
+		updated_at,
+		geth_process_job_id
+	FROM geth_market_data
+	WHERE start_date BETWEEN $1 AND $2
+	AND asset_id = $3
+	AND market_data_type_id = $4`
+	results, err := dbConnPgx.Query(ctx, sql, *startDate, *endDate, *assetID, *marketDataTypeID)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+
+	marketDataList, err := pgx.CollectRows(results, pgx.RowToStructByName[GethMarketData])
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return marketDataList, nil
+}
+
 func GetGethMarketData(dbConnPgx utils.PgxIface, marketDataID *int) (*GethMarketData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
@@ -126,7 +176,8 @@ func GetGethMarketDataByAssetID(dbConnPgx utils.PgxIface, startDate *time.Time, 
 	FROM geth_market_data 
 	WHERE start_date = $1
 	AND asset_id = $2
-	AND market_data_type_id =$3`, startDateStr, *assetID, *marketDataTypeID)
+	AND market_data_type_id =$3
+	ORDER BY start_date DESC`, startDateStr, *assetID, *marketDataTypeID)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
