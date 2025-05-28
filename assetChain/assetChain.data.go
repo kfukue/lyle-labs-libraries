@@ -78,37 +78,35 @@ func GetAssetChainList(dbConnPgx utils.PgxIface, assetIDs, chainIDs []int) ([]As
 	return feeds, nil
 }
 
-func InsertAssetChain(dbConnPgx utils.PgxIface, feed *AssetChain) (int, error) {
+func InsertAssetChain(dbConnPgx utils.PgxIface, feed *AssetChain) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 	tx, err := dbConnPgx.Begin(ctx)
 	if err != nil {
 		log.Printf("Error in InsertAssetChain DbConn.Begin   %s", err.Error())
-		return -1, err
+		return err
 	}
-	var ID int
 	err = dbConnPgx.QueryRow(ctx, `INSERT INTO asset_chain_link_data_feed  
 		(asset_id, chain_id, chainlink_data_feed_contract_address, created_by, created_at, updated_by, updated_at)
-		VALUES ($1, $2, $3, $4, current_timestamp at time zone 'UTC', $5, current_timestamp at time zone 'UTC')
-		RETURNING id`,
+		VALUES ($1, $2, $3, $4, current_timestamp at time zone 'UTC', $5, current_timestamp at time zone 'UTC')`,
 		feed.AssetID,
 		feed.ChainID,
 		feed.ChainlinkDataFeedContractAddress,
 		feed.CreatedBy,
 		feed.UpdatedBy,
-	).Scan(&ID)
+	).Scan()
 	if err != nil && err != pgx.ErrNoRows {
 		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return -1, err
+		return err
 	}
 	err = tx.Commit(ctx)
 	if err != nil {
 		tx.Rollback(ctx)
 		log.Println(err.Error())
-		return -1, err
+		return err
 	}
-	return int(ID), nil
+	return nil
 }
 
 func UpdateAssetChain(dbConnPgx utils.PgxIface, feed *AssetChain) error {
