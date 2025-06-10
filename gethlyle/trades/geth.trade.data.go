@@ -871,7 +871,8 @@ func GetLatestGethTradeFromAssetIDAnDate(dbConnPgx utils.PgxIface, assetID *int,
 		oracle_price_usd,
 		oracle_price_asset_id
 	FROM geth_trades
-	WHERE base_asset_id = $1 `
+	WHERE base_asset_id = $1
+	AND price_usd IS NOT NULL `
 	tradeDateSQL := ``
 	if *isBefore {
 		tradeDateSQL = ` AND trade_date <= $2 ORDER BY trade_date desc`
