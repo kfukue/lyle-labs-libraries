@@ -1063,7 +1063,7 @@ func GetTotalTransfersCount(dbConnPgx utils.PgxIface) (*int, error) {
 	return &totalCount, nil
 }
 
-func GetClosestBlockNumberFromGethTransferFromChainAndDate(dbConnPgx utils.PgxIface, chainID *int, asOfDate time.Time, isBefore *bool) (*GethTrade, error) {
+func GetClosestBlockNumberFromGethTransferFromChainAndDate(dbConnPgx utils.PgxIface, chainID *int, asOfDate *time.Time, isBefore *bool) (*GethTransfer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
