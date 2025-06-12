@@ -1062,3 +1062,64 @@ func GetTotalTransfersCount(dbConnPgx utils.PgxIface) (*int, error) {
 	}
 	return &totalCount, nil
 }
+
+func GetClosestBlockNumberFromGethTransferFromChainAndDate(dbConnPgx utils.PgxIface, chainID *int, asOfDate time.Time, isBefore *bool) (*GethTrade, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	selectSQL := `SELECT
+		id,
+		uuid,
+		chain_id,
+		token_address,
+		token_address_id,
+		asset_id,
+		block_number,
+		index_number,
+		transfer_date,
+		txn_hash,
+		sender_address,
+		sender_address_id,
+		to_address,
+		to_address_id,
+		amount,
+		description,
+		created_by,
+		created_at,
+		updated_by,
+		updated_at,
+		geth_process_job_id,
+		topics_str,
+		status_id,
+		base_asset_id,
+		transfer_type_id
+	FROM geth_transfers 
+	WHERE 
+	`
+	tradeDateSQL := ``
+	if *isBefore {
+		tradeDateSQL = ` transfer_date <= $2 
+		AND chain_id = $1
+		AND block_number IS NOT NULL 
+		ORDER BY transfer_date desc`
+	} else {
+		tradeDateSQL = `  transfer_date >= $2
+		AND chain_id = $1
+		AND block_number IS NOT NULL 
+		 ORDER BY transfer_date asc`
+	}
+	sql := selectSQL + tradeDateSQL + ` LIMIT 1`
+	row, err := dbConnPgx.Query(ctx, sql, *chainID, asOfDate.Format(utils.LayoutPostgres))
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	gethTrade, err := pgx.CollectOneRow(row, pgx.RowToStructByName[GethTransfer])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &gethTrade, nil
+}

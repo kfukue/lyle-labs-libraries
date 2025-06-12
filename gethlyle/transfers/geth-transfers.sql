@@ -55,6 +55,9 @@ CREATE INDEX geth_transfers_to_address ON geth_transfers(to_address);
 CREATE INDEX geth_transfers_sender_address ON geth_transfers(sender_address);
 CREATE INDEX geth_transfers_asset_id ON geth_transfers(asset_id);
 CREATE INDEX geth_transfers_base_asset_id ON geth_transfers(base_asset_id);
+CREATE INDEX geth_transfers_chain_id ON geth_transfers(chain_id);
+CREATE INDEX geth_transfers_block_number ON geth_transfers(block_number);
+CREATE INDEX geth_transfers_transfer_date ON geth_transfers(transfer_date);
 
 CREATE INDEX  geth_transfers_txn_hash ON geth_transfers(txn_hash);
 CREATE INDEX  geth_transfers_fk_geth_process_jobs ON geth_transfers(geth_process_job_id);
