@@ -1,4 +1,4 @@
-package aiModels
+package aimodels
 
 import (
 	"context"
@@ -221,7 +221,7 @@ func InsertAIModels(dbConnPgx utils.PgxIface, aiModels []AIModel) error {
 		uuidString := &pgtype.UUID{}
 		uuidString.Set(aiModel.UUID)
 		row := []interface{}{
-			uuidString,           //1
+			uuidString,            //1
 			aiModel.Name,          //2
 			aiModel.AlternateName, //3
 			aiModel.URL,           //4
@@ -234,7 +234,7 @@ func InsertAIModels(dbConnPgx utils.PgxIface, aiModels []AIModel) error {
 			aiModel.CreatedBy,     //11
 			&aiModel.CreatedAt,    //12
 			aiModel.CreatedBy,     //13
-			&now,                 //14
+			&now,                  //14
 		}
 		rows = append(rows, row)
 	}
@@ -244,20 +244,20 @@ func InsertAIModels(dbConnPgx utils.PgxIface, aiModels []AIModel) error {
 		ctx,
 		pgx.Identifier{"ai_models"},
 		[]string{
-			"uuid",           //1
-			"name",           //2
-			"alternate_name", //3
-			"url",            //4
-			"ticker",         //5
-			"description",    //6
-			"ollama_name",    //7
-			"params_size",    //8
-			"quantiized_size",//9
-			"base_model_id",  //10
-			"created_by",     //11
-			"created_at",     //12
-			"updated_by",     //13
-			"updated_at",     //14
+			"uuid",            //1
+			"name",            //2
+			"alternate_name",  //3
+			"url",             //4
+			"ticker",          //5
+			"description",     //6
+			"ollama_name",     //7
+			"params_size",     //8
+			"quantiized_size", //9
+			"base_model_id",   //10
+			"created_by",      //11
+			"created_at",      //12
+			"updated_by",      //13
+			"updated_at",      //14
 		},
 		pgx.CopyFromRows(rows),
 	)

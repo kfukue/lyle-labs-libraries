@@ -1,4 +1,4 @@
-package aiModels
+package aimodels
 
 import (
 	"errors"
